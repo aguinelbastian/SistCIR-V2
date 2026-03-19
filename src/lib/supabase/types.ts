@@ -114,12 +114,16 @@ export type Database = {
       }
       opme_items: {
         Row: {
+          code: string
           created_at: string | null
           current_lives: number | null
+          description: string
           id: string
+          is_active: boolean
           is_available: boolean | null
           item_type: string
           lot_number: string | null
+          manufacturer: string
           max_lives: number | null
           name: string
           serial_number: string | null
@@ -127,12 +131,16 @@ export type Database = {
           updated_at: string | null
         }
         Insert: {
+          code: string
           created_at?: string | null
           current_lives?: number | null
+          description: string
           id?: string
+          is_active?: boolean
           is_available?: boolean | null
           item_type: string
           lot_number?: string | null
+          manufacturer: string
           max_lives?: number | null
           name: string
           serial_number?: string | null
@@ -140,12 +148,16 @@ export type Database = {
           updated_at?: string | null
         }
         Update: {
+          code?: string
           created_at?: string | null
           current_lives?: number | null
+          description?: string
           id?: string
+          is_active?: boolean
           is_available?: boolean | null
           item_type?: string
           lot_number?: string | null
+          manufacturer?: string
           max_lives?: number | null
           name?: string
           serial_number?: string | null
@@ -201,33 +213,52 @@ export type Database = {
       }
       pedido_opme_items: {
         Row: {
+          added_by: string | null
+          authorization_code: string | null
+          authorized_at: string | null
           created_at: string | null
           id: string
           lives_consumed: number | null
           lot_used: string | null
+          notes: string | null
           opme_item_id: string
           pedido_id: string
           quantity: number
         }
         Insert: {
+          added_by?: string | null
+          authorization_code?: string | null
+          authorized_at?: string | null
           created_at?: string | null
           id?: string
           lives_consumed?: number | null
           lot_used?: string | null
+          notes?: string | null
           opme_item_id: string
           pedido_id: string
           quantity?: number
         }
         Update: {
+          added_by?: string | null
+          authorization_code?: string | null
+          authorized_at?: string | null
           created_at?: string | null
           id?: string
           lives_consumed?: number | null
           lot_used?: string | null
+          notes?: string | null
           opme_item_id?: string
           pedido_id?: string
           quantity?: number
         }
         Relationships: [
+          {
+            foreignKeyName: 'pedido_opme_items_added_by_fkey'
+            columns: ['added_by']
+            isOneToOne: false
+            referencedRelation: 'profiles'
+            referencedColumns: ['id']
+          },
           {
             foreignKeyName: 'pedido_opme_items_opme_item_id_fkey'
             columns: ['opme_item_id']
@@ -767,6 +798,10 @@ export const Constants = {
 //   is_available: boolean (nullable, default: true)
 //   created_at: timestamp with time zone (nullable, default: now())
 //   updated_at: timestamp with time zone (nullable, default: now())
+//   code: text (not null)
+//   description: text (not null)
+//   manufacturer: text (not null)
+//   is_active: boolean (not null, default: true)
 // Table: patients
 //   id: uuid (not null, default: uuid_generate_v4())
 //   full_name: text (not null)
@@ -788,6 +823,10 @@ export const Constants = {
 //   lives_consumed: integer (nullable, default: 0)
 //   lot_used: text (nullable)
 //   created_at: timestamp with time zone (nullable, default: now())
+//   authorization_code: text (nullable)
+//   authorized_at: timestamp with time zone (nullable)
+//   notes: text (nullable)
+//   added_by: uuid (nullable)
 // Table: pedidos_cirurgia
 //   id: uuid (not null, default: uuid_generate_v4())
 //   patient_id: uuid (not null)
@@ -870,6 +909,7 @@ export const Constants = {
 // Table: audit_logs
 //   PRIMARY KEY audit_logs_pkey: PRIMARY KEY (id)
 // Table: opme_items
+//   UNIQUE opme_items_code_unique: UNIQUE (code)
 //   CHECK opme_items_item_type_check: CHECK ((item_type = ANY (ARRAY['pinça_clicada'::text, 'uso_unico'::text, 'grampeador'::text, 'drape'::text, 'outro'::text])))
 //   PRIMARY KEY opme_items_pkey: PRIMARY KEY (id)
 // Table: patients
@@ -877,9 +917,11 @@ export const Constants = {
 //   FOREIGN KEY patients_created_by_fkey: FOREIGN KEY (created_by) REFERENCES auth.users(id)
 //   PRIMARY KEY patients_pkey: PRIMARY KEY (id)
 // Table: pedido_opme_items
+//   FOREIGN KEY pedido_opme_items_added_by_fkey: FOREIGN KEY (added_by) REFERENCES profiles(id)
 //   FOREIGN KEY pedido_opme_items_opme_item_id_fkey: FOREIGN KEY (opme_item_id) REFERENCES opme_items(id)
 //   FOREIGN KEY pedido_opme_items_pedido_id_fkey: FOREIGN KEY (pedido_id) REFERENCES pedidos_cirurgia(id) ON DELETE CASCADE
 //   PRIMARY KEY pedido_opme_items_pkey: PRIMARY KEY (id)
+//   UNIQUE pedido_opme_items_unique: UNIQUE (pedido_id, opme_item_id)
 // Table: pedidos_cirurgia
 //   CHECK pedidos_cirurgia_asa_classification_check: CHECK ((asa_classification = ANY (ARRAY['ASA I'::text, 'ASA II'::text, 'ASA III'::text, 'ASA IV'::text, 'ASA V'::text])))
 //   FOREIGN KEY pedidos_cirurgia_cancellation_actor_id_fkey: FOREIGN KEY (cancellation_actor_id) REFERENCES auth.users(id)
@@ -918,12 +960,11 @@ export const Constants = {
 //   Policy "audit_logs_select_admin" (SELECT, PERMISSIVE) roles={public}
 //     USING: has_role('admin'::text)
 // Table: opme_items
-//   Policy "opme_insert" (INSERT, PERMISSIVE) roles={public}
-//     WITH CHECK: has_any_role(ARRAY['opme'::text, 'admin'::text])
-//   Policy "opme_select" (SELECT, PERMISSIVE) roles={public}
-//     USING: has_any_role(ARRAY['surgeon'::text, 'secretary'::text, 'opme'::text, 'nursing'::text, 'coordinator'::text, 'admin'::text])
-//   Policy "opme_update" (UPDATE, PERMISSIVE) roles={public}
-//     USING: has_any_role(ARRAY['opme'::text, 'nursing'::text, 'admin'::text])
+//   Policy "opme_items_all" (ALL, PERMISSIVE) roles={authenticated}
+//     USING: (EXISTS ( SELECT 1    FROM user_roles ur   WHERE ((ur.user_id = auth.uid()) AND (ur.role = ANY (ARRAY['opme'::user_role_type, 'admin'::user_role_type])) AND (ur.is_active = true))))
+//     WITH CHECK: (EXISTS ( SELECT 1    FROM user_roles ur   WHERE ((ur.user_id = auth.uid()) AND (ur.role = ANY (ARRAY['opme'::user_role_type, 'admin'::user_role_type])) AND (ur.is_active = true))))
+//   Policy "opme_items_select" (SELECT, PERMISSIVE) roles={authenticated}
+//     USING: true
 // Table: patients
 //   Policy "patients_delete" (DELETE, PERMISSIVE) roles={public}
 //     USING: has_role('admin'::text)
@@ -936,19 +977,10 @@ export const Constants = {
 //   Policy "patients_update" (UPDATE, PERMISSIVE) roles={public}
 //     USING: has_any_role(ARRAY['secretary'::text, 'admin'::text])
 // Table: pedido_opme_items
-//   Policy "opme_items_insert" (INSERT, PERMISSIVE) roles={public}
-//     WITH CHECK: has_any_role(ARRAY['surgeon'::text, 'secretary'::text, 'opme'::text, 'admin'::text])
-//   Policy "opme_items_select" (SELECT, PERMISSIVE) roles={public}
-//     USING: (EXISTS ( SELECT 1    FROM pedidos_cirurgia pc   WHERE ((pc.id = pedido_opme_items.pedido_id) AND ((pc.surgeon_id = auth.uid()) OR has_any_role(ARRAY['opme'::text, 'nursing'::text, 'coordinator'::text, 'billing'::text, 'admin'::text])))))
-//   Policy "opme_items_update" (UPDATE, PERMISSIVE) roles={public}
-//     USING: has_any_role(ARRAY['opme'::text, 'nursing'::text, 'admin'::text])
-//   Policy "pedido_opme_items_delete" (DELETE, PERMISSIVE) roles={authenticated}
-//     USING: true
-//   Policy "pedido_opme_items_insert" (INSERT, PERMISSIVE) roles={authenticated}
-//     WITH CHECK: true
+//   Policy "pedido_opme_items_all" (ALL, PERMISSIVE) roles={authenticated}
+//     USING: (EXISTS ( SELECT 1    FROM user_roles ur   WHERE ((ur.user_id = auth.uid()) AND (ur.role = ANY (ARRAY['opme'::user_role_type, 'admin'::user_role_type])) AND (ur.is_active = true))))
+//     WITH CHECK: (EXISTS ( SELECT 1    FROM user_roles ur   WHERE ((ur.user_id = auth.uid()) AND (ur.role = ANY (ARRAY['opme'::user_role_type, 'admin'::user_role_type])) AND (ur.is_active = true))))
 //   Policy "pedido_opme_items_select" (SELECT, PERMISSIVE) roles={authenticated}
-//     USING: true
-//   Policy "pedido_opme_items_update" (UPDATE, PERMISSIVE) roles={authenticated}
 //     USING: true
 // Table: pedidos_cirurgia
 //   Policy "pedidos_insert" (INSERT, PERMISSIVE) roles={public}
@@ -1242,8 +1274,12 @@ export const Constants = {
 //   CREATE INDEX idx_audit_logs_created ON public.audit_logs USING btree (created_at DESC)
 //   CREATE INDEX idx_audit_logs_event ON public.audit_logs USING btree (event_type)
 //   CREATE INDEX idx_audit_logs_record ON public.audit_logs USING btree (record_id)
+// Table: opme_items
+//   CREATE UNIQUE INDEX opme_items_code_unique ON public.opme_items USING btree (code)
 // Table: patients
 //   CREATE UNIQUE INDEX patients_cpf_hash_key ON public.patients USING btree (cpf_hash)
+// Table: pedido_opme_items
+//   CREATE UNIQUE INDEX pedido_opme_items_unique ON public.pedido_opme_items USING btree (pedido_id, opme_item_id)
 // Table: procedures
 //   CREATE UNIQUE INDEX procedures_tuss_code_key ON public.procedures USING btree (tuss_code)
 // Table: sectors
