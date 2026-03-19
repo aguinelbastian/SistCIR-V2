@@ -166,12 +166,15 @@ export const api = {
         .order('name', { ascending: true }),
   },
   reports: {
-    status: async () => await supabase.functions.invoke('get-relatorio-status'),
-    cirurgioes: async () => await supabase.functions.invoke('get-relatorio-cirurgioes'),
-    procedimentos: async () => await supabase.functions.invoke('get-relatorio-procedimentos'),
-    conversao: async () => await supabase.functions.invoke('get-relatorio-conversao'),
-    sla: async () => await supabase.functions.invoke('get-relatorio-sla'),
+    status: async () => await supabase.functions.invoke('get-relatorio-status', { method: 'GET' }),
+    cirurgioes: async () =>
+      await supabase.functions.invoke('get-relatorio-cirurgioes', { method: 'GET' }),
+    procedimentos: async () =>
+      await supabase.functions.invoke('get-relatorio-procedimentos', { method: 'GET' }),
+    conversao: async () =>
+      await supabase.functions.invoke('get-relatorio-conversao', { method: 'GET' }),
+    sla: async () => await supabase.functions.invoke('get-relatorio-sla', { method: 'GET' }),
     tempoAutorizacao: async () =>
-      await supabase.functions.invoke('get-relatorio-tempo-autorizacao'),
+      await supabase.functions.invoke('get-relatorio-tempo-autorizacao', { method: 'GET' }),
   },
 }
