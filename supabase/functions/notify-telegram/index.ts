@@ -36,22 +36,20 @@ serve(async (req: Request) => {
   }
 
   try {
-    // 1. Security Validation
-    const authHeader = req.headers.get('Authorization')
+    // 1. Parse Webhook Payload
+    const payload = await req.json()
 
-    if (!authHeader || authHeader !== `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`) {
-      console.error('Unauthorized: invalid or missing Authorization header')
-      return new Response('Unauthorized', {
-        status: 401,
-        headers: corsHeaders,
+    // 2. Structural Payload Validation
+    if (!payload || !payload.record || !payload.record.pedido_id) {
+      return new Response(JSON.stringify({ message: 'Invalid payload' }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       })
     }
 
-    // 2. Parse Webhook Payload
-    const payload = await req.json()
     const record = payload.record
 
-    if (!record || !record.pedido_id || payload.type !== 'INSERT') {
+    if (payload.type !== 'INSERT') {
       return new Response(JSON.stringify({ message: 'Event ignored' }), {
         status: 200,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
