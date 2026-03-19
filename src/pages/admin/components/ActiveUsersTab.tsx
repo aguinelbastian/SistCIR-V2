@@ -22,6 +22,7 @@ import {
 } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { Key } from 'lucide-react'
 
 const roleColors: Record<string, string> = {
   surgeon: 'bg-blue-100 text-blue-800 border-blue-200',
@@ -209,6 +210,7 @@ export default function ActiveUsersTab({
                     className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
                     onClick={() => setUserToReset(ur.profile)}
                   >
+                    <Key className="w-4 h-4" />
                     Resetar Senha
                   </Button>
                   <Button

@@ -27,8 +27,10 @@ serve(async (req) => {
       })
     }
 
+    const appUrl = Deno.env.get('APP_URL') || 'https://sistcir.com'
+
     const { error } = await supabaseAdmin.auth.resetPasswordForEmail(user_email, {
-      redirectTo: `${Deno.env.get('APP_URL') || 'https://sistcir.com'}/login`,
+      redirectTo: `${appUrl}/minha-conta`,
     })
 
     if (error) {
