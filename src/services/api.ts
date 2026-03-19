@@ -18,7 +18,6 @@ export const api = {
         .order('created_at', { ascending: false })
     },
     listDashboard: async (filters?: { surgeonId?: string }) => {
-      // Retorna apenas os dados cruciais e não expõe o full_name do paciente (Privacy-First)
       let query = supabase
         .from('pedidos_cirurgia')
         .select(`
@@ -46,7 +45,7 @@ export const api = {
           *,
           patients (*),
           procedures (*),
-          profiles!pedidos_cirurgia_surgeon_id_fkey (name)
+          profiles!pedidos_cirurgia_surgeon_id_fkey (*)
         `)
         .eq('id', id)
         .single()
@@ -54,28 +53,72 @@ export const api = {
     create: async (data: PedidoInsert) => {
       return await supabase.from('pedidos_cirurgia').insert(data).select().single()
     },
-    updateStatus: async (id: string, status: Database['public']['Enums']['surgery_status']) => {
-      return await supabase.from('pedidos_cirurgia').update({ status }).eq('id', id)
-    },
-    cancel: async (id: string, reason: string) => {
+    updateStatus: async (
+      id: string,
+      statusFrom: string,
+      statusTo: Database['public']['Enums']['surgery_status'],
+      actionLabel: string,
+    ) => {
       const {
         data: { user },
       } = await supabase.auth.getUser()
-      return await supabase
+      if (!user) return { error: new Error('Não autenticado') }
+
+      const updateRes = await supabase
+        .from('pedidos_cirurgia')
+        .update({ status: statusTo })
+        .eq('id', id)
+      if (updateRes.error) return updateRes
+
+      await supabase.from('audit_log' as any).insert({
+        pedido_id: id,
+        changed_by: user.id,
+        status_from: statusFrom,
+        status_to: statusTo,
+        action: actionLabel,
+      })
+
+      return updateRes
+    },
+    cancel: async (id: string, statusFrom: string, reason: string) => {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser()
+      if (!user) return { error: new Error('Não autenticado') }
+
+      const updateRes = await supabase
         .from('pedidos_cirurgia')
         .update({
           status: '10_CANCELADO',
           cancellation_reason: reason,
-          cancellation_actor_id: user?.id,
+          cancellation_actor_id: user.id,
         })
         .eq('id', id)
+      if (updateRes.error) return updateRes
+
+      await supabase.from('audit_log' as any).insert({
+        pedido_id: id,
+        changed_by: user.id,
+        status_from: statusFrom,
+        status_to: '10_CANCELADO',
+        action: 'Cancelar',
+        notes: reason,
+      })
+
+      return updateRes
     },
     getTimeline: async (id: string) => {
       return await supabase
-        .from('audit_logs')
-        .select('*')
-        .eq('record_id', id)
-        .order('created_at', { ascending: false })
+        .from('audit_log' as any)
+        .select(`
+          id,
+          changed_at,
+          action,
+          notes,
+          profiles ( name )
+        `)
+        .eq('pedido_id', id)
+        .order('changed_at', { ascending: true })
     },
   },
   pacientes: {

@@ -10,7 +10,7 @@ import {
 } from '@/components/ui/table'
 import { api } from '@/services/api'
 import { StatusBadge } from '@/components/StatusBadge'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { Eye, Plus, Activity, Clock, ShieldAlert } from 'lucide-react'
 import { PedidoCirurgia, SurgeryStatus } from '@/types/sistcir'
@@ -31,10 +31,11 @@ export default function Dashboard() {
   const [pedidos, setPedidos] = useState<Partial<PedidoCirurgia>[]>([])
   const [loading, setLoading] = useState(true)
   const { user, roles, hasRole, loading: authLoading } = useAuth()
+  const navigate = useNavigate()
 
-  // Estado do Modal de Cancelamento
   const [cancelModalOpen, setCancelModalOpen] = useState(false)
   const [pedidoToCancel, setPedidoToCancel] = useState<string | null>(null)
+  const [pedidoToCancelStatus, setPedidoToCancelStatus] = useState<string | null>(null)
   const [cancelReason, setCancelReason] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
 
@@ -57,8 +58,15 @@ export default function Dashboard() {
     }
   }, [user, authLoading, roles])
 
-  const handleUpdateStatus = async (id: string, newStatus: SurgeryStatus) => {
-    const { error } = await api.pedidos.updateStatus(id, newStatus)
+  const handleUpdateStatus = async (
+    e: React.MouseEvent,
+    id: string,
+    statusFrom: string,
+    newStatus: SurgeryStatus,
+    actionLabel: string,
+  ) => {
+    e.stopPropagation()
+    const { error } = await api.pedidos.updateStatus(id, statusFrom, newStatus, actionLabel)
     if (error) {
       toast.error('Erro ao atualizar status')
     } else {
@@ -68,9 +76,9 @@ export default function Dashboard() {
   }
 
   const handleCancelConfirm = async () => {
-    if (!pedidoToCancel || !cancelReason.trim()) return
+    if (!pedidoToCancel || !pedidoToCancelStatus || !cancelReason.trim()) return
     setIsSubmitting(true)
-    const { error } = await api.pedidos.cancel(pedidoToCancel, cancelReason)
+    const { error } = await api.pedidos.cancel(pedidoToCancel, pedidoToCancelStatus, cancelReason)
     setIsSubmitting(false)
     if (error) {
       toast.error('Erro ao cancelar solicitação')
@@ -78,6 +86,7 @@ export default function Dashboard() {
       toast.success('Solicitação cancelada com sucesso')
       setCancelModalOpen(false)
       setPedidoToCancel(null)
+      setPedidoToCancelStatus(null)
       setCancelReason('')
       loadData()
     }
@@ -92,7 +101,7 @@ export default function Dashboard() {
   }
 
   const renderActions = (pedido: Partial<PedidoCirurgia>) => {
-    const s = pedido.status
+    const s = pedido.status!
     const isMySurgeon = pedido.surgeon_id === user?.id
     const canCancel = hasRole('admin') || hasRole('nursing') || (hasRole('surgeon') && isMySurgeon)
 
@@ -102,7 +111,9 @@ export default function Dashboard() {
           <Button
             variant="secondary"
             size="sm"
-            onClick={() => handleUpdateStatus(pedido.id!, '2_AGUARDANDO_OPME')}
+            onClick={(e) =>
+              handleUpdateStatus(e, pedido.id!, s, '2_AGUARDANDO_OPME', 'Enviar para OPME')
+            }
           >
             Enviar p/ OPME
           </Button>
@@ -112,7 +123,9 @@ export default function Dashboard() {
           <Button
             variant="secondary"
             size="sm"
-            onClick={() => handleUpdateStatus(pedido.id!, '6_AGUARDANDO_MAPA')}
+            onClick={(e) =>
+              handleUpdateStatus(e, pedido.id!, s, '6_AGUARDANDO_MAPA', 'OPME Finalizada')
+            }
           >
             OPME Finalizada
           </Button>
@@ -122,7 +135,9 @@ export default function Dashboard() {
           <Button
             variant="secondary"
             size="sm"
-            onClick={() => handleUpdateStatus(pedido.id!, '3_EM_AUDITORIA')}
+            onClick={(e) =>
+              handleUpdateStatus(e, pedido.id!, s, '3_EM_AUDITORIA', 'Enviar para Auditoria')
+            }
           >
             Enviar p/ Auditoria
           </Button>
@@ -132,7 +147,9 @@ export default function Dashboard() {
           <Button
             variant="outline"
             size="sm"
-            onClick={() => handleUpdateStatus(pedido.id!, '4_PENDENCIA_TECNICA')}
+            onClick={(e) =>
+              handleUpdateStatus(e, pedido.id!, s, '4_PENDENCIA_TECNICA', 'Pendência Técnica')
+            }
             className="text-orange-600 border-orange-200 hover:bg-orange-50"
           >
             Pendência Técnica
@@ -143,7 +160,9 @@ export default function Dashboard() {
           <Button
             variant="default"
             size="sm"
-            onClick={() => handleUpdateStatus(pedido.id!, '5_AUTORIZADO')}
+            onClick={(e) =>
+              handleUpdateStatus(e, pedido.id!, s, '5_AUTORIZADO', 'Marcar Autorizado')
+            }
             className="bg-lime-600 hover:bg-lime-700"
           >
             Marcar Autorizado
@@ -154,7 +173,9 @@ export default function Dashboard() {
           <Button
             variant="default"
             size="sm"
-            onClick={() => handleUpdateStatus(pedido.id!, '7_AGENDADO_CC')}
+            onClick={(e) =>
+              handleUpdateStatus(e, pedido.id!, s, '7_AGENDADO_CC', 'Alocar Sala/Robô')
+            }
             className="bg-blue-600 hover:bg-blue-700"
           >
             Alocar Sala/Robô
@@ -166,14 +187,18 @@ export default function Dashboard() {
             <Button
               variant="secondary"
               size="sm"
-              onClick={() => handleUpdateStatus(pedido.id!, '7_AGENDADO_CC')}
+              onClick={(e) =>
+                handleUpdateStatus(e, pedido.id!, s, '7_AGENDADO_CC', 'Confirmar Agendamento')
+              }
             >
               Confirmar Agendamento
             </Button>
             <Button
               variant="default"
               size="sm"
-              onClick={() => handleUpdateStatus(pedido.id!, '8_EM_EXECUCAO')}
+              onClick={(e) =>
+                handleUpdateStatus(e, pedido.id!, s, '8_EM_EXECUCAO', 'Iniciar Procedimento')
+              }
               className="bg-purple-600 hover:bg-purple-700"
             >
               Iniciar Procedimento
@@ -185,7 +210,7 @@ export default function Dashboard() {
           <Button
             variant="default"
             size="sm"
-            onClick={() => handleUpdateStatus(pedido.id!, '9_REALIZADO')}
+            onClick={(e) => handleUpdateStatus(e, pedido.id!, s, '9_REALIZADO', 'Marcar Realizado')}
             className="bg-emerald-600 hover:bg-emerald-700"
           >
             Marcar Realizado
@@ -197,8 +222,10 @@ export default function Dashboard() {
             variant="ghost"
             size="sm"
             title="Cancelar Solicitação"
-            onClick={() => {
+            onClick={(e) => {
+              e.stopPropagation()
               setPedidoToCancel(pedido.id!)
+              setPedidoToCancelStatus(s)
               setCancelModalOpen(true)
             }}
             className="text-red-600 hover:text-red-700 hover:bg-red-50"
@@ -207,10 +234,16 @@ export default function Dashboard() {
           </Button>
         )}
 
-        <Button variant="ghost" size="sm" asChild title="Ver Detalhes">
-          <Link to={`/pedidos/${pedido.id}`}>
-            <Eye className="w-4 h-4" />
-          </Link>
+        <Button
+          variant="ghost"
+          size="sm"
+          title="Ver Detalhes"
+          onClick={(e) => {
+            e.stopPropagation()
+            navigate(`/pedidos/${pedido.id}`)
+          }}
+        >
+          <Eye className="w-4 h-4" />
         </Button>
       </div>
     )
@@ -285,7 +318,11 @@ export default function Dashboard() {
             </TableHeader>
             <TableBody>
               {pedidos.map((pedido) => (
-                <TableRow key={pedido.id}>
+                <TableRow
+                  key={pedido.id}
+                  className="cursor-pointer transition-colors hover:bg-muted/50"
+                  onClick={() => navigate(`/pedidos/${pedido.id}`)}
+                >
                   <TableCell className="font-mono text-xs text-muted-foreground">
                     {pedido.id?.substring(0, 6).toUpperCase()}
                   </TableCell>
