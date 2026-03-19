@@ -19,6 +19,7 @@ import PedidoCreate from './pages/pedidos/PedidoCreate'
 import PedidoDetail from './pages/pedidos/PedidoDetail'
 import AdminPage from './pages/admin/AdminPage'
 import UsersPage from './pages/admin/UsersPage'
+import AdminOpmeList from './pages/admin/AdminOpmeList'
 
 const App = () => (
   <BrowserRouter future={{ v7_startTransition: false, v7_relativeSplatPath: false }}>
@@ -37,6 +38,7 @@ const App = () => (
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/admin" element={<AdminPage />} />
               <Route path="/admin/usuarios" element={<UsersPage />} />
+              <Route path="/admin/opme" element={<AdminOpmeList />} />
               <Route path="/pacientes" element={<PacientesList />} />
               <Route path="/procedimentos" element={<ProcedimentosList />} />
               <Route path="/opme" element={<OpmeList />} />

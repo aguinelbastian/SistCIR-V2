@@ -72,29 +72,43 @@ export function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
 
-        {hasRole('admin') && (
+        {(hasRole('admin') || hasRole('opme')) && (
           <SidebarGroup className="mt-auto mb-4">
             <SidebarGroupLabel className="text-xs uppercase tracking-wider text-muted-foreground font-semibold px-4">
               Administração
             </SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
-                <SidebarMenuItem>
-                  <SidebarMenuButton asChild isActive={location.pathname === '/admin'}>
-                    <Link to="/admin">
-                      <ShieldAlert className="w-4 h-4 mr-3 text-red-500" />
-                      <span>Acessos</span>
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-                <SidebarMenuItem>
-                  <SidebarMenuButton asChild isActive={location.pathname === '/admin/usuarios'}>
-                    <Link to="/admin/usuarios">
-                      <Users className="w-4 h-4 mr-3 text-red-500" />
-                      <span>Usuários</span>
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
+                {hasRole('admin') && (
+                  <>
+                    <SidebarMenuItem>
+                      <SidebarMenuButton asChild isActive={location.pathname === '/admin'}>
+                        <Link to="/admin">
+                          <ShieldAlert className="w-4 h-4 mr-3 text-red-500" />
+                          <span>Acessos</span>
+                        </Link>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                    <SidebarMenuItem>
+                      <SidebarMenuButton asChild isActive={location.pathname === '/admin/usuarios'}>
+                        <Link to="/admin/usuarios">
+                          <Users className="w-4 h-4 mr-3 text-red-500" />
+                          <span>Usuários</span>
+                        </Link>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  </>
+                )}
+                {(hasRole('admin') || hasRole('opme')) && (
+                  <SidebarMenuItem>
+                    <SidebarMenuButton asChild isActive={location.pathname === '/admin/opme'}>
+                      <Link to="/admin/opme">
+                        <Package className="w-4 h-4 mr-3 text-orange-500" />
+                        <span>Catálogo OPME</span>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                )}
               </SidebarMenu>
             </SidebarGroupContent>
           </SidebarGroup>

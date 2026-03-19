@@ -981,6 +981,9 @@ export const Constants = {
 //   Policy "procedures_update" (UPDATE, PERMISSIVE) roles={public}
 //     USING: has_any_role(ARRAY['admin'::text, 'nursing'::text])
 // Table: profiles
+//   Policy "Admin can update any profile" (UPDATE, PERMISSIVE) roles={authenticated}
+//     USING: (EXISTS ( SELECT 1    FROM user_roles   WHERE ((user_roles.user_id = auth.uid()) AND (user_roles.role = 'admin'::user_role_type) AND (user_roles.is_active = true))))
+//     WITH CHECK: (EXISTS ( SELECT 1    FROM user_roles   WHERE ((user_roles.user_id = auth.uid()) AND (user_roles.role = 'admin'::user_role_type) AND (user_roles.is_active = true))))
 //   Policy "profiles_select_all" (SELECT, PERMISSIVE) roles={public}
 //     USING: true
 //   Policy "profiles_select_dashboard" (SELECT, PERMISSIVE) roles={authenticated}

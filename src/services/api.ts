@@ -136,6 +136,27 @@ export const api = {
   opme: {
     list: async () => await supabase.from('opme_items').select('*').order('name'),
   },
+  opmeCatalog: {
+    list: async () => await supabase.from('opme_items').select('*').order('description'),
+    listActive: async () =>
+      await supabase.from('opme_items').select('*').eq('is_active', true).order('description'),
+    create: async (data: any) => await supabase.from('opme_items').insert(data).select().single(),
+    update: async (id: string, data: any) =>
+      await supabase.from('opme_items').update(data).eq('id', id).select().single(),
+  },
+  pedidoOpme: {
+    list: async (pedidoId: string) =>
+      await supabase
+        .from('pedido_opme_items')
+        .select('*, opme_items(code, description, manufacturer), profiles(name)')
+        .eq('pedido_id', pedidoId)
+        .order('created_at'),
+    add: async (data: any) =>
+      await supabase.from('pedido_opme_items').insert(data).select().single(),
+    update: async (id: string, data: any) =>
+      await supabase.from('pedido_opme_items').update(data).eq('id', id).select().single(),
+    remove: async (id: string) => await supabase.from('pedido_opme_items').delete().eq('id', id),
+  },
   profiles: {
     listActive: async () =>
       await supabase

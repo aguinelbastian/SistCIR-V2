@@ -19,6 +19,7 @@ import {
 import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
 import { cn } from '@/lib/utils'
+import { PedidoOpmeSection } from './components/PedidoOpmeSection'
 
 export default function PedidoDetail() {
   const { id } = useParams()
@@ -186,7 +187,7 @@ export default function PedidoDetail() {
   }
 
   return (
-    <div className="max-w-5xl mx-auto space-y-6 animate-fade-in">
+    <div className="max-w-5xl mx-auto space-y-6 animate-fade-in pb-12">
       <div className="flex items-center gap-4">
         <Button variant="outline" size="icon" onClick={() => navigate('/dashboard')}>
           <ChevronLeft className="w-5 h-5" />
@@ -335,6 +336,8 @@ export default function PedidoDetail() {
           )}
         </div>
       </div>
+
+      {id && <PedidoOpmeSection pedidoId={id} />}
 
       <Dialog open={cancelModalOpen} onOpenChange={setCancelModalOpen}>
         <DialogContent>
