@@ -165,4 +165,13 @@ export const api = {
         .eq('is_active', true)
         .order('name', { ascending: true }),
   },
+  reports: {
+    status: async () => await supabase.functions.invoke('get-relatorio-status'),
+    cirurgioes: async () => await supabase.functions.invoke('get-relatorio-cirurgioes'),
+    procedimentos: async () => await supabase.functions.invoke('get-relatorio-procedimentos'),
+    conversao: async () => await supabase.functions.invoke('get-relatorio-conversao'),
+    sla: async () => await supabase.functions.invoke('get-relatorio-sla'),
+    tempoAutorizacao: async () =>
+      await supabase.functions.invoke('get-relatorio-tempo-autorizacao'),
+  },
 }

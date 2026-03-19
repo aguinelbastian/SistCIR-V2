@@ -8,6 +8,7 @@ import {
   ShieldAlert,
   Package,
   UserCircle,
+  TrendingUp,
 } from 'lucide-react'
 import {
   Sidebar,
@@ -34,6 +35,8 @@ export function AppSidebar() {
     { title: 'Procedimentos', url: '/procedimentos', icon: Activity },
     { title: 'Estoque OPME', url: '/opme', icon: Package },
   ]
+
+  const showReports = hasRole('admin') || hasRole('coordinator')
 
   return (
     <Sidebar>
@@ -70,6 +73,17 @@ export function AppSidebar() {
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}
+
+              {showReports && (
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild isActive={location.pathname === '/relatorios'}>
+                    <Link to="/relatorios">
+                      <TrendingUp className="w-4 h-4 mr-3 text-primary" />
+                      <span className="font-medium">Relatórios</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              )}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>

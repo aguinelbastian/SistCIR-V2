@@ -22,6 +22,7 @@ import AdminPage from './pages/admin/AdminPage'
 import UsersPage from './pages/admin/UsersPage'
 import AdminOpmeList from './pages/admin/AdminOpmeList'
 import MinhaConta from './pages/account/MinhaConta'
+import RelatoriosPage from './pages/relatorios/RelatoriosPage'
 
 const App = () => (
   <BrowserRouter future={{ v7_startTransition: false, v7_relativeSplatPath: false }}>
@@ -40,6 +41,7 @@ const App = () => (
               <Route path="/" element={<Navigate to="/dashboard" replace />} />
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/minha-conta" element={<MinhaConta />} />
+              <Route path="/relatorios" element={<RelatoriosPage />} />
               <Route path="/admin" element={<AdminPage />} />
               <Route path="/admin/usuarios" element={<UsersPage />} />
               <Route path="/admin/opme" element={<AdminOpmeList />} />
