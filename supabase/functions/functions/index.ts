@@ -1,7 +1,16 @@
-import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Methods': 'POST, GET, OPTIONS',
+  'Access-Control-Allow-Headers':
+    'authorization, x-client-info, x-supabase-client-platform, apikey, content-type',
+}
 
-serve(async (req) => {
-  return new Response(JSON.stringify({ message: 'Functions endpoint is active' }), {
-    headers: { 'Content-Type': 'application/json' },
+Deno.serve(async (req: Request) => {
+  if (req.method === 'OPTIONS') {
+    return new Response('ok', { headers: corsHeaders })
+  }
+
+  return new Response(JSON.stringify({ status: 'ok', message: 'Function deployed successfully' }), {
+    headers: { 'Content-Type': 'application/json', ...corsHeaders },
   })
 })
