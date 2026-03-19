@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { api } from '@/services/api'
+import { useAuth } from '@/hooks/use-auth'
 import { Card, CardContent } from '@/components/ui/card'
 import {
   Table,
@@ -16,6 +17,7 @@ import { Plus, Eye } from 'lucide-react'
 
 export default function PedidosList() {
   const [pedidos, setPedidos] = useState<any[]>([])
+  const { hasRole } = useAuth()
 
   useEffect(() => {
     api.pedidos.list().then(({ data }) => {
@@ -27,11 +29,13 @@ export default function PedidosList() {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-bold tracking-tight">Pedidos de Cirurgia</h1>
-        <Button asChild>
-          <Link to="/pedidos/novo">
-            <Plus className="w-4 h-4 mr-2" /> Novo Pedido
-          </Link>
-        </Button>
+        {(hasRole('surgeon') || hasRole('secretary')) && (
+          <Button asChild>
+            <Link to="/pedidos/novo">
+              <Plus className="w-4 h-4 mr-2" /> Novo Pedido
+            </Link>
+          </Button>
+        )}
       </div>
 
       <Card>

@@ -220,11 +220,13 @@ export default function Dashboard() {
     <div className="space-y-6 animate-fade-in">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <h1 className="text-3xl font-bold tracking-tight">Painel de Cirurgias</h1>
-        <Button asChild>
-          <Link to="/pedidos/novo">
-            <Plus className="w-4 h-4 mr-2" /> Novo Pedido
-          </Link>
-        </Button>
+        {(hasRole('surgeon') || hasRole('secretary')) && (
+          <Button asChild>
+            <Link to="/pedidos/novo">
+              <Plus className="w-4 h-4 mr-2" /> Novo Pedido
+            </Link>
+          </Button>
+        )}
       </div>
 
       <div className="grid gap-4 md:grid-cols-3">

@@ -79,16 +79,26 @@ export const api = {
     },
   },
   pacientes: {
-    list: async () => await supabase.from('patients').select('*').order('full_name'),
+    list: async () =>
+      await supabase.from('patients').select('*').order('medical_record', { ascending: true }),
     create: async (data: Tables['patients']['Insert']) =>
       await supabase.from('patients').insert(data).select().single(),
   },
   procedimentos: {
-    list: async () => await supabase.from('procedures').select('*').order('name'),
+    list: async () =>
+      await supabase.from('procedures').select('*').order('name', { ascending: true }),
     create: async (data: Tables['procedures']['Insert']) =>
       await supabase.from('procedures').insert(data).select().single(),
   },
   opme: {
     list: async () => await supabase.from('opme_items').select('*').order('name'),
+  },
+  profiles: {
+    listActive: async () =>
+      await supabase
+        .from('profiles')
+        .select('id, name, crm')
+        .eq('is_active', true)
+        .order('name', { ascending: true }),
   },
 }
