@@ -150,7 +150,7 @@ export const api = {
         .from('pedido_opme_items')
         .select('*, opme_items(code, description, manufacturer), profiles(name)')
         .eq('pedido_id', pedidoId)
-        .order('created_at'),
+        .order('created_at', { ascending: true }),
     add: async (data: any) =>
       await supabase.from('pedido_opme_items').insert(data).select().single(),
     update: async (id: string, data: any) =>

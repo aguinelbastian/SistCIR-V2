@@ -115,7 +115,7 @@ export type Database = {
       opme_items: {
         Row: {
           code: string
-          created_at: string | null
+          created_at: string
           current_lives: number | null
           description: string
           id: string
@@ -132,7 +132,7 @@ export type Database = {
         }
         Insert: {
           code: string
-          created_at?: string | null
+          created_at?: string
           current_lives?: number | null
           description: string
           id?: string
@@ -149,7 +149,7 @@ export type Database = {
         }
         Update: {
           code?: string
-          created_at?: string | null
+          created_at?: string
           current_lives?: number | null
           description?: string
           id?: string
@@ -213,10 +213,10 @@ export type Database = {
       }
       pedido_opme_items: {
         Row: {
-          added_by: string | null
+          added_by: string
           authorization_code: string | null
           authorized_at: string | null
-          created_at: string | null
+          created_at: string
           id: string
           lives_consumed: number | null
           lot_used: string | null
@@ -226,10 +226,10 @@ export type Database = {
           quantity: number
         }
         Insert: {
-          added_by?: string | null
+          added_by: string
           authorization_code?: string | null
           authorized_at?: string | null
-          created_at?: string | null
+          created_at?: string
           id?: string
           lives_consumed?: number | null
           lot_used?: string | null
@@ -239,10 +239,10 @@ export type Database = {
           quantity?: number
         }
         Update: {
-          added_by?: string | null
+          added_by?: string
           authorization_code?: string | null
           authorized_at?: string | null
-          created_at?: string | null
+          created_at?: string
           id?: string
           lives_consumed?: number | null
           lot_used?: string | null
@@ -796,7 +796,7 @@ export const Constants = {
 //   lot_number: text (nullable)
 //   serial_number: text (nullable)
 //   is_available: boolean (nullable, default: true)
-//   created_at: timestamp with time zone (nullable, default: now())
+//   created_at: timestamp with time zone (not null, default: now())
 //   updated_at: timestamp with time zone (nullable, default: now())
 //   code: text (not null)
 //   description: text (not null)
@@ -822,11 +822,11 @@ export const Constants = {
 //   quantity: integer (not null, default: 1)
 //   lives_consumed: integer (nullable, default: 0)
 //   lot_used: text (nullable)
-//   created_at: timestamp with time zone (nullable, default: now())
+//   created_at: timestamp with time zone (not null, default: now())
 //   authorization_code: text (nullable)
 //   authorized_at: timestamp with time zone (nullable)
 //   notes: text (nullable)
-//   added_by: uuid (nullable)
+//   added_by: uuid (not null)
 // Table: pedidos_cirurgia
 //   id: uuid (not null, default: uuid_generate_v4())
 //   patient_id: uuid (not null)
@@ -921,6 +921,7 @@ export const Constants = {
 //   FOREIGN KEY pedido_opme_items_opme_item_id_fkey: FOREIGN KEY (opme_item_id) REFERENCES opme_items(id)
 //   FOREIGN KEY pedido_opme_items_pedido_id_fkey: FOREIGN KEY (pedido_id) REFERENCES pedidos_cirurgia(id) ON DELETE CASCADE
 //   PRIMARY KEY pedido_opme_items_pkey: PRIMARY KEY (id)
+//   CHECK pedido_opme_items_quantity_check: CHECK ((quantity > 0))
 //   UNIQUE pedido_opme_items_unique: UNIQUE (pedido_id, opme_item_id)
 // Table: pedidos_cirurgia
 //   CHECK pedidos_cirurgia_asa_classification_check: CHECK ((asa_classification = ANY (ARRAY['ASA I'::text, 'ASA II'::text, 'ASA III'::text, 'ASA IV'::text, 'ASA V'::text])))
@@ -960,6 +961,11 @@ export const Constants = {
 //   Policy "audit_logs_select_admin" (SELECT, PERMISSIVE) roles={public}
 //     USING: has_role('admin'::text)
 // Table: opme_items
+//   Policy "Authenticated users can read opme_items" (SELECT, PERMISSIVE) roles={authenticated}
+//     USING: true
+//   Policy "Only opme and admin can manage opme_items" (ALL, PERMISSIVE) roles={authenticated}
+//     USING: (EXISTS ( SELECT 1    FROM user_roles ur   WHERE ((ur.user_id = auth.uid()) AND (ur.role = ANY (ARRAY['opme'::user_role_type, 'admin'::user_role_type])) AND (ur.is_active = true))))
+//     WITH CHECK: (EXISTS ( SELECT 1    FROM user_roles ur   WHERE ((ur.user_id = auth.uid()) AND (ur.role = ANY (ARRAY['opme'::user_role_type, 'admin'::user_role_type])) AND (ur.is_active = true))))
 //   Policy "opme_items_all" (ALL, PERMISSIVE) roles={authenticated}
 //     USING: (EXISTS ( SELECT 1    FROM user_roles ur   WHERE ((ur.user_id = auth.uid()) AND (ur.role = ANY (ARRAY['opme'::user_role_type, 'admin'::user_role_type])) AND (ur.is_active = true))))
 //     WITH CHECK: (EXISTS ( SELECT 1    FROM user_roles ur   WHERE ((ur.user_id = auth.uid()) AND (ur.role = ANY (ARRAY['opme'::user_role_type, 'admin'::user_role_type])) AND (ur.is_active = true))))
@@ -977,6 +983,11 @@ export const Constants = {
 //   Policy "patients_update" (UPDATE, PERMISSIVE) roles={public}
 //     USING: has_any_role(ARRAY['secretary'::text, 'admin'::text])
 // Table: pedido_opme_items
+//   Policy "Authenticated users can read pedido_opme_items" (SELECT, PERMISSIVE) roles={authenticated}
+//     USING: true
+//   Policy "Only opme and admin can manage pedido_opme_items" (ALL, PERMISSIVE) roles={authenticated}
+//     USING: (EXISTS ( SELECT 1    FROM user_roles ur   WHERE ((ur.user_id = auth.uid()) AND (ur.role = ANY (ARRAY['opme'::user_role_type, 'admin'::user_role_type])) AND (ur.is_active = true))))
+//     WITH CHECK: (EXISTS ( SELECT 1    FROM user_roles ur   WHERE ((ur.user_id = auth.uid()) AND (ur.role = ANY (ARRAY['opme'::user_role_type, 'admin'::user_role_type])) AND (ur.is_active = true))))
 //   Policy "pedido_opme_items_all" (ALL, PERMISSIVE) roles={authenticated}
 //     USING: (EXISTS ( SELECT 1    FROM user_roles ur   WHERE ((ur.user_id = auth.uid()) AND (ur.role = ANY (ARRAY['opme'::user_role_type, 'admin'::user_role_type])) AND (ur.is_active = true))))
 //     WITH CHECK: (EXISTS ( SELECT 1    FROM user_roles ur   WHERE ((ur.user_id = auth.uid()) AND (ur.role = ANY (ARRAY['opme'::user_role_type, 'admin'::user_role_type])) AND (ur.is_active = true))))

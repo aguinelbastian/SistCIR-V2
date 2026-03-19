@@ -28,6 +28,7 @@ import {
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
+import { Badge } from '@/components/ui/badge'
 import { toast } from 'sonner'
 import { Plus, Edit2, Trash2, Package } from 'lucide-react'
 
@@ -37,13 +38,22 @@ export function PedidoOpmeSection({ pedidoId }: { pedidoId: string }) {
 
   const [items, setItems] = useState<any[]>([])
   const [catalog, setCatalog] = useState<any[]>([])
-  const [modalMode, setModalMode] = useState<'add' | 'edit' | null>(null)
+
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false)
+  const [editItemDisplay, setEditItemDisplay] = useState('')
   const [deleteId, setDeleteId] = useState<any>(null)
   const [loading, setLoading] = useState(false)
 
-  const [form, setForm] = useState({
-    id: '',
+  const [addForm, setAddForm] = useState({
     opme_item_id: '',
+    quantity: 1,
+    authorization_code: '',
+    authorized_at: '',
+    notes: '',
+  })
+
+  const [editForm, setEditForm] = useState({
+    id: '',
     quantity: 1,
     authorization_code: '',
     authorized_at: '',
@@ -66,69 +76,81 @@ export function PedidoOpmeSection({ pedidoId }: { pedidoId: string }) {
     loadCatalog()
   }, [pedidoId])
 
-  const openAdd = () => {
-    setForm({
-      id: '',
-      opme_item_id: '',
-      quantity: 1,
-      authorization_code: '',
-      authorized_at: '',
-      notes: '',
-    })
-    setModalMode('add')
-  }
-
-  const openEdit = (item: any) => {
-    setForm({
-      id: item.id,
-      opme_item_id: item.opme_item_id,
-      quantity: item.quantity,
-      authorization_code: item.authorization_code || '',
-      authorized_at: item.authorized_at ? item.authorized_at.split('T')[0] : '',
-      notes: item.notes || '',
-    })
-    setModalMode('edit')
-  }
-
-  const handleSave = async (e: React.FormEvent) => {
+  const handleAdd = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
 
     const payload = {
       pedido_id: pedidoId,
-      opme_item_id: form.opme_item_id,
-      quantity: form.quantity,
-      authorization_code: form.authorization_code || null,
-      authorized_at: form.authorization_code && form.authorized_at ? form.authorized_at : null,
-      notes: form.notes || null,
+      opme_item_id: addForm.opme_item_id,
+      quantity: addForm.quantity,
+      authorization_code: addForm.authorization_code || null,
+      authorized_at:
+        addForm.authorization_code && addForm.authorized_at ? addForm.authorized_at : null,
+      notes: addForm.notes || null,
       added_by: user?.id,
     }
 
-    let error
-    if (modalMode === 'add') {
-      const res = await api.pedidoOpme.add(payload)
-      error = res.error
-    } else {
-      const res = await api.pedidoOpme.update(form.id, payload)
-      error = res.error
-    }
-
+    const { error } = await api.pedidoOpme.add(payload)
     setLoading(false)
+
     if (error) {
       if (error.code === '23505') toast.error('Este material já está vinculado ao pedido')
-      else toast.error('Erro ao salvar material')
+      else toast.error('Erro ao adicionar material')
     } else {
-      toast.success(
-        modalMode === 'add' ? 'Material adicionado com sucesso' : 'Material atualizado com sucesso',
-      )
-      setModalMode(null)
+      toast.success('Material adicionado com sucesso')
+      setAddForm({
+        opme_item_id: '',
+        quantity: 1,
+        authorization_code: '',
+        authorized_at: '',
+        notes: '',
+      })
+      loadData()
+    }
+  }
+
+  const openEdit = (item: any) => {
+    setEditItemDisplay(`[${item.opme_items?.code}] — ${item.opme_items?.description}`)
+    setEditForm({
+      id: item.id,
+      quantity: item.quantity,
+      authorization_code: item.authorization_code || '',
+      authorized_at: item.authorized_at ? item.authorized_at.split('T')[0] : '',
+      notes: item.notes || '',
+    })
+    setIsEditModalOpen(true)
+  }
+
+  const handleEdit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setLoading(true)
+
+    const payload = {
+      quantity: editForm.quantity,
+      authorization_code: editForm.authorization_code || null,
+      authorized_at:
+        editForm.authorization_code && editForm.authorized_at ? editForm.authorized_at : null,
+      notes: editForm.notes || null,
+    }
+
+    const { error } = await api.pedidoOpme.update(editForm.id, payload)
+    setLoading(false)
+
+    if (error) {
+      toast.error('Erro ao atualizar material')
+    } else {
+      toast.success('Material atualizado com sucesso')
+      setIsEditModalOpen(false)
       loadData()
     }
   }
 
   const handleDelete = async () => {
     if (!deleteId) return
+    setLoading(true)
     const { error } = await api.pedidoOpme.remove(deleteId.id)
+    setLoading(false)
     if (error) {
       toast.error('Erro ao remover material')
     } else {
@@ -139,17 +161,93 @@ export function PedidoOpmeSection({ pedidoId }: { pedidoId: string }) {
   }
 
   return (
-    <div className="mt-8 space-y-4">
+    <div className="mt-8 space-y-6">
       <div className="flex items-center justify-between">
         <h2 className="text-xl font-bold tracking-tight flex items-center gap-2">
           <Package className="w-5 h-5 text-muted-foreground" /> Materiais OPME
         </h2>
-        {canEdit && (
-          <Button size="sm" onClick={openAdd}>
-            <Plus className="w-4 h-4 mr-2" /> Adicionar Material
-          </Button>
-        )}
       </div>
+
+      {canEdit && (
+        <div className="bg-muted/30 border rounded-lg p-5">
+          <h3 className="text-sm font-semibold mb-4">Adicionar Novo Material</h3>
+          <form onSubmit={handleAdd} className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
+              <div className="md:col-span-6 space-y-2">
+                <Label>Material *</Label>
+                <Select
+                  value={addForm.opme_item_id}
+                  onValueChange={(v) => setAddForm({ ...addForm, opme_item_id: v })}
+                  required
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione o material" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {catalog.map((c) => (
+                      <SelectItem key={c.id} value={c.id}>
+                        [{c.code}] — {c.description}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="md:col-span-2 space-y-2">
+                <Label>Quantidade *</Label>
+                <Input
+                  type="number"
+                  min="1"
+                  required
+                  value={addForm.quantity}
+                  onChange={(e) =>
+                    setAddForm({ ...addForm, quantity: parseInt(e.target.value) || 1 })
+                  }
+                />
+              </div>
+              <div className="md:col-span-4 space-y-2">
+                <Label>Código de autorização da operadora</Label>
+                <Input
+                  value={addForm.authorization_code}
+                  onChange={(e) => setAddForm({ ...addForm, authorization_code: e.target.value })}
+                  placeholder="Deixe em branco se ainda não autorizado"
+                />
+              </div>
+              {addForm.authorization_code && (
+                <div className="md:col-span-4 space-y-2">
+                  <Label>Data de autorização</Label>
+                  <Input
+                    type="date"
+                    required
+                    value={addForm.authorized_at}
+                    onChange={(e) => setAddForm({ ...addForm, authorized_at: e.target.value })}
+                  />
+                </div>
+              )}
+              <div
+                className={
+                  addForm.authorization_code
+                    ? 'md:col-span-8 space-y-2'
+                    : 'md:col-span-12 space-y-2'
+                }
+              >
+                <Label>Observações</Label>
+                <Textarea
+                  maxLength={500}
+                  value={addForm.notes}
+                  onChange={(e) => setAddForm({ ...addForm, notes: e.target.value })}
+                  placeholder="Opcional"
+                  className="min-h-[40px] h-10"
+                />
+              </div>
+            </div>
+            <div className="flex justify-end">
+              <Button type="submit" disabled={!addForm.opme_item_id || loading}>
+                <Plus className="w-4 h-4 mr-2" /> Adicionar Material
+              </Button>
+            </div>
+          </form>
+        </div>
+      )}
 
       <div className="border rounded-lg bg-card">
         <Table>
@@ -157,6 +255,7 @@ export function PedidoOpmeSection({ pedidoId }: { pedidoId: string }) {
             <TableRow className="bg-muted/50">
               <TableHead>Código</TableHead>
               <TableHead>Descrição</TableHead>
+              <TableHead>Fabricante</TableHead>
               <TableHead>Qtd</TableHead>
               <TableHead>Autorização</TableHead>
               <TableHead>Autorizado em</TableHead>
@@ -170,20 +269,23 @@ export function PedidoOpmeSection({ pedidoId }: { pedidoId: string }) {
                 <TableCell className="font-mono text-muted-foreground">
                   {item.opme_items?.code}
                 </TableCell>
-                <TableCell className="font-medium">
-                  {item.opme_items?.description}
-                  <div className="text-xs text-muted-foreground">
-                    {item.opme_items?.manufacturer}
-                  </div>
+                <TableCell className="font-medium">{item.opme_items?.description}</TableCell>
+                <TableCell className="text-muted-foreground">
+                  {item.opme_items?.manufacturer}
                 </TableCell>
                 <TableCell>{item.quantity}</TableCell>
                 <TableCell>
                   {item.authorization_code ? (
-                    <span className="font-mono bg-muted px-2 py-1 rounded">
+                    <Badge className="bg-green-600 hover:bg-green-700">
                       {item.authorization_code}
-                    </span>
+                    </Badge>
                   ) : (
-                    <span className="text-muted-foreground italic">Pendente</span>
+                    <Badge
+                      variant="outline"
+                      className="bg-yellow-100 text-yellow-800 border-yellow-200 hover:bg-yellow-100"
+                    >
+                      Pendente
+                    </Badge>
                   )}
                 </TableCell>
                 <TableCell>
@@ -202,7 +304,7 @@ export function PedidoOpmeSection({ pedidoId }: { pedidoId: string }) {
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="text-red-600 hover:text-red-700"
+                      className="text-red-600 hover:text-red-700 hover:bg-red-50"
                       onClick={() => setDeleteId(item)}
                     >
                       <Trash2 className="w-4 h-4" />
@@ -214,7 +316,7 @@ export function PedidoOpmeSection({ pedidoId }: { pedidoId: string }) {
             {items.length === 0 && (
               <TableRow>
                 <TableCell
-                  colSpan={canEdit ? 7 : 6}
+                  colSpan={canEdit ? 8 : 7}
                   className="text-center py-6 text-muted-foreground"
                 >
                   Nenhum material OPME vinculado a este pedido.
@@ -225,79 +327,66 @@ export function PedidoOpmeSection({ pedidoId }: { pedidoId: string }) {
         </Table>
       </div>
 
-      <Dialog open={!!modalMode} onOpenChange={(o) => !o && setModalMode(null)}>
+      <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>
-              {modalMode === 'add' ? 'Vincular Material' : 'Editar Material'}
-            </DialogTitle>
+            <DialogTitle>Editar Material</DialogTitle>
           </DialogHeader>
-          <form onSubmit={handleSave} className="space-y-4 py-4">
+          <form onSubmit={handleEdit} className="space-y-4 py-4">
             <div className="space-y-2">
               <Label>Material</Label>
-              <Select
-                value={form.opme_item_id}
-                onValueChange={(v) => setForm({ ...form, opme_item_id: v })}
-                disabled={modalMode === 'edit'}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecione o material" />
-                </SelectTrigger>
-                <SelectContent>
-                  {catalog.map((c) => (
-                    <SelectItem key={c.id} value={c.id}>
-                      [{c.code}] — {c.description}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Input value={editItemDisplay} disabled className="bg-muted" />
             </div>
             <div className="space-y-2">
-              <Label>Quantidade</Label>
+              <Label>Quantidade *</Label>
               <Input
                 type="number"
                 min="1"
                 required
-                value={form.quantity}
-                onChange={(e) => setForm({ ...form, quantity: parseInt(e.target.value) })}
+                value={editForm.quantity}
+                onChange={(e) =>
+                  setEditForm({ ...editForm, quantity: parseInt(e.target.value) || 1 })
+                }
               />
             </div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label>Código de autorização da operadora</Label>
+              <Input
+                value={editForm.authorization_code}
+                onChange={(e) => setEditForm({ ...editForm, authorization_code: e.target.value })}
+                placeholder="Deixe em branco se ainda não autorizado"
+              />
+            </div>
+            {editForm.authorization_code && (
               <div className="space-y-2">
-                <Label>Cód. Autorização</Label>
+                <Label>Data de autorização</Label>
                 <Input
-                  value={form.authorization_code}
-                  onChange={(e) => setForm({ ...form, authorization_code: e.target.value })}
-                  placeholder="Opcional"
+                  type="date"
+                  required
+                  value={editForm.authorized_at}
+                  onChange={(e) => setEditForm({ ...editForm, authorized_at: e.target.value })}
                 />
               </div>
-              {form.authorization_code && (
-                <div className="space-y-2">
-                  <Label>Data Autorização</Label>
-                  <Input
-                    type="date"
-                    required
-                    value={form.authorized_at}
-                    onChange={(e) => setForm({ ...form, authorized_at: e.target.value })}
-                  />
-                </div>
-              )}
-            </div>
+            )}
             <div className="space-y-2">
               <Label>Observações</Label>
               <Textarea
                 maxLength={500}
-                value={form.notes}
-                onChange={(e) => setForm({ ...form, notes: e.target.value })}
-                placeholder="Observações sobre o material..."
+                value={editForm.notes}
+                onChange={(e) => setEditForm({ ...editForm, notes: e.target.value })}
               />
             </div>
             <DialogFooter>
-              <Button variant="outline" type="button" onClick={() => setModalMode(null)}>
+              <Button
+                variant="outline"
+                type="button"
+                onClick={() => setIsEditModalOpen(false)}
+                disabled={loading}
+              >
                 Cancelar
               </Button>
-              <Button type="submit" disabled={!form.opme_item_id || loading}>
-                Salvar
+              <Button type="submit" disabled={loading}>
+                {loading ? 'Salvando...' : 'Salvar'}
               </Button>
             </DialogFooter>
           </form>
@@ -313,11 +402,11 @@ export function PedidoOpmeSection({ pedidoId }: { pedidoId: string }) {
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDeleteId(null)}>
+            <Button variant="outline" onClick={() => setDeleteId(null)} disabled={loading}>
               Cancelar
             </Button>
-            <Button variant="destructive" onClick={handleDelete}>
-              Remover
+            <Button variant="destructive" onClick={handleDelete} disabled={loading}>
+              {loading ? 'Removendo...' : 'Remover'}
             </Button>
           </DialogFooter>
         </DialogContent>
