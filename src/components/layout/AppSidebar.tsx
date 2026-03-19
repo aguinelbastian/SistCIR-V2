@@ -4,7 +4,6 @@ import {
   LayoutDashboard,
   Users,
   FileText,
-  Settings,
   Stethoscope,
   ShieldAlert,
   Package,
@@ -84,7 +83,15 @@ export function AppSidebar() {
                   <SidebarMenuButton asChild isActive={location.pathname === '/admin'}>
                     <Link to="/admin">
                       <ShieldAlert className="w-4 h-4 mr-3 text-red-500" />
-                      <span>Acessos / Usuários</span>
+                      <span>Acessos</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild isActive={location.pathname === '/admin/usuarios'}>
+                    <Link to="/admin/usuarios">
+                      <Users className="w-4 h-4 mr-3 text-red-500" />
+                      <span>Usuários</span>
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>

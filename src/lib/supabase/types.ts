@@ -1096,57 +1096,6 @@ export const Constants = {
 //   END;
 //   $function$
 //
-// FUNCTION fn_webhook_notify_telegram()
-//   CREATE OR REPLACE FUNCTION public.fn_webhook_notify_telegram()
-//    RETURNS trigger
-//    LANGUAGE plpgsql
-//    SECURITY DEFINER
-//   AS $function$
-//   DECLARE
-//     v_url TEXT;
-//     v_auth_header TEXT;
-//     v_request_body JSONB;
-//   BEGIN
-//     -- Construct the Edge Function URL
-//     -- Uses the project URL from settings if available, otherwise falls back to the known project domain
-//     v_url := COALESCE(
-//       current_setting('app.settings.project_url', true),
-//       'https://iumxxwtcohabjgynxciv.supabase.co'
-//     ) || '/functions/v1/notify-telegram';
-//
-//     -- Construct the Authorization Header
-//     -- Uses the service role key from settings to securely authenticate with the Edge Function
-//     v_auth_header := 'Bearer ' || COALESCE(
-//       current_setting('app.settings.service_role_key', true),
-//       'REPLACE_WITH_YOUR_SERVICE_ROLE_KEY'
-//     );
-//
-//     -- Build the JSON payload matching standard Supabase Webhook format
-//     v_request_body := jsonb_build_object(
-//       'type', TG_OP,
-//       'table', TG_TABLE_NAME,
-//       'schema', TG_TABLE_SCHEMA,
-//       'record', row_to_json(NEW)
-//     );
-//
-//     -- Dispatch asynchronous HTTP POST request
-//     -- Using net.http_post ensures the database transaction is not blocked by network latency
-//     PERFORM net.http_post(
-//       url := v_url,
-//       headers := jsonb_build_object(
-//         'Content-Type', 'application/json',
-//         'Authorization', v_auth_header
-//       ),
-//       body := v_request_body
-//     );
-//
-//     RETURN NEW;
-//   EXCEPTION WHEN OTHERS THEN
-//     -- Catch any errors so they don't abort the original INSERT transaction
-//     RETURN NEW;
-//   END;
-//   $function$
-//
 // FUNCTION get_user_role()
 //   CREATE OR REPLACE FUNCTION public.get_user_role()
 //    RETURNS text
@@ -1278,8 +1227,7 @@ export const Constants = {
 
 // --- TRIGGERS ---
 // Table: audit_log
-//   notify-telegram-audit: CREATE TRIGGER "notify-telegram-audit" AFTER INSERT ON public.audit_log FOR EACH ROW EXECUTE FUNCTION supabase_functions.http_request('https://iumxxwtcohabjgynxciv.supabase.co/functions/v1/notify-telegram', 'POST', '{"Content-type":"application/json","Authorization":"Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml1bXh4d3Rjb2hhYmpneW54Y2l2Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3MzUzMDAyNiwiZXhwIjoyMDg5MTA2MDI2fQ.m6QaLyKL7sYlMAzuBL4m-n_7j0JlcvCikrzJNQiX8Ow"}', '{}', '5000')
-//   trg_audit_log_notify_telegram: CREATE TRIGGER trg_audit_log_notify_telegram AFTER INSERT ON public.audit_log FOR EACH ROW EXECUTE FUNCTION fn_webhook_notify_telegram()
+//   notify-telegram-audit: CREATE TRIGGER "notify-telegram-audit" AFTER INSERT ON public.audit_log FOR EACH ROW EXECUTE FUNCTION supabase_functions.http_request('https://iumxxwtcohabjgynxciv.supabase.co/functions/v1/notify-telegram', 'POST', '{"Content-type":"application/json"}', '{}', '5000')
 // Table: pedidos_cirurgia
 //   trg_audit_pedidos: CREATE TRIGGER trg_audit_pedidos AFTER INSERT OR DELETE OR UPDATE ON public.pedidos_cirurgia FOR EACH ROW EXECUTE FUNCTION fn_audit_pedidos()
 // Table: user_roles
