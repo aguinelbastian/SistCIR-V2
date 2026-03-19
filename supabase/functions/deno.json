@@ -4,7 +4,7 @@
     "create-users": 6,
     "admin-manage-users": 9,
     "notify-telegram": 4,
-    "functions": 1,
+    "functions": 2,
     "admin-reset-password": 1
   }
 }
