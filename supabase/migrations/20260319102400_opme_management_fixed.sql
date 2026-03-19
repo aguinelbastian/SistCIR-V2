@@ -5,7 +5,7 @@ ALTER TABLE public.opme_items ADD COLUMN IF NOT EXISTS manufacturer TEXT;
 ALTER TABLE public.opme_items ADD COLUMN IF NOT EXISTS is_active BOOLEAN DEFAULT TRUE;
 
 UPDATE public.opme_items SET 
-    code = COALESCE(code, tuss_code, gen_random_uuid()::text),
+    code = CASE WHEN code IS NULL OR code = tuss_code THEN tuss_code || '-' || substr(id::text, 1, 8) ELSE code END,
     description = COALESCE(description, name, 'N/A'),
     manufacturer = COALESCE(manufacturer, 'Desconhecido');
 
@@ -42,6 +42,8 @@ END $$;
 DROP POLICY IF EXISTS "opme_insert" ON public.opme_items;
 DROP POLICY IF EXISTS "opme_select" ON public.opme_items;
 DROP POLICY IF EXISTS "opme_update" ON public.opme_items;
+DROP POLICY IF EXISTS "opme_items_select" ON public.opme_items;
+DROP POLICY IF EXISTS "opme_items_all" ON public.opme_items;
 
 CREATE POLICY "opme_items_select" ON public.opme_items FOR SELECT TO authenticated USING (true);
 CREATE POLICY "opme_items_all" ON public.opme_items FOR ALL TO authenticated 
@@ -60,6 +62,7 @@ DROP POLICY IF EXISTS "pedido_opme_items_delete" ON public.pedido_opme_items;
 DROP POLICY IF EXISTS "pedido_opme_items_insert" ON public.pedido_opme_items;
 DROP POLICY IF EXISTS "pedido_opme_items_select" ON public.pedido_opme_items;
 DROP POLICY IF EXISTS "pedido_opme_items_update" ON public.pedido_opme_items;
+DROP POLICY IF EXISTS "pedido_opme_items_all" ON public.pedido_opme_items;
 
 CREATE POLICY "pedido_opme_items_select" ON public.pedido_opme_items FOR SELECT TO authenticated USING (true);
 CREATE POLICY "pedido_opme_items_all" ON public.pedido_opme_items FOR ALL TO authenticated 
