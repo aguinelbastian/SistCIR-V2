@@ -9,6 +9,61 @@ export type Database = {
   }
   public: {
     Tables: {
+      audit_log: {
+        Row: {
+          action: string
+          changed_at: string
+          changed_by: string
+          id: string
+          notes: string | null
+          pedido_id: string
+          status_from: string | null
+          status_to: string
+        }
+        Insert: {
+          action: string
+          changed_at?: string
+          changed_by: string
+          id?: string
+          notes?: string | null
+          pedido_id: string
+          status_from?: string | null
+          status_to: string
+        }
+        Update: {
+          action?: string
+          changed_at?: string
+          changed_by?: string
+          id?: string
+          notes?: string | null
+          pedido_id?: string
+          status_from?: string | null
+          status_to?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'audit_log_changed_by_fkey'
+            columns: ['changed_by']
+            isOneToOne: false
+            referencedRelation: 'profiles'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'audit_log_pedido_id_fkey'
+            columns: ['pedido_id']
+            isOneToOne: false
+            referencedRelation: 'mv_kpi_cirurgias'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'audit_log_pedido_id_fkey'
+            columns: ['pedido_id']
+            isOneToOne: false
+            referencedRelation: 'pedidos_cirurgia'
+            referencedColumns: ['id']
+          },
+        ]
+      }
       audit_logs: {
         Row: {
           actor_id: string | null
@@ -677,6 +732,15 @@ export const Constants = {
 // --- COLUMN TYPES (actual PostgreSQL types) ---
 // Use this to know the real database type when writing migrations.
 // "string" in TypeScript types above may be uuid, text, varchar, timestamptz, etc.
+// Table: audit_log
+//   id: uuid (not null, default: gen_random_uuid())
+//   pedido_id: uuid (not null)
+//   changed_by: uuid (not null)
+//   changed_at: timestamp with time zone (not null, default: now())
+//   status_from: text (nullable)
+//   status_to: text (not null)
+//   action: text (not null)
+//   notes: text (nullable)
 // Table: audit_logs
 //   id: uuid (not null, default: uuid_generate_v4())
 //   actor_id: uuid (nullable)
@@ -799,6 +863,10 @@ export const Constants = {
 //   created_at: timestamp with time zone (nullable, default: now())
 
 // --- CONSTRAINTS ---
+// Table: audit_log
+//   FOREIGN KEY audit_log_changed_by_fkey: FOREIGN KEY (changed_by) REFERENCES profiles(id)
+//   FOREIGN KEY audit_log_pedido_id_fkey: FOREIGN KEY (pedido_id) REFERENCES pedidos_cirurgia(id) ON DELETE CASCADE
+//   PRIMARY KEY audit_log_pkey: PRIMARY KEY (id)
 // Table: audit_logs
 //   PRIMARY KEY audit_logs_pkey: PRIMARY KEY (id)
 // Table: opme_items
@@ -839,6 +907,11 @@ export const Constants = {
 //   UNIQUE user_roles_user_id_role_key: UNIQUE (user_id, role)
 
 // --- ROW LEVEL SECURITY POLICIES ---
+// Table: audit_log
+//   Policy "Authenticated users can insert audit_log" (INSERT, PERMISSIVE) roles={authenticated}
+//     WITH CHECK: (changed_by = auth.uid())
+//   Policy "Authenticated users can read audit_log" (SELECT, PERMISSIVE) roles={authenticated}
+//     USING: true
 // Table: audit_logs
 //   Policy "audit_logs_insert_system" (INSERT, PERMISSIVE) roles={public}
 //     WITH CHECK: true

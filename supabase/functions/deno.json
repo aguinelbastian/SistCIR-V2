@@ -1,7 +1,8 @@
 {
   "_versions": {
-    "notify-sector": 9,
-    "create-users": 3,
-    "admin-manage-users": 6
+    "notify-sector": 13,
+    "create-users": 6,
+    "admin-manage-users": 9,
+    "notify-telegram": 1
   }
 }
