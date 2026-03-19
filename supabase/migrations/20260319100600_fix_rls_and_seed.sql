@@ -1,15 +1,85 @@
+-- Fix function handle_new_user to properly cast user_role to user_role_type
+CREATE OR REPLACE FUNCTION public.handle_new_user()
+RETURNS trigger
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $function$
+BEGIN
+  INSERT INTO public.profiles (id, email, name, crm, phone, city, photo_url)
+  VALUES (
+    NEW.id,
+    NEW.email,
+    NEW.raw_user_meta_data->>'full_name',
+    NEW.raw_user_meta_data->>'crm',
+    NEW.raw_user_meta_data->>'phone',
+    NEW.raw_user_meta_data->>'city',
+    NEW.raw_user_meta_data->>'photo_url'
+  )
+  ON CONFLICT (id) DO NOTHING;
+
+  -- Ensure roles are processed if provided via signUp metadata
+  IF NEW.raw_user_meta_data->>'user_role' IS NOT NULL THEN
+    INSERT INTO public.user_roles (user_id, role)
+    VALUES (NEW.id, (NEW.raw_user_meta_data->>'user_role')::public.user_role_type)
+    ON CONFLICT (user_id, role) DO NOTHING;
+  END IF;
+
+  RETURN NEW;
+END;
+$function$;
+
+-- Fix function create_auth_user to properly cast user_role and insert mandatory auth.users columns
+CREATE OR REPLACE FUNCTION public.create_auth_user(email text, password text, user_role text)
+RETURNS uuid
+LANGUAGE plpgsql
+AS $function$
+DECLARE
+  v_user_id UUID;
+BEGIN
+  v_user_id := gen_random_uuid();
+  INSERT INTO auth.users (
+    id, instance_id, email, encrypted_password, email_confirmed_at,
+    created_at, updated_at, raw_app_meta_data, raw_user_meta_data,
+    is_super_admin, role, aud,
+    confirmation_token, recovery_token, email_change_token_new,
+    email_change, email_change_token_current,
+    phone, phone_change, phone_change_token, reauthentication_token
+  ) VALUES (
+    v_user_id,
+    '00000000-0000-0000-0000-000000000000',
+    email,
+    crypt(password, gen_salt('bf')),
+    now(), now(), now(),
+    jsonb_build_object('provider', 'email', 'providers', ARRAY['email']),
+    jsonb_build_object('user_role', user_role),
+    false, 'authenticated', 'authenticated',
+    '', '', '', '', '', NULL, '', '', ''
+  );
+
+  INSERT INTO public.user_roles (user_id, role)
+  VALUES (v_user_id, user_role::public.user_role_type)
+  ON CONFLICT (user_id, role) DO NOTHING;
+
+  RETURN v_user_id;
+END;
+$function$;
+
 -- Fix RLS for pedido_opme_items
 ALTER TABLE public.pedido_opme_items ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "pedido_opme_items_select" ON public.pedido_opme_items;
 CREATE POLICY "pedido_opme_items_select" ON public.pedido_opme_items
   FOR SELECT TO authenticated USING (true);
 
+DROP POLICY IF EXISTS "pedido_opme_items_insert" ON public.pedido_opme_items;
 CREATE POLICY "pedido_opme_items_insert" ON public.pedido_opme_items
   FOR INSERT TO authenticated WITH CHECK (true);
 
+DROP POLICY IF EXISTS "pedido_opme_items_update" ON public.pedido_opme_items;
 CREATE POLICY "pedido_opme_items_update" ON public.pedido_opme_items
   FOR UPDATE TO authenticated USING (true);
 
+DROP POLICY IF EXISTS "pedido_opme_items_delete" ON public.pedido_opme_items;
 CREATE POLICY "pedido_opme_items_delete" ON public.pedido_opme_items
   FOR DELETE TO authenticated USING (true);
 
@@ -63,10 +133,10 @@ BEGIN
         '', '', '', '', '', NULL, '', '', ''
       );
       
-      -- Insert Admin Role explicitly
+      -- Insert Admin Role explicitly (will use ON CONFLICT to avoid duplicate if trigger already inserted it)
       INSERT INTO public.user_roles (user_id, role, is_active)
       VALUES (v_admin_id, 'admin', true)
-      ON CONFLICT DO NOTHING;
+      ON CONFLICT (user_id, role) DO NOTHING;
     END;
   END IF;
 END $$;
