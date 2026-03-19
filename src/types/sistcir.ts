@@ -39,4 +39,15 @@ export interface PedidoCirurgia {
   cancellation_reason?: string
   scheduled_date?: string
   operating_room?: string
+  patients?: {
+    medical_record: string
+    full_name?: string
+  }
+  procedures?: {
+    name: string
+    tuss_code?: string
+  }
+  profiles?: {
+    name: string | null
+  }
 }

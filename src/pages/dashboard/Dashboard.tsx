@@ -13,15 +13,16 @@ import { StatusBadge } from '@/components/StatusBadge'
 import { Link } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { Eye, Plus, Activity, Clock, ShieldAlert } from 'lucide-react'
+import { PedidoCirurgia } from '@/types/sistcir'
 
 export default function Dashboard() {
-  const [pedidos, setPedidos] = useState<any[]>([])
+  const [pedidos, setPedidos] = useState<Partial<PedidoCirurgia>[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     const fetchData = async () => {
       const { data } = await api.pedidos.listDashboard()
-      if (data) setPedidos(data)
+      if (data) setPedidos(data as any)
       setLoading(false)
     }
     fetchData()
@@ -30,7 +31,7 @@ export default function Dashboard() {
   const stats = {
     total: pedidos.length,
     emProgresso: pedidos.filter(
-      (p) => !['1_RASCUNHO', '9_REALIZADO', '10_CANCELADO'].includes(p.status),
+      (p) => p.status && !['1_RASCUNHO', '9_REALIZADO', '10_CANCELADO'].includes(p.status),
     ).length,
     atencao: pedidos.filter((p) => p.status === '4_PENDENCIA_TECNICA').length,
   }
@@ -94,6 +95,7 @@ export default function Dashboard() {
                 <TableHead className="w-[100px]">ID</TableHead>
                 <TableHead>Procedimento</TableHead>
                 <TableHead>Prontuário</TableHead>
+                <TableHead>Cirurgião</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Data Agendada</TableHead>
                 <TableHead className="text-right">Ações</TableHead>
@@ -103,7 +105,7 @@ export default function Dashboard() {
               {pedidos.map((pedido) => (
                 <TableRow key={pedido.id}>
                   <TableCell className="font-mono text-xs text-muted-foreground">
-                    {pedido.id.substring(0, 6).toUpperCase()}
+                    {pedido.id?.substring(0, 6).toUpperCase()}
                   </TableCell>
                   <TableCell
                     className="font-medium max-w-[300px] truncate"
@@ -116,8 +118,11 @@ export default function Dashboard() {
                       {pedido.patients?.medical_record || 'N/A'}
                     </span>
                   </TableCell>
+                  <TableCell className="truncate max-w-[150px]" title={pedido.profiles?.name || ''}>
+                    {pedido.profiles?.name || 'Não informado'}
+                  </TableCell>
                   <TableCell>
-                    <StatusBadge status={pedido.status} />
+                    <StatusBadge status={pedido.status || null} />
                   </TableCell>
                   <TableCell>
                     {pedido.scheduled_date ? (
@@ -137,7 +142,7 @@ export default function Dashboard() {
               ))}
               {pedidos.length === 0 && !loading && (
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center py-12 text-muted-foreground">
+                  <TableCell colSpan={7} className="text-center py-12 text-muted-foreground">
                     <div className="flex flex-col items-center justify-center">
                       <Activity className="w-8 h-8 text-muted mb-2" />
                       <p>Nenhuma solicitação encontrada no momento.</p>

@@ -27,7 +27,8 @@ export const api = {
           scheduled_date,
           created_at,
           patients ( medical_record ),
-          procedures ( name )
+          procedures ( name ),
+          profiles!pedidos_cirurgia_surgeon_id_fkey ( name )
         `)
         .order('created_at', { ascending: false })
     },

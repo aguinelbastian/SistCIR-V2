@@ -851,6 +851,8 @@ export const Constants = {
 //     WITH CHECK: has_any_role(ARRAY['surgeon'::text, 'secretary'::text, 'admin'::text])
 //   Policy "patients_select" (SELECT, PERMISSIVE) roles={public}
 //     USING: ((created_by = auth.uid()) OR has_any_role(ARRAY['secretary'::text, 'opme'::text, 'billing'::text, 'nursing'::text, 'coordinator'::text, 'admin'::text]))
+//   Policy "patients_select_dashboard" (SELECT, PERMISSIVE) roles={authenticated}
+//     USING: true
 //   Policy "patients_update" (UPDATE, PERMISSIVE) roles={public}
 //     USING: has_any_role(ARRAY['secretary'::text, 'admin'::text])
 // Table: pedido_opme_items
@@ -873,6 +875,8 @@ export const Constants = {
 //     WITH CHECK: (has_any_role(ARRAY['surgeon'::text, 'secretary'::text]) AND (surgeon_id = auth.uid()))
 //   Policy "pedidos_select" (SELECT, PERMISSIVE) roles={public}
 //     USING: ((surgeon_id = auth.uid()) OR has_any_role(ARRAY['secretary'::text, 'opme'::text, 'billing'::text, 'nursing'::text, 'coordinator'::text, 'admin'::text]))
+//   Policy "pedidos_select_dashboard" (SELECT, PERMISSIVE) roles={authenticated}
+//     USING: true
 //   Policy "pedidos_update_admin" (UPDATE, PERMISSIVE) roles={public}
 //     USING: has_role('admin'::text)
 //   Policy "pedidos_update_billing" (UPDATE, PERMISSIVE) roles={public}
@@ -892,10 +896,14 @@ export const Constants = {
 //     WITH CHECK: has_any_role(ARRAY['admin'::text, 'nursing'::text])
 //   Policy "procedures_select" (SELECT, PERMISSIVE) roles={public}
 //     USING: (auth.role() = 'authenticated'::text)
+//   Policy "procedures_select_dashboard" (SELECT, PERMISSIVE) roles={authenticated}
+//     USING: true
 //   Policy "procedures_update" (UPDATE, PERMISSIVE) roles={public}
 //     USING: has_any_role(ARRAY['admin'::text, 'nursing'::text])
 // Table: profiles
 //   Policy "profiles_select_all" (SELECT, PERMISSIVE) roles={public}
+//     USING: true
+//   Policy "profiles_select_dashboard" (SELECT, PERMISSIVE) roles={authenticated}
 //     USING: true
 //   Policy "profiles_update_own" (UPDATE, PERMISSIVE) roles={public}
 //     USING: (auth.uid() = id)
