@@ -5,6 +5,7 @@
     "admin-manage-users": 10,
     "notify-telegram": 5,
     "functions": 3,
-    "admin-reset-password": 4
+    "admin-reset-password": 4,
+    "send-email-welcome": 1
   }
 }
