@@ -4,9 +4,9 @@
     "create-users": 7,
     "admin-manage-users": 10,
     "notify-telegram": 5,
-    "functions": 4,
+    "functions": 5,
     "admin-reset-password": 4,
-    "send-email-welcome": 2,
+    "send-email-welcome": 3,
     "send-email-surgery-created": 1,
     "send-email-surgery-cancelled": 1
   }
