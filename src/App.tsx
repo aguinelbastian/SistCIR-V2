@@ -9,6 +9,7 @@ import Layout from './components/Layout'
 // Pages
 import NotFound from './pages/NotFound'
 import Login from './pages/auth/Login'
+import Cadastro from './pages/auth/Cadastro'
 import Aguardando from './pages/auth/Aguardando'
 import Dashboard from './pages/dashboard/Dashboard'
 import PacientesList from './pages/pacientes/PacientesList'
@@ -29,9 +30,10 @@ const App = () => (
         <Sonner position="top-right" />
         <Routes>
           <Route path="/login" element={<Login />} />
+          <Route path="/cadastro" element={<Cadastro />} />
 
           <Route element={<ProtectedRoute />}>
-            <Route path="/aguardando" element={<Aguardando />} />
+            <Route path="/aguardando-aprovacao" element={<Aguardando />} />
 
             <Route element={<Layout />}>
               <Route path="/" element={<Navigate to="/dashboard" replace />} />

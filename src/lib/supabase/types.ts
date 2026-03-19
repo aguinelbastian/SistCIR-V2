@@ -471,9 +471,11 @@ export type Database = {
           email: string
           id: string
           is_active: boolean
+          last_sign_in_at: string | null
           name: string | null
           phone: string | null
           photo_url: string | null
+          requested_at: string | null
         }
         Insert: {
           city?: string | null
@@ -482,9 +484,11 @@ export type Database = {
           email: string
           id: string
           is_active?: boolean
+          last_sign_in_at?: string | null
           name?: string | null
           phone?: string | null
           photo_url?: string | null
+          requested_at?: string | null
         }
         Update: {
           city?: string | null
@@ -493,9 +497,11 @@ export type Database = {
           email?: string
           id?: string
           is_active?: boolean
+          last_sign_in_at?: string | null
           name?: string | null
           phone?: string | null
           photo_url?: string | null
+          requested_at?: string | null
         }
         Relationships: []
       }
@@ -886,6 +892,8 @@ export const Constants = {
 //   phone: text (nullable)
 //   city: text (nullable)
 //   photo_url: text (nullable)
+//   last_sign_in_at: timestamp with time zone (nullable)
+//   requested_at: timestamp with time zone (nullable, default: now())
 // Table: sectors
 //   id: uuid (not null, default: uuid_generate_v4())
 //   name: text (not null)

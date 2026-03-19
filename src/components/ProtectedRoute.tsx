@@ -18,12 +18,12 @@ export const ProtectedRoute = () => {
   }
 
   // Se o usuário não está ativo e não está na página de aguardando, redirecionar para aguardando
-  if (!isActive && location.pathname !== '/aguardando') {
-    return <Navigate to="/aguardando" replace />
+  if (!isActive && location.pathname !== '/aguardando-aprovacao') {
+    return <Navigate to="/aguardando-aprovacao" replace />
   }
 
   // Se o usuário está ativo mas tenta ir para a sala de espera, mandar para o dashboard
-  if (isActive && location.pathname === '/aguardando') {
+  if (isActive && location.pathname === '/aguardando-aprovacao') {
     return <Navigate to="/dashboard" replace />
   }
 

@@ -8,6 +8,7 @@ interface AuthContextType {
   roles: string[]
   isActive: boolean
   signIn: (email: string, password: string) => Promise<{ error: any }>
+  signUp: (email: string, password: string, metadata?: any) => Promise<{ data: any; error: any }>
   signOut: () => Promise<{ error: any }>
   loading: boolean
   hasRole: (role: string) => boolean
@@ -20,6 +21,8 @@ export const useAuth = () => {
   if (!context) throw new Error('useAuth must be used within an AuthProvider')
   return context
 }
+
+const updatedSessions = new Set<string>()
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null)
@@ -35,7 +38,18 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     ])
 
     if (rolesRes.data) setRoles(rolesRes.data.map((r) => r.role))
-    if (profileRes.data) setIsActive(profileRes.data.is_active ?? false)
+
+    const active = profileRes.data?.is_active ?? false
+    setIsActive(active)
+
+    if (active && !updatedSessions.has(userId)) {
+      updatedSessions.add(userId)
+      supabase
+        .from('profiles')
+        .update({ last_sign_in_at: new Date().toISOString() })
+        .eq('id', userId)
+        .then()
+    }
   }
 
   useEffect(() => {
@@ -71,8 +85,20 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     return { error }
   }
 
+  const signUp = async (email: string, password: string, metadata?: any) => {
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: metadata,
+      },
+    })
+    return { data, error }
+  }
+
   const signOut = async () => {
     const { error } = await supabase.auth.signOut()
+    updatedSessions.clear()
     return { error }
   }
 
@@ -80,7 +106,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   return (
     <AuthContext.Provider
-      value={{ user, session, roles, isActive, signIn, signOut, loading, hasRole }}
+      value={{ user, session, roles, isActive, signIn, signUp, signOut, loading, hasRole }}
     >
       {children}
     </AuthContext.Provider>

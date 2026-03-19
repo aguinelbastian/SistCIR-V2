@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '@/hooks/use-auth'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -29,9 +29,9 @@ export default function Login() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-muted/30 p-4">
-      <Card className="w-full max-w-sm shadow-elevation border-none">
-        <CardHeader className="space-y-1 items-center">
-          <div className="w-12 h-12 bg-primary rounded-xl flex items-center justify-center mb-4 text-primary-foreground">
+      <Card className="w-full max-w-sm shadow-elevation border-none animate-fade-in">
+        <CardHeader className="space-y-1 items-center text-center">
+          <div className="w-12 h-12 bg-primary rounded-xl flex items-center justify-center mb-4 text-primary-foreground shadow-sm">
             <Stethoscope className="w-8 h-8" />
           </div>
           <CardTitle className="text-2xl font-bold tracking-tight">SistCIR v2</CardTitle>
@@ -40,7 +40,7 @@ export default function Login() {
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="email">E-mail</Label>
               <Input
                 id="email"
                 type="email"
@@ -60,9 +60,16 @@ export default function Login() {
                 required
               />
             </div>
-            <Button className="w-full" type="submit" disabled={isLoading}>
+            <Button className="w-full mt-2" type="submit" disabled={isLoading}>
               {isLoading ? 'Entrando...' : 'Entrar'}
             </Button>
+
+            <div className="text-center mt-4 text-sm">
+              <span className="text-muted-foreground">Ainda não tem acesso? </span>
+              <Link to="/cadastro" className="text-primary hover:underline font-medium">
+                Solicite seu cadastro
+              </Link>
+            </div>
           </form>
         </CardContent>
       </Card>
