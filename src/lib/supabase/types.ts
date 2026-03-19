@@ -332,6 +332,13 @@ export type Database = {
             referencedRelation: 'procedures'
             referencedColumns: ['id']
           },
+          {
+            foreignKeyName: 'pedidos_cirurgia_surgeon_id_fkey'
+            columns: ['surgeon_id']
+            isOneToOne: false
+            referencedRelation: 'profiles'
+            referencedColumns: ['id']
+          },
         ]
       }
       procedures: {
@@ -815,7 +822,7 @@ export const Constants = {
 //   FOREIGN KEY pedidos_cirurgia_procedure_id_fkey: FOREIGN KEY (procedure_id) REFERENCES procedures(id)
 //   FOREIGN KEY pedidos_cirurgia_proctor_id_fkey: FOREIGN KEY (proctor_id) REFERENCES auth.users(id)
 //   FOREIGN KEY pedidos_cirurgia_secretary_id_fkey: FOREIGN KEY (secretary_id) REFERENCES auth.users(id)
-//   FOREIGN KEY pedidos_cirurgia_surgeon_id_fkey: FOREIGN KEY (surgeon_id) REFERENCES auth.users(id)
+//   FOREIGN KEY pedidos_cirurgia_surgeon_id_fkey: FOREIGN KEY (surgeon_id) REFERENCES profiles(id) ON DELETE RESTRICT
 // Table: procedures
 //   PRIMARY KEY procedures_pkey: PRIMARY KEY (id)
 //   UNIQUE procedures_tuss_code_key: UNIQUE (tuss_code)

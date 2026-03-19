@@ -17,20 +17,27 @@ export const api = {
         `)
         .order('created_at', { ascending: false })
     },
-    listDashboard: async () => {
+    listDashboard: async (filters?: { surgeonId?: string }) => {
       // Retorna apenas os dados cruciais e não expõe o full_name do paciente (Privacy-First)
-      return await supabase
+      let query = supabase
         .from('pedidos_cirurgia')
         .select(`
           id,
           status,
           scheduled_date,
           created_at,
+          surgeon_id,
           patients ( medical_record ),
           procedures ( name ),
           profiles!pedidos_cirurgia_surgeon_id_fkey ( name )
         `)
         .order('created_at', { ascending: false })
+
+      if (filters?.surgeonId) {
+        query = query.eq('surgeon_id', filters.surgeonId)
+      }
+
+      return await query
     },
     get: async (id: string) => {
       return await supabase
@@ -49,6 +56,19 @@ export const api = {
     },
     updateStatus: async (id: string, status: Database['public']['Enums']['surgery_status']) => {
       return await supabase.from('pedidos_cirurgia').update({ status }).eq('id', id)
+    },
+    cancel: async (id: string, reason: string) => {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser()
+      return await supabase
+        .from('pedidos_cirurgia')
+        .update({
+          status: '10_CANCELADO',
+          cancellation_reason: reason,
+          cancellation_actor_id: user?.id,
+        })
+        .eq('id', id)
     },
     getTimeline: async (id: string) => {
       return await supabase

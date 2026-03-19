@@ -13,20 +13,75 @@ import { StatusBadge } from '@/components/StatusBadge'
 import { Link } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { Eye, Plus, Activity, Clock, ShieldAlert } from 'lucide-react'
-import { PedidoCirurgia } from '@/types/sistcir'
+import { PedidoCirurgia, SurgeryStatus } from '@/types/sistcir'
+import { useAuth } from '@/hooks/use-auth'
+import { toast } from 'sonner'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+  DialogDescription,
+} from '@/components/ui/dialog'
+import { Textarea } from '@/components/ui/textarea'
+import { Label } from '@/components/ui/label'
 
 export default function Dashboard() {
   const [pedidos, setPedidos] = useState<Partial<PedidoCirurgia>[]>([])
   const [loading, setLoading] = useState(true)
+  const { user, roles, hasRole, loading: authLoading } = useAuth()
+
+  // Estado do Modal de Cancelamento
+  const [cancelModalOpen, setCancelModalOpen] = useState(false)
+  const [pedidoToCancel, setPedidoToCancel] = useState<string | null>(null)
+  const [cancelReason, setCancelReason] = useState('')
+  const [isSubmitting, setIsSubmitting] = useState(false)
+
+  const loadData = async () => {
+    setLoading(true)
+    const viewAll = ['admin', 'secretary', 'opme', 'billing', 'nursing', 'coordinator'].some((r) =>
+      roles.includes(r),
+    )
+    const filters = viewAll ? undefined : { surgeonId: user?.id }
+
+    const { data, error } = await api.pedidos.listDashboard(filters)
+    if (data) setPedidos(data as any)
+    if (error) toast.error('Erro ao carregar solicitações')
+    setLoading(false)
+  }
 
   useEffect(() => {
-    const fetchData = async () => {
-      const { data } = await api.pedidos.listDashboard()
-      if (data) setPedidos(data as any)
-      setLoading(false)
+    if (user && !authLoading) {
+      loadData()
     }
-    fetchData()
-  }, [])
+  }, [user, authLoading, roles])
+
+  const handleUpdateStatus = async (id: string, newStatus: SurgeryStatus) => {
+    const { error } = await api.pedidos.updateStatus(id, newStatus)
+    if (error) {
+      toast.error('Erro ao atualizar status')
+    } else {
+      toast.success('Status atualizado com sucesso')
+      loadData()
+    }
+  }
+
+  const handleCancelConfirm = async () => {
+    if (!pedidoToCancel || !cancelReason.trim()) return
+    setIsSubmitting(true)
+    const { error } = await api.pedidos.cancel(pedidoToCancel, cancelReason)
+    setIsSubmitting(false)
+    if (error) {
+      toast.error('Erro ao cancelar solicitação')
+    } else {
+      toast.success('Solicitação cancelada com sucesso')
+      setCancelModalOpen(false)
+      setPedidoToCancel(null)
+      setCancelReason('')
+      loadData()
+    }
+  }
 
   const stats = {
     total: pedidos.length,
@@ -36,8 +91,133 @@ export default function Dashboard() {
     atencao: pedidos.filter((p) => p.status === '4_PENDENCIA_TECNICA').length,
   }
 
+  const renderActions = (pedido: Partial<PedidoCirurgia>) => {
+    const s = pedido.status
+    const isMySurgeon = pedido.surgeon_id === user?.id
+    const canCancel = hasRole('admin') || hasRole('nursing') || (hasRole('surgeon') && isMySurgeon)
+
+    return (
+      <div className="flex flex-wrap gap-2 justify-end items-center">
+        {s === '1_RASCUNHO' && (hasRole('surgeon') || hasRole('secretary')) && (
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={() => handleUpdateStatus(pedido.id!, '2_AGUARDANDO_OPME')}
+          >
+            Enviar p/ OPME
+          </Button>
+        )}
+
+        {s === '2_AGUARDANDO_OPME' && hasRole('opme') && (
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={() => handleUpdateStatus(pedido.id!, '6_AGUARDANDO_MAPA')}
+          >
+            OPME Finalizada
+          </Button>
+        )}
+
+        {s === '2_AGUARDANDO_OPME' && hasRole('billing') && (
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={() => handleUpdateStatus(pedido.id!, '3_EM_AUDITORIA')}
+          >
+            Enviar p/ Auditoria
+          </Button>
+        )}
+
+        {s === '3_EM_AUDITORIA' && hasRole('billing') && (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => handleUpdateStatus(pedido.id!, '4_PENDENCIA_TECNICA')}
+            className="text-orange-600 border-orange-200 hover:bg-orange-50"
+          >
+            Pendência Técnica
+          </Button>
+        )}
+
+        {(s === '3_EM_AUDITORIA' || s === '4_PENDENCIA_TECNICA') && hasRole('billing') && (
+          <Button
+            variant="default"
+            size="sm"
+            onClick={() => handleUpdateStatus(pedido.id!, '5_AUTORIZADO')}
+            className="bg-lime-600 hover:bg-lime-700"
+          >
+            Marcar Autorizado
+          </Button>
+        )}
+
+        {s === '6_AGUARDANDO_MAPA' && hasRole('coordinator') && (
+          <Button
+            variant="default"
+            size="sm"
+            onClick={() => handleUpdateStatus(pedido.id!, '7_AGENDADO_CC')}
+            className="bg-blue-600 hover:bg-blue-700"
+          >
+            Alocar Sala/Robô
+          </Button>
+        )}
+
+        {s === '7_AGENDADO_CC' && hasRole('nursing') && (
+          <>
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => handleUpdateStatus(pedido.id!, '7_AGENDADO_CC')}
+            >
+              Confirmar Agendamento
+            </Button>
+            <Button
+              variant="default"
+              size="sm"
+              onClick={() => handleUpdateStatus(pedido.id!, '8_EM_EXECUCAO')}
+              className="bg-purple-600 hover:bg-purple-700"
+            >
+              Iniciar Procedimento
+            </Button>
+          </>
+        )}
+
+        {s === '8_EM_EXECUCAO' && hasRole('nursing') && (
+          <Button
+            variant="default"
+            size="sm"
+            onClick={() => handleUpdateStatus(pedido.id!, '9_REALIZADO')}
+            className="bg-emerald-600 hover:bg-emerald-700"
+          >
+            Marcar Realizado
+          </Button>
+        )}
+
+        {canCancel && s !== '10_CANCELADO' && s !== '9_REALIZADO' && (
+          <Button
+            variant="ghost"
+            size="sm"
+            title="Cancelar Solicitação"
+            onClick={() => {
+              setPedidoToCancel(pedido.id!)
+              setCancelModalOpen(true)
+            }}
+            className="text-red-600 hover:text-red-700 hover:bg-red-50"
+          >
+            Cancelar
+          </Button>
+        )}
+
+        <Button variant="ghost" size="sm" asChild title="Ver Detalhes">
+          <Link to={`/pedidos/${pedido.id}`}>
+            <Eye className="w-4 h-4" />
+          </Link>
+        </Button>
+      </div>
+    )
+  }
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 animate-fade-in">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <h1 className="text-3xl font-bold tracking-tight">Painel de Cirurgias</h1>
         <Button asChild>
@@ -108,7 +288,7 @@ export default function Dashboard() {
                     {pedido.id?.substring(0, 6).toUpperCase()}
                   </TableCell>
                   <TableCell
-                    className="font-medium max-w-[300px] truncate"
+                    className="font-medium max-w-[250px] truncate"
                     title={pedido.procedures?.name}
                   >
                     {pedido.procedures?.name || 'Não informado'}
@@ -131,13 +311,7 @@ export default function Dashboard() {
                       <span className="text-muted-foreground">-</span>
                     )}
                   </TableCell>
-                  <TableCell className="text-right">
-                    <Button variant="ghost" size="sm" asChild>
-                      <Link to={`/pedidos/${pedido.id}`}>
-                        <Eye className="w-4 h-4 mr-2" /> Ver
-                      </Link>
-                    </Button>
-                  </TableCell>
+                  <TableCell className="text-right">{renderActions(pedido)}</TableCell>
                 </TableRow>
               ))}
               {pedidos.length === 0 && !loading && (
@@ -154,6 +328,47 @@ export default function Dashboard() {
           </Table>
         </CardContent>
       </Card>
+
+      <Dialog open={cancelModalOpen} onOpenChange={setCancelModalOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Cancelar Solicitação Cirúrgica</DialogTitle>
+            <DialogDescription>
+              Você está prestes a cancelar esta solicitação. Esta ação não pode ser desfeita.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="cancel-reason" className="text-red-600 font-medium">
+                Motivo do Cancelamento (Obrigatório)
+              </Label>
+              <Textarea
+                id="cancel-reason"
+                placeholder="Descreva o motivo pelo qual esta cirurgia está sendo cancelada..."
+                value={cancelReason}
+                onChange={(e) => setCancelReason(e.target.value)}
+                className="min-h-[100px]"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setCancelModalOpen(false)}
+              disabled={isSubmitting}
+            >
+              Voltar
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleCancelConfirm}
+              disabled={!cancelReason.trim() || isSubmitting}
+            >
+              {isSubmitting ? 'Cancelando...' : 'Confirmar Cancelamento'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
