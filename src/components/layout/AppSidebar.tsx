@@ -7,6 +7,7 @@ import {
   Stethoscope,
   ShieldAlert,
   Package,
+  UserCircle,
 } from 'lucide-react'
 import {
   Sidebar,
@@ -27,6 +28,7 @@ export function AppSidebar() {
 
   const routes = [
     { title: 'Painel Geral', url: '/dashboard', icon: LayoutDashboard },
+    { title: 'Minha Conta', url: '/minha-conta', icon: UserCircle },
     { title: 'Pedidos Cirúrgicos', url: '/pedidos', icon: FileText },
     { title: 'Pacientes', url: '/pacientes', icon: Users },
     { title: 'Procedimentos', url: '/procedimentos', icon: Activity },

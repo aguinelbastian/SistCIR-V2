@@ -1,53 +1,30 @@
-import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-}
+const supabaseAdmin = createClient(
+  Deno.env.get('SUPABASE_URL')!,
+  Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
+)
 
-serve(async (req) => {
-  if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders })
+Deno.serve(async (req) => {
+  if (req.method !== 'POST') {
+    return new Response('Method not allowed', { status: 405 })
   }
 
-  try {
-    const supabaseAdmin = createClient(
-      Deno.env.get('SUPABASE_URL')!,
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
-    )
+  const { user_email } = await req.json()
 
-    const { user_email } = await req.json()
-
-    if (!user_email) {
-      return new Response(JSON.stringify({ error: 'Email é obrigatório' }), {
-        status: 400,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      })
-    }
-
-    const appUrl = Deno.env.get('APP_URL') || 'https://sistcir.com'
-
-    const { error } = await supabaseAdmin.auth.resetPasswordForEmail(user_email, {
-      redirectTo: `${appUrl}/minha-conta`,
-    })
-
-    if (error) {
-      return new Response(JSON.stringify({ error: error.message }), {
-        status: 400,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      })
-    }
-
-    return new Response(JSON.stringify({ success: true }), {
-      status: 200,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    })
-  } catch (error: any) {
-    return new Response(JSON.stringify({ error: error.message }), {
-      status: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    })
+  if (!user_email) {
+    return new Response(JSON.stringify({ error: 'user_email is required' }), { status: 400 })
   }
+
+  const { error } = await supabaseAdmin.auth.resetPasswordForEmail(user_email, {
+    redirectTo: `${Deno.env.get('APP_URL')}/minha-conta`,
+  })
+
+  if (error) {
+    return new Response(JSON.stringify({ error: error.message }), { status: 400 })
+  }
+
+  return new Response(JSON.stringify({ success: true, message: 'Reset email sent' }), {
+    status: 200,
+  })
 })

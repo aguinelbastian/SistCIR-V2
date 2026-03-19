@@ -1,10 +1,10 @@
 {
   "_versions": {
-    "notify-sector": 14,
-    "create-users": 6,
-    "admin-manage-users": 9,
-    "notify-telegram": 4,
-    "functions": 2,
-    "admin-reset-password": 2
+    "notify-sector": 15,
+    "create-users": 7,
+    "admin-manage-users": 10,
+    "notify-telegram": 5,
+    "functions": 3,
+    "admin-reset-password": 4
   }
 }
