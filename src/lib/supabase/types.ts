@@ -853,6 +853,21 @@ export const Constants = {
 //     USING: ((created_by = auth.uid()) OR has_any_role(ARRAY['secretary'::text, 'opme'::text, 'billing'::text, 'nursing'::text, 'coordinator'::text, 'admin'::text]))
 //   Policy "patients_update" (UPDATE, PERMISSIVE) roles={public}
 //     USING: has_any_role(ARRAY['secretary'::text, 'admin'::text])
+// Table: pedido_opme_items
+//   Policy "opme_items_insert" (INSERT, PERMISSIVE) roles={public}
+//     WITH CHECK: has_any_role(ARRAY['surgeon'::text, 'secretary'::text, 'opme'::text, 'admin'::text])
+//   Policy "opme_items_select" (SELECT, PERMISSIVE) roles={public}
+//     USING: (EXISTS ( SELECT 1    FROM pedidos_cirurgia pc   WHERE ((pc.id = pedido_opme_items.pedido_id) AND ((pc.surgeon_id = auth.uid()) OR has_any_role(ARRAY['opme'::text, 'nursing'::text, 'coordinator'::text, 'billing'::text, 'admin'::text])))))
+//   Policy "opme_items_update" (UPDATE, PERMISSIVE) roles={public}
+//     USING: has_any_role(ARRAY['opme'::text, 'nursing'::text, 'admin'::text])
+//   Policy "pedido_opme_items_delete" (DELETE, PERMISSIVE) roles={authenticated}
+//     USING: true
+//   Policy "pedido_opme_items_insert" (INSERT, PERMISSIVE) roles={authenticated}
+//     WITH CHECK: true
+//   Policy "pedido_opme_items_select" (SELECT, PERMISSIVE) roles={authenticated}
+//     USING: true
+//   Policy "pedido_opme_items_update" (UPDATE, PERMISSIVE) roles={authenticated}
+//     USING: true
 // Table: pedidos_cirurgia
 //   Policy "pedidos_insert" (INSERT, PERMISSIVE) roles={public}
 //     WITH CHECK: (has_any_role(ARRAY['surgeon'::text, 'secretary'::text]) AND (surgeon_id = auth.uid()))
@@ -899,13 +914,6 @@ export const Constants = {
 //   Policy "user_roles_update_admin" (UPDATE, PERMISSIVE) roles={public}
 //     USING: has_role('admin'::text)
 
-// --- WARNING: TABLES WITH RLS ENABLED BUT NO POLICIES ---
-// These tables have Row Level Security enabled but NO policies defined.
-// This means ALL queries (SELECT, INSERT, UPDATE, DELETE) will return ZERO rows
-// for non-superuser roles (including the anon and authenticated roles used by the app).
-// You MUST create RLS policies for these tables to allow data access.
-//   - pedido_opme_items (FORCE ROW LEVEL SECURITY)
-
 // --- DATABASE FUNCTIONS ---
 // FUNCTION create_auth_user(text, text, text)
 //   CREATE OR REPLACE FUNCTION public.create_auth_user(email text, password text, user_role text)
@@ -913,58 +921,33 @@ export const Constants = {
 //    LANGUAGE plpgsql
 //   AS $function$
 //   DECLARE
-//     user_id UUID;
+//     v_user_id UUID;
 //   BEGIN
-//     -- Inserir usuário via auth.users com campos obrigatórios preenchidos
+//     v_user_id := gen_random_uuid();
 //     INSERT INTO auth.users (
-//       instance_id,
-//       id,
-//       aud,
-//       role,
-//       email,
-//       encrypted_password,
-//       email_confirmed_at,
-//       recovery_sent_at,
-//       recovery_token,
-//       recovery_token_expires_at,
-//       confirmation_sent_at,
-//       confirmation_token,
-//       confirmation_token_expires_at,
-//       created_at,
-//       updated_at,
-//       raw_app_meta_data,
-//       raw_user_meta_data,
-//       is_super_admin,
-//       deleted_at
+//       id, instance_id, email, encrypted_password, email_confirmed_at,
+//       created_at, updated_at, raw_app_meta_data, raw_user_meta_data,
+//       is_super_admin, role, aud,
+//       confirmation_token, recovery_token, email_change_token_new,
+//       email_change, email_change_token_current,
+//       phone, phone_change, phone_change_token, reauthentication_token
 //     ) VALUES (
+//       v_user_id,
 //       '00000000-0000-0000-0000-000000000000',
-//       gen_random_uuid(),
-//       'authenticated',
-//       'authenticated',
 //       email,
 //       crypt(password, gen_salt('bf')),
-//       now(),
-//       NULL,
-//       '',
-//       NULL,
-//       NULL,
-//       '',
-//       NULL,
-//       now(),
-//       now(),
+//       now(), now(), now(),
 //       jsonb_build_object('provider', 'email', 'providers', ARRAY['email']),
 //       jsonb_build_object('user_role', user_role),
-//       false,
-//       NULL
-//     )
-//     RETURNING id INTO user_id;
+//       false, 'authenticated', 'authenticated',
+//       '', '', '', '', '', NULL, '', '', ''
+//     );
 //
-//     -- Inserir role na tabela user_roles
 //     INSERT INTO public.user_roles (user_id, role)
-//     VALUES (user_id, user_role)
-//     ON CONFLICT (user_id) DO UPDATE SET role = user_role;
+//     VALUES (v_user_id, user_role::public.user_role_type)
+//     ON CONFLICT (user_id, role) DO NOTHING;
 //
-//     RETURN user_id;
+//     RETURN v_user_id;
 //   END;
 //   $function$
 //
@@ -1070,8 +1053,8 @@ export const Constants = {
 //     -- Ensure roles are processed if provided via signUp metadata
 //     IF NEW.raw_user_meta_data->>'user_role' IS NOT NULL THEN
 //       INSERT INTO public.user_roles (user_id, role)
-//       VALUES (NEW.id, NEW.raw_user_meta_data->>'user_role')
-//       ON CONFLICT (user_id) DO NOTHING;
+//       VALUES (NEW.id, (NEW.raw_user_meta_data->>'user_role')::public.user_role_type)
+//       ON CONFLICT (user_id, role) DO NOTHING;
 //     END IF;
 //
 //     RETURN NEW;

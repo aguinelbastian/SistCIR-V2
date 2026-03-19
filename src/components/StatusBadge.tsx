@@ -1,5 +1,6 @@
 import { Badge } from '@/components/ui/badge'
-import { STATUS_MAP, SurgeryStatus } from '@/lib/constants'
+import { STATUS_MAP } from '@/lib/constants'
+import { SurgeryStatus } from '@/types/sistcir'
 import { cn } from '@/lib/utils'
 
 export function StatusBadge({ status, className }: { status: string | null; className?: string }) {
@@ -10,7 +11,10 @@ export function StatusBadge({ status, className }: { status: string | null; clas
   }
 
   return (
-    <Badge variant="outline" className={cn('font-medium', config.color, className)}>
+    <Badge
+      variant="outline"
+      className={cn('font-medium shadow-sm whitespace-nowrap', config.color, className)}
+    >
       {config.label}
     </Badge>
   )

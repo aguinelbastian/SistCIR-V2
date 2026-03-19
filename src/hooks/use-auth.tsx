@@ -6,6 +6,7 @@ interface AuthContextType {
   user: User | null
   session: Session | null
   roles: string[]
+  isActive: boolean
   signIn: (email: string, password: string) => Promise<{ error: any }>
   signOut: () => Promise<{ error: any }>
   loading: boolean
@@ -24,15 +25,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null)
   const [session, setSession] = useState<Session | null>(null)
   const [roles, setRoles] = useState<string[]>([])
+  const [isActive, setIsActive] = useState<boolean>(false)
   const [loading, setLoading] = useState(true)
 
-  const fetchRoles = async (userId: string) => {
-    const { data } = await supabase
-      .from('user_roles')
-      .select('role')
-      .eq('user_id', userId)
-      .eq('is_active', true)
-    if (data) setRoles(data.map((r) => r.role))
+  const fetchUserData = async (userId: string) => {
+    const [rolesRes, profileRes] = await Promise.all([
+      supabase.from('user_roles').select('role').eq('user_id', userId).eq('is_active', true),
+      supabase.from('profiles').select('is_active').eq('id', userId).single(),
+    ])
+
+    if (rolesRes.data) setRoles(rolesRes.data.map((r) => r.role))
+    if (profileRes.data) setIsActive(profileRes.data.is_active ?? false)
   }
 
   useEffect(() => {
@@ -42,10 +45,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setSession(session)
       setUser(session?.user ?? null)
       if (session?.user) {
-        // Sync operation inside callback, async in separate function
-        fetchRoles(session.user.id).finally(() => setLoading(false))
+        fetchUserData(session.user.id).finally(() => setLoading(false))
       } else {
         setRoles([])
+        setIsActive(false)
         setLoading(false)
       }
     })
@@ -54,7 +57,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setSession(session)
       setUser(session?.user ?? null)
       if (session?.user) {
-        fetchRoles(session.user.id).finally(() => setLoading(false))
+        fetchUserData(session.user.id).finally(() => setLoading(false))
       } else {
         setLoading(false)
       }
@@ -76,7 +79,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const hasRole = (role: string) => roles.includes(role) || roles.includes('admin')
 
   return (
-    <AuthContext.Provider value={{ user, session, roles, signIn, signOut, loading, hasRole }}>
+    <AuthContext.Provider
+      value={{ user, session, roles, isActive, signIn, signOut, loading, hasRole }}
+    >
       {children}
     </AuthContext.Provider>
   )

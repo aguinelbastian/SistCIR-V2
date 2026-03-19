@@ -17,6 +17,20 @@ export const api = {
         `)
         .order('created_at', { ascending: false })
     },
+    listDashboard: async () => {
+      // Retorna apenas os dados cruciais e não expõe o full_name do paciente (Privacy-First)
+      return await supabase
+        .from('pedidos_cirurgia')
+        .select(`
+          id,
+          status,
+          scheduled_date,
+          created_at,
+          patients ( medical_record ),
+          procedures ( name )
+        `)
+        .order('created_at', { ascending: false })
+    },
     get: async (id: string) => {
       return await supabase
         .from('pedidos_cirurgia')

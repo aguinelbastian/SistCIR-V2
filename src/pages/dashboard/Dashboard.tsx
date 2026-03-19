@@ -1,104 +1,152 @@
 import { useEffect, useState } from 'react'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Activity, Clock, CheckCircle2, AlertCircle } from 'lucide-react'
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table'
 import { api } from '@/services/api'
 import { StatusBadge } from '@/components/StatusBadge'
 import { Link } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
+import { Eye, Plus, Activity, Clock, ShieldAlert } from 'lucide-react'
 
 export default function Dashboard() {
-  const [stats, setStats] = useState({ rascunho: 0, aguardando: 0, autorizado: 0, total: 0 })
-  const [recent, setRecent] = useState<any[]>([])
+  const [pedidos, setPedidos] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     const fetchData = async () => {
-      const { data } = await api.pedidos.list()
-      if (data) {
-        setRecent(data.slice(0, 5))
-        setStats({
-          rascunho: data.filter((d) => d.status === '1_RASCUNHO').length,
-          aguardando: data.filter((d) => d.status?.includes('AGUARDANDO')).length,
-          autorizado: data.filter((d) => d.status === '5_AUTORIZADO').length,
-          total: data.length,
-        })
-      }
+      const { data } = await api.pedidos.listDashboard()
+      if (data) setPedidos(data)
+      setLoading(false)
     }
     fetchData()
   }, [])
 
-  const kpis = [
-    { title: 'Total de Pedidos', value: stats.total, icon: Activity, color: 'text-blue-500' },
-    { title: 'Em Rascunho', value: stats.rascunho, icon: Clock, color: 'text-gray-500' },
-    {
-      title: 'Aguardando Ação',
-      value: stats.aguardando,
-      icon: AlertCircle,
-      color: 'text-amber-500',
-    },
-    {
-      title: 'Autorizados',
-      value: stats.autorizado,
-      icon: CheckCircle2,
-      color: 'text-emerald-500',
-    },
-  ]
+  const stats = {
+    total: pedidos.length,
+    emProgresso: pedidos.filter(
+      (p) => !['1_RASCUNHO', '9_REALIZADO', '10_CANCELADO'].includes(p.status),
+    ).length,
+    atencao: pedidos.filter((p) => p.status === '4_PENDENCIA_TECNICA').length,
+  }
 
   return (
     <div className="space-y-6">
-      <h1 className="text-3xl font-bold tracking-tight">Visão Geral</h1>
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <h1 className="text-3xl font-bold tracking-tight">Painel de Cirurgias</h1>
+        <Button asChild>
+          <Link to="/pedidos/novo">
+            <Plus className="w-4 h-4 mr-2" /> Novo Pedido
+          </Link>
+        </Button>
+      </div>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        {kpis.map((kpi, i) => (
-          <Card key={i}>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
-                {kpi.title}
-              </CardTitle>
-              <kpi.icon className={`h-4 w-4 ${kpi.color}`} />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{kpi.value}</div>
-            </CardContent>
-          </Card>
-        ))}
+      <div className="grid gap-4 md:grid-cols-3">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              Total de Solicitações
+            </CardTitle>
+            <Activity className="h-4 w-4 text-blue-500" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stats.total}</div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              Em Progresso (Esteira)
+            </CardTitle>
+            <Clock className="h-4 w-4 text-amber-500" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stats.emProgresso}</div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              Requerem Atenção
+            </CardTitle>
+            <ShieldAlert className="h-4 w-4 text-red-500" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stats.atencao}</div>
+          </CardContent>
+        </Card>
       </div>
 
       <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
-          <div>
-            <CardTitle>Pedidos Recentes</CardTitle>
-            <p className="text-sm text-muted-foreground mt-1">
-              Últimas cirurgias cadastradas no sistema.
-            </p>
-          </div>
-          <Button variant="outline" asChild size="sm">
-            <Link to="/pedidos">Ver todos</Link>
-          </Button>
+        <CardHeader>
+          <CardTitle>Solicitações Recentes</CardTitle>
+          <CardDescription>Acompanhamento de ponta a ponta da esteira cirúrgica.</CardDescription>
         </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            {recent.map((pedido) => (
-              <div
-                key={pedido.id}
-                className="flex items-center justify-between border-b pb-4 last:border-0 last:pb-0"
-              >
-                <div className="space-y-1">
-                  <Link to={`/pedidos/${pedido.id}`} className="font-medium hover:underline">
-                    {pedido.patients?.full_name}
-                  </Link>
-                  <div className="text-sm text-muted-foreground flex items-center gap-2">
-                    <span>{pedido.procedures?.name}</span>
-                    <span>•</span>
-                    <span>{new Date(pedido.created_at).toLocaleDateString('pt-BR')}</span>
-                  </div>
-                </div>
-                <StatusBadge status={pedido.status} />
-              </div>
-            ))}
-            {recent.length === 0 && (
-              <p className="text-sm text-muted-foreground py-4">Nenhum pedido encontrado.</p>
-            )}
-          </div>
+        <CardContent className="p-0">
+          <Table>
+            <TableHeader>
+              <TableRow className="bg-muted/50">
+                <TableHead className="w-[100px]">ID</TableHead>
+                <TableHead>Procedimento</TableHead>
+                <TableHead>Prontuário</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead>Data Agendada</TableHead>
+                <TableHead className="text-right">Ações</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {pedidos.map((pedido) => (
+                <TableRow key={pedido.id}>
+                  <TableCell className="font-mono text-xs text-muted-foreground">
+                    {pedido.id.substring(0, 6).toUpperCase()}
+                  </TableCell>
+                  <TableCell
+                    className="font-medium max-w-[300px] truncate"
+                    title={pedido.procedures?.name}
+                  >
+                    {pedido.procedures?.name || 'Não informado'}
+                  </TableCell>
+                  <TableCell>
+                    <span className="bg-muted px-2 py-1 rounded text-xs font-mono text-muted-foreground border">
+                      {pedido.patients?.medical_record || 'N/A'}
+                    </span>
+                  </TableCell>
+                  <TableCell>
+                    <StatusBadge status={pedido.status} />
+                  </TableCell>
+                  <TableCell>
+                    {pedido.scheduled_date ? (
+                      new Date(pedido.scheduled_date).toLocaleDateString('pt-BR')
+                    ) : (
+                      <span className="text-muted-foreground">-</span>
+                    )}
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <Button variant="ghost" size="sm" asChild>
+                      <Link to={`/pedidos/${pedido.id}`}>
+                        <Eye className="w-4 h-4 mr-2" /> Ver
+                      </Link>
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ))}
+              {pedidos.length === 0 && !loading && (
+                <TableRow>
+                  <TableCell colSpan={6} className="text-center py-12 text-muted-foreground">
+                    <div className="flex flex-col items-center justify-center">
+                      <Activity className="w-8 h-8 text-muted mb-2" />
+                      <p>Nenhuma solicitação encontrada no momento.</p>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
         </CardContent>
       </Card>
     </div>

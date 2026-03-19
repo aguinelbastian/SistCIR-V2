@@ -1,59 +1,69 @@
 import { Link, useLocation } from 'react-router-dom'
-import { Home, Stethoscope, Users, Box, ListVideo, LogOut } from 'lucide-react'
-import { useAuth } from '@/hooks/use-auth'
+import {
+  Activity,
+  LayoutDashboard,
+  Users,
+  FileText,
+  Settings,
+  Stethoscope,
+  ShieldAlert,
+  Package,
+} from 'lucide-react'
 import {
   Sidebar,
   SidebarContent,
-  SidebarFooter,
   SidebarGroup,
   SidebarGroupContent,
-  SidebarHeader,
+  SidebarGroupLabel,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  SidebarHeader,
 } from '@/components/ui/sidebar'
-import { Avatar, AvatarFallback } from '@/components/ui/avatar'
-import { ROLE_LABELS } from '@/lib/constants'
+import { useAuth } from '@/hooks/use-auth'
 
 export function AppSidebar() {
-  const { user, roles, signOut } = useAuth()
   const location = useLocation()
+  const { hasRole } = useAuth()
 
-  const mainRole = roles[0] || 'user'
-  const displayRole = ROLE_LABELS[mainRole] || mainRole
-
-  const menuItems = [
-    { title: 'Dashboard', path: '/', icon: Home },
-    { title: 'Pedidos de Cirurgia', path: '/pedidos', icon: Stethoscope },
-    { title: 'Pacientes', path: '/pacientes', icon: Users },
-    { title: 'Procedimentos', path: '/procedimentos', icon: ListVideo },
-    { title: 'Estoque OPME', path: '/opme', icon: Box },
+  const routes = [
+    { title: 'Painel Geral', url: '/dashboard', icon: LayoutDashboard },
+    { title: 'Pedidos Cirúrgicos', url: '/pedidos', icon: FileText },
+    { title: 'Pacientes', url: '/pacientes', icon: Users },
+    { title: 'Procedimentos', url: '/procedimentos', icon: Activity },
+    { title: 'Estoque OPME', url: '/opme', icon: Package },
   ]
 
   return (
-    <Sidebar variant="sidebar" collapsible="icon">
-      <SidebarHeader className="border-b border-sidebar-border h-16 flex items-center px-4">
-        <div className="flex items-center gap-2 overflow-hidden">
-          <div className="bg-primary text-primary-foreground p-1.5 rounded-md flex-shrink-0">
+    <Sidebar>
+      <SidebarHeader className="h-16 flex items-center justify-center border-b px-4">
+        <Link
+          to="/dashboard"
+          className="flex items-center gap-2 font-bold text-xl text-primary w-full px-2 hover:opacity-90 transition-opacity"
+        >
+          <div className="w-8 h-8 rounded-lg bg-primary text-primary-foreground flex items-center justify-center">
             <Stethoscope className="w-5 h-5" />
           </div>
-          <span className="font-bold text-lg tracking-tight truncate">SistCIR v2</span>
-        </div>
+          <span>SistCIR v2</span>
+        </Link>
       </SidebarHeader>
-
       <SidebarContent>
         <SidebarGroup>
+          <SidebarGroupLabel className="text-xs uppercase tracking-wider text-muted-foreground font-semibold mt-4 mb-2 px-4">
+            Menu Principal
+          </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {menuItems.map((item) => (
-                <SidebarMenuItem key={item.path}>
+              {routes.map((item) => (
+                <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton
                     asChild
-                    isActive={location.pathname === item.path}
-                    tooltip={item.title}
+                    isActive={
+                      location.pathname === item.url || location.pathname.startsWith(`${item.url}/`)
+                    }
                   >
-                    <Link to={item.path}>
-                      <item.icon />
+                    <Link to={item.url}>
+                      <item.icon className="w-4 h-4 mr-3 opacity-70" />
                       <span>{item.title}</span>
                     </Link>
                   </SidebarMenuButton>
@@ -62,32 +72,27 @@ export function AppSidebar() {
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
-      </SidebarContent>
 
-      <SidebarFooter className="border-t border-sidebar-border p-4">
-        <div className="flex items-center gap-3 mb-4 overflow-hidden">
-          <Avatar className="h-9 w-9 bg-sidebar-accent">
-            <AvatarFallback className="text-sidebar-accent-foreground">
-              {user?.email?.charAt(0).toUpperCase()}
-            </AvatarFallback>
-          </Avatar>
-          <div className="flex flex-col truncate group-data-[collapsible=icon]:hidden">
-            <span className="text-sm font-medium truncate">{user?.email}</span>
-            <span className="text-xs text-sidebar-foreground/70 truncate">{displayRole}</span>
-          </div>
-        </div>
-        <SidebarMenu>
-          <SidebarMenuItem>
-            <SidebarMenuButton
-              onClick={signOut}
-              className="text-destructive hover:bg-destructive hover:text-destructive-foreground"
-            >
-              <LogOut />
-              <span>Sair</span>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-        </SidebarMenu>
-      </SidebarFooter>
+        {hasRole('admin') && (
+          <SidebarGroup className="mt-auto mb-4">
+            <SidebarGroupLabel className="text-xs uppercase tracking-wider text-muted-foreground font-semibold px-4">
+              Administração
+            </SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild isActive={location.pathname === '/admin'}>
+                    <Link to="/admin">
+                      <ShieldAlert className="w-4 h-4 mr-3 text-red-500" />
+                      <span>Acessos / Usuários</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        )}
+      </SidebarContent>
     </Sidebar>
   )
 }
