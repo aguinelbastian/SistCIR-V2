@@ -5,6 +5,7 @@ import { supabase } from '@/lib/supabase/client'
 import { toast } from 'sonner'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Label } from '@/components/ui/label'
+import { Input } from '@/components/ui/input'
 import {
   Select,
   SelectContent,
@@ -58,6 +59,11 @@ export default function UsersPage() {
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   const [roleToRemove, setRoleToRemove] = useState<any>(null)
+
+  // Edit Profile State
+  const [editingProfile, setEditingProfile] = useState<any>(null)
+  const [editForm, setEditForm] = useState({ name: '', crm: '', is_active: false })
+  const [isSavingProfile, setIsSavingProfile] = useState(false)
 
   useEffect(() => {
     if (!authLoading && !hasRole('admin')) {
@@ -159,6 +165,67 @@ export default function UsersPage() {
     setRoleToRemove(null)
   }
 
+  const handleOpenEdit = (profile: any) => {
+    if (!profile) return
+    setEditingProfile(profile)
+    setEditForm({
+      name: profile.name || '',
+      crm: profile.crm || '',
+      is_active: profile.is_active ?? false,
+    })
+  }
+
+  const handleSaveProfile = async () => {
+    if (editForm.name.trim().length < 3) {
+      toast.error('O nome deve ter pelo menos 3 caracteres.')
+      return
+    }
+
+    if (!editForm.is_active && editingProfile.is_active) {
+      const isThisUserAdmin = userRoles.some(
+        (ur) => ur.user_id === editingProfile.id && ur.role === 'admin' && ur.is_active,
+      )
+
+      if (isThisUserAdmin) {
+        const activeAdmins = userRoles.filter((ur) => ur.role === 'admin' && ur.is_active)
+        const fullyActiveAdmins = activeAdmins.filter((ur) => {
+          const prof = profiles.find((p) => p.id === ur.user_id)
+          return prof && prof.is_active
+        })
+        const otherFullyActiveAdmins = fullyActiveAdmins.filter(
+          (ur) => ur.user_id !== editingProfile.id,
+        )
+
+        if (otherFullyActiveAdmins.length === 0) {
+          toast.error('Operação bloqueada: o sistema requer ao menos um administrador ativo.')
+          return
+        }
+      }
+    }
+
+    setIsSavingProfile(true)
+    const { error } = await supabase
+      .from('profiles')
+      .update({
+        name: editForm.name.trim(),
+        crm: editForm.crm.trim(),
+        is_active: editForm.is_active,
+      })
+      .eq('id', editingProfile.id)
+
+    setIsSavingProfile(false)
+
+    if (error) {
+      toast.error('Erro ao atualizar perfil')
+    } else {
+      toast.success('Perfil atualizado com sucesso')
+      setProfiles((prev) =>
+        prev.map((p) => (p.id === editingProfile.id ? { ...p, ...editForm } : p)),
+      )
+      setEditingProfile(null)
+    }
+  }
+
   if (authLoading || !hasRole('admin')) return null
 
   const combinedData = userRoles
@@ -245,7 +312,7 @@ export default function UsersPage() {
                 <TableHead>Nome</TableHead>
                 <TableHead>CRM</TableHead>
                 <TableHead>Role</TableHead>
-                <TableHead>Status</TableHead>
+                <TableHead>Status Role</TableHead>
                 <TableHead className="text-right">Ações</TableHead>
               </TableRow>
             </TableHeader>
@@ -260,7 +327,14 @@ export default function UsersPage() {
               {!loading &&
                 combinedData.map((ur) => (
                   <TableRow key={ur.id}>
-                    <TableCell className="font-medium">{ur.profile?.name || 'Sem nome'}</TableCell>
+                    <TableCell className="font-medium">
+                      <div className="flex flex-col">
+                        <span>{ur.profile?.name || 'Sem nome'}</span>
+                        {!ur.profile?.is_active && (
+                          <span className="text-xs text-destructive">Perfil desativado</span>
+                        )}
+                      </div>
+                    </TableCell>
                     <TableCell>{ur.profile?.crm || '-'}</TableCell>
                     <TableCell>
                       <Badge
@@ -279,12 +353,7 @@ export default function UsersPage() {
                       />
                     </TableCell>
                     <TableCell className="text-right space-x-2">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => {}}
-                        className="hidden md:inline-flex"
-                      >
+                      <Button variant="ghost" size="sm" onClick={() => handleOpenEdit(ur.profile)}>
                         Editar
                       </Button>
                       <Button
@@ -310,6 +379,7 @@ export default function UsersPage() {
         </CardContent>
       </Card>
 
+      {/* Remove Role Dialog */}
       <Dialog open={!!roleToRemove} onOpenChange={(o) => !o && setRoleToRemove(null)}>
         <DialogContent>
           <DialogHeader>
@@ -329,6 +399,63 @@ export default function UsersPage() {
             </Button>
             <Button variant="destructive" onClick={confirmRemoveRole}>
               Remover
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Profile Dialog */}
+      <Dialog open={!!editingProfile} onOpenChange={(o) => !o && setEditingProfile(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Editar Perfil</DialogTitle>
+            <DialogDescription>
+              Atualize as informações principais e status global do usuário.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="edit-name">Nome completo</Label>
+              <Input
+                id="edit-name"
+                value={editForm.name}
+                onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
+                placeholder="Nome do usuário"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="edit-crm">CRM</Label>
+              <Input
+                id="edit-crm"
+                value={editForm.crm}
+                onChange={(e) => setEditForm({ ...editForm, crm: e.target.value })}
+                placeholder="Ex: 12345-SC"
+              />
+            </div>
+            <div className="flex items-center justify-between pt-2">
+              <Label htmlFor="edit-active" className="flex flex-col space-y-1 cursor-pointer">
+                <span>Perfil ativo</span>
+                <span className="font-normal text-xs text-muted-foreground">
+                  Permite o acesso geral do usuário ao sistema.
+                </span>
+              </Label>
+              <Switch
+                id="edit-active"
+                checked={editForm.is_active}
+                onCheckedChange={(c) => setEditForm({ ...editForm, is_active: c })}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setEditingProfile(null)}
+              disabled={isSavingProfile}
+            >
+              Cancelar
+            </Button>
+            <Button onClick={handleSaveProfile} disabled={isSavingProfile}>
+              {isSavingProfile ? 'Salvando...' : 'Salvar'}
             </Button>
           </DialogFooter>
         </DialogContent>
