@@ -9,11 +9,11 @@
     "send-email-welcome": 3,
     "send-email-surgery-created": 1,
     "send-email-surgery-cancelled": 1,
-    "get-relatorio-status": 3,
-    "get-relatorio-cirurgioes": 3,
-    "get-relatorio-procedimentos": 3,
-    "get-relatorio-sla": 3,
-    "get-relatorio-conversao": 4,
-    "get-relatorio-tempo-autorizacao": 3
+    "get-relatorio-status": 5,
+    "get-relatorio-cirurgioes": 5,
+    "get-relatorio-procedimentos": 5,
+    "get-relatorio-sla": 5,
+    "get-relatorio-conversao": 5,
+    "get-relatorio-tempo-autorizacao": 5
   }
 }

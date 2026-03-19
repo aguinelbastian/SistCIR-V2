@@ -65,7 +65,7 @@ export function ReportCard({
         {error ? (
           <div className="flex flex-col items-center justify-center h-full text-destructive text-sm text-center p-4 opacity-80 animate-fade-in">
             <AlertCircle className="w-8 h-8 mb-3 opacity-50" />
-            <p className="font-medium">Erro ao carregar dados.</p>
+            <p className="font-medium">Erro ao carregar dados. Tente novamente.</p>
             <p className="text-xs mt-1">Tentando novamente em instantes...</p>
           </div>
         ) : loading && !lastUpdated ? (
