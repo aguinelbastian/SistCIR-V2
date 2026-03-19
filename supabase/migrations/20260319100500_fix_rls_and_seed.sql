@@ -14,7 +14,7 @@ CREATE POLICY "pedido_opme_items_delete" ON public.pedido_opme_items
   FOR DELETE TO authenticated USING (true);
 
 -- Seed Data for Testing
-DO $
+DO $$
 DECLARE
   v_proc1_id uuid := gen_random_uuid();
   v_proc2_id uuid := gen_random_uuid();
@@ -69,5 +69,4 @@ BEGIN
       ON CONFLICT DO NOTHING;
     END;
   END IF;
-END $;
-
+END $$;
