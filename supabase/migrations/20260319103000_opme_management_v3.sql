@@ -1,14 +1,35 @@
--- 1. Alter opme_items table to include new fields
+-- 1. Alter opme_items table to include new fields safely
 ALTER TABLE public.opme_items ADD COLUMN IF NOT EXISTS code TEXT;
 ALTER TABLE public.opme_items ADD COLUMN IF NOT EXISTS description TEXT;
 ALTER TABLE public.opme_items ADD COLUMN IF NOT EXISTS manufacturer TEXT;
 ALTER TABLE public.opme_items ADD COLUMN IF NOT EXISTS is_active BOOLEAN DEFAULT TRUE;
 
-UPDATE public.opme_items SET 
-    code = CASE WHEN code IS NULL OR code = tuss_code THEN tuss_code || '-' || substr(id::text, 1, 8) ELSE code END,
+-- Set default values
+UPDATE public.opme_items 
+SET 
+    code = COALESCE(code, tuss_code || '-' || substr(id::text, 1, 8)),
     description = COALESCE(description, name, 'N/A'),
     manufacturer = COALESCE(manufacturer, 'Desconhecido');
 
+-- Remove any duplicates in 'code' that might have caused the unique index error
+WITH duplicates AS (
+    SELECT id, code, row_number() OVER (PARTITION BY code ORDER BY created_at ASC) as rn
+    FROM public.opme_items
+)
+UPDATE public.opme_items
+SET code = code || '-' || substr(id::text, 1, 4)
+WHERE id IN (SELECT id FROM duplicates WHERE rn > 1);
+
+-- Double check duplicates one more time just in case there's still a collision
+WITH duplicates AS (
+    SELECT id, code, row_number() OVER (PARTITION BY code ORDER BY created_at ASC) as rn
+    FROM public.opme_items
+)
+UPDATE public.opme_items
+SET code = id::text
+WHERE id IN (SELECT id FROM duplicates WHERE rn > 1);
+
+-- Apply constraints safely
 ALTER TABLE public.opme_items ALTER COLUMN code SET NOT NULL;
 ALTER TABLE public.opme_items ALTER COLUMN description SET NOT NULL;
 ALTER TABLE public.opme_items ALTER COLUMN manufacturer SET NOT NULL;
