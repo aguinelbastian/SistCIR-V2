@@ -41,9 +41,9 @@ serve(async (req: Request) => {
     const authHeader = req.headers.get('Authorization')
     if (!authHeader || authHeader !== `Bearer ${supabaseServiceKey}`) {
       console.error('Unauthorized request attempt')
-      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+      return new Response('Unauthorized', {
         status: 401,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        headers: corsHeaders,
       })
     }
 
