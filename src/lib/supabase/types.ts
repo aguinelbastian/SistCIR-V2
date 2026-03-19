@@ -62,6 +62,13 @@ export type Database = {
             referencedRelation: 'pedidos_cirurgia'
             referencedColumns: ['id']
           },
+          {
+            foreignKeyName: 'audit_log_pedido_id_fkey'
+            columns: ['pedido_id']
+            isOneToOne: false
+            referencedRelation: 'v_pedidos_pendentes_sla'
+            referencedColumns: ['id']
+          },
         ]
       }
       audit_logs: {
@@ -278,6 +285,13 @@ export type Database = {
             columns: ['pedido_id']
             isOneToOne: false
             referencedRelation: 'pedidos_cirurgia'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'pedido_opme_items_pedido_id_fkey'
+            columns: ['pedido_id']
+            isOneToOne: false
+            referencedRelation: 'v_pedidos_pendentes_sla'
             referencedColumns: ['id']
           },
         ]
@@ -574,6 +588,71 @@ export type Database = {
           scheduled_date: string | null
           status: Database['public']['Enums']['surgery_status'] | null
           tuss_code: string | null
+        }
+        Relationships: []
+      }
+      v_cirurgias_por_cirurgiao: {
+        Row: {
+          canceladas: number | null
+          cirurgiao: string | null
+          crm: string | null
+          realizadas: number | null
+          taxa_cancelamento_pct: number | null
+          total_cirurgias: number | null
+        }
+        Relationships: []
+      }
+      v_cirurgias_por_procedimento: {
+        Row: {
+          canceladas: number | null
+          procedimento: string | null
+          realizadas: number | null
+          taxa_realizacao_pct: number | null
+          total: number | null
+        }
+        Relationships: []
+      }
+      v_cirurgias_por_status: {
+        Row: {
+          percentual: number | null
+          status: Database['public']['Enums']['surgery_status'] | null
+          total: number | null
+        }
+        Relationships: []
+      }
+      v_pedidos_pendentes_sla: {
+        Row: {
+          cirurgiao: string | null
+          created_at: string | null
+          horas_pendente: number | null
+          id: string | null
+          paciente: string | null
+          procedimento: string | null
+          scheduled_date: string | null
+          status_sla: string | null
+        }
+        Relationships: []
+      }
+      v_taxa_conversao: {
+        Row: {
+          autorizados: number | null
+          cancelados: number | null
+          em_execucao: number | null
+          em_processamento: number | null
+          rascunhos: number | null
+          realizados: number | null
+          taxa_realizacao_geral_pct: number | null
+          total_pedidos: number | null
+        }
+        Relationships: []
+      }
+      v_tempo_autorizacao: {
+        Row: {
+          cirurgiao: string | null
+          tempo_maximo_horas: number | null
+          tempo_medio_horas: number | null
+          tempo_minimo_horas: number | null
+          total_pedidos: number | null
         }
         Relationships: []
       }
@@ -908,6 +987,47 @@ export const Constants = {
 //   is_active: boolean (nullable, default: false)
 //   granted_by: uuid (nullable)
 //   created_at: timestamp with time zone (nullable, default: now())
+// Table: v_cirurgias_por_cirurgiao
+//   cirurgiao: text (nullable)
+//   crm: text (nullable)
+//   total_cirurgias: bigint (nullable)
+//   canceladas: bigint (nullable)
+//   realizadas: bigint (nullable)
+//   taxa_cancelamento_pct: numeric (nullable)
+// Table: v_cirurgias_por_procedimento
+//   procedimento: text (nullable)
+//   total: bigint (nullable)
+//   realizadas: bigint (nullable)
+//   canceladas: bigint (nullable)
+//   taxa_realizacao_pct: numeric (nullable)
+// Table: v_cirurgias_por_status
+//   status: surgery_status (nullable)
+//   total: bigint (nullable)
+//   percentual: numeric (nullable)
+// Table: v_pedidos_pendentes_sla
+//   id: uuid (nullable)
+//   cirurgiao: text (nullable)
+//   paciente: text (nullable)
+//   procedimento: text (nullable)
+//   scheduled_date: timestamp with time zone (nullable)
+//   created_at: timestamp with time zone (nullable)
+//   horas_pendente: numeric (nullable)
+//   status_sla: text (nullable)
+// Table: v_taxa_conversao
+//   rascunhos: bigint (nullable)
+//   em_processamento: bigint (nullable)
+//   autorizados: bigint (nullable)
+//   em_execucao: bigint (nullable)
+//   realizados: bigint (nullable)
+//   cancelados: bigint (nullable)
+//   total_pedidos: bigint (nullable)
+//   taxa_realizacao_geral_pct: numeric (nullable)
+// Table: v_tempo_autorizacao
+//   cirurgiao: text (nullable)
+//   total_pedidos: bigint (nullable)
+//   tempo_medio_horas: numeric (nullable)
+//   tempo_minimo_horas: numeric (nullable)
+//   tempo_maximo_horas: numeric (nullable)
 
 // --- CONSTRAINTS ---
 // Table: audit_log
@@ -1283,6 +1403,8 @@ export const Constants = {
 
 // --- TRIGGERS ---
 // Table: audit_log
+//   Send Email on Surgery Cancelled: CREATE TRIGGER "Send Email on Surgery Cancelled" AFTER INSERT ON public.audit_log FOR EACH ROW WHEN ((new.status_to = '10_CANCELADO'::text)) EXECUTE FUNCTION supabase_functions.http_request('https://iumxxwtcohabjgynxciv.supabase.co/functions/v1/send-email-surgery-cancelled', 'POST', '{"Content-type":"application/json"}', '{}', '5000')
+//   Send Email on Surgery Created: CREATE TRIGGER "Send Email on Surgery Created" AFTER INSERT ON public.audit_log FOR EACH ROW WHEN ((new.action = 'created'::text)) EXECUTE FUNCTION supabase_functions.http_request('https://iumxxwtcohabjgynxciv.supabase.co/functions/v1/send-email-surgery-created', 'POST', '{"Content-type":"application/json"}', '{}', '5000')
 //   notify-telegram-audit: CREATE TRIGGER "notify-telegram-audit" AFTER INSERT ON public.audit_log FOR EACH ROW EXECUTE FUNCTION supabase_functions.http_request('https://iumxxwtcohabjgynxciv.supabase.co/functions/v1/notify-telegram', 'POST', '{"Content-type":"application/json"}', '{}', '5000')
 // Table: pedidos_cirurgia
 //   trg_audit_pedidos: CREATE TRIGGER trg_audit_pedidos AFTER INSERT OR DELETE OR UPDATE ON public.pedidos_cirurgia FOR EACH ROW EXECUTE FUNCTION fn_audit_pedidos()

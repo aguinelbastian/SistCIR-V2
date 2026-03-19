@@ -8,6 +8,12 @@
     "admin-reset-password": 4,
     "send-email-welcome": 3,
     "send-email-surgery-created": 1,
-    "send-email-surgery-cancelled": 1
+    "send-email-surgery-cancelled": 1,
+    "get-relatorio-status": 1,
+    "get-relatorio-cirurgioes": 1,
+    "get-relatorio-procedimentos": 1,
+    "get-relatorio-sla": 1,
+    "get-relatorio-conversao": 1,
+    "get-relatorio-tempo-autorizacao": 1
   }
 }
