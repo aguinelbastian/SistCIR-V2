@@ -13,7 +13,7 @@
     "get-relatorio-cirurgioes": 3,
     "get-relatorio-procedimentos": 3,
     "get-relatorio-sla": 3,
-    "get-relatorio-conversao": 3,
+    "get-relatorio-conversao": 4,
     "get-relatorio-tempo-autorizacao": 3
   }
 }

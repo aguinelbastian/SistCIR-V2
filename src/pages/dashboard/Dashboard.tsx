@@ -12,7 +12,7 @@ import { api } from '@/services/api'
 import { StatusBadge } from '@/components/StatusBadge'
 import { Link, useNavigate } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
-import { Eye, Plus, Activity, Clock, ShieldAlert } from 'lucide-react'
+import { Eye, Plus, Activity, Clock, ShieldAlert, Percent } from 'lucide-react'
 import { PedidoCirurgia, SurgeryStatus } from '@/types/sistcir'
 import { useAuth } from '@/hooks/use-auth'
 import { toast } from 'sonner'
@@ -26,6 +26,7 @@ import {
 } from '@/components/ui/dialog'
 import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
+import { useReportData } from '@/hooks/use-report-data'
 
 export default function Dashboard() {
   const [pedidos, setPedidos] = useState<Partial<PedidoCirurgia>[]>([])
@@ -38,6 +39,8 @@ export default function Dashboard() {
   const [pedidoToCancelStatus, setPedidoToCancelStatus] = useState<string | null>(null)
   const [cancelReason, setCancelReason] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
+
+  const { data: conversao } = useReportData(() => api.reports.conversao(), 60000)
 
   const loadData = async () => {
     setLoading(true)
@@ -262,7 +265,7 @@ export default function Dashboard() {
         )}
       </div>
 
-      <div className="grid gap-4 md:grid-cols-3">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">
@@ -294,6 +297,21 @@ export default function Dashboard() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{stats.atencao}</div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              Taxa de Conversão
+            </CardTitle>
+            <Percent className="h-4 w-4 text-green-500" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              {conversao?.taxa_realizacao_geral_pct != null
+                ? `${Number(conversao.taxa_realizacao_geral_pct).toFixed(1)}%`
+                : '-'}
+            </div>
           </CardContent>
         </Card>
       </div>
