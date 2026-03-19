@@ -2,7 +2,6 @@ import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
 const supabaseUrl = Deno.env.get('SUPABASE_URL')!
-const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
 const botToken = Deno.env.get('TELEGRAM_BOT_TOKEN')
 
 const corsHeaders = {
@@ -39,8 +38,9 @@ serve(async (req: Request) => {
   try {
     // 1. Security Validation
     const authHeader = req.headers.get('Authorization')
-    if (!authHeader || authHeader !== `Bearer ${supabaseServiceKey}`) {
-      console.error('Unauthorized request attempt')
+
+    if (!authHeader || authHeader !== `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`) {
+      console.error('Unauthorized: invalid or missing Authorization header')
       return new Response('Unauthorized', {
         status: 401,
         headers: corsHeaders,
@@ -68,7 +68,8 @@ serve(async (req: Request) => {
     }
 
     // 3. Retrieve Full Details from DB
-    const supabase = createClient(supabaseUrl, supabaseServiceKey)
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
+    const supabase = createClient(supabaseUrl, supabaseServiceKey!)
     const { data: pedido, error } = await supabase
       .from('pedidos_cirurgia')
       .select(`
