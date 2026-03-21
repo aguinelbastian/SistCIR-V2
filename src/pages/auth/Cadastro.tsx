@@ -44,10 +44,22 @@ export default function Cadastro() {
     setIsLoading(false)
 
     if (error) {
-      if (error.message?.toLowerCase().includes('already registered') || error.status === 400) {
-        toast.error('Este e-mail já possui cadastro no sistema')
+      const errorCode = (error as any).code || ''
+      const errorStatus = (error as any).status || 0
+
+      if (errorCode === 'email_address_invalid' || error.message?.includes('invalid')) {
+        toast.error('O domínio deste e-mail não é aceito ou o formato é inválido.')
+      } else if (errorCode === 'over_email_send_rate_limit' || errorStatus === 429) {
+        toast.error(
+          'Limite de tentativas excedido. Por favor, aguarde alguns minutos antes de tentar novamente.',
+        )
+      } else if (
+        error.message?.toLowerCase().includes('already registered') ||
+        errorStatus === 400
+      ) {
+        toast.error('Este e-mail já possui cadastro no sistema.')
       } else {
-        toast.error('Erro ao processar cadastro. Tente novamente.')
+        toast.error('Erro ao processar cadastro. Tente novamente.', { description: error.message })
       }
     } else {
       toast.success('Cadastro solicitado com sucesso')

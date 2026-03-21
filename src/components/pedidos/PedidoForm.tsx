@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
@@ -12,12 +12,21 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form'
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from '@/components/ui/command'
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { toast } from 'sonner'
 import { api } from '@/services/api'
 import { supabase } from '@/lib/supabase/client'
-import { Calendar } from 'lucide-react'
+import { Calendar, Check, ChevronsUpDown } from 'lucide-react'
+import { cn } from '@/lib/utils'
 
-// Schema without google_calendar_refresh_token requirement
 const formSchema = z.object({
   patient_id: z.string().min(1, 'Selecione um paciente'),
   procedure_id: z.string().min(1, 'Selecione um procedimento'),
@@ -29,6 +38,11 @@ const formSchema = z.object({
 
 export function PedidoForm({ onSuccess }: { onSuccess?: () => void }) {
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [patients, setPatients] = useState<any[]>([])
+  const [procedures, setProcedures] = useState<any[]>([])
+
+  const [patientOpen, setPatientOpen] = useState(false)
+  const [procedureOpen, setProcedureOpen] = useState(false)
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -41,6 +55,19 @@ export function PedidoForm({ onSuccess }: { onSuccess?: () => void }) {
       previsao_tempo_minutos: 60,
     },
   })
+
+  useEffect(() => {
+    async function loadData() {
+      try {
+        const [pRes, prRes] = await Promise.all([api.pacientes.list(), api.procedimentos.list()])
+        if (pRes.data) setPatients(pRes.data)
+        if (prRes.data) setProcedures(prRes.data)
+      } catch (error) {
+        console.error('Erro ao carregar dados:', error)
+      }
+    }
+    loadData()
+  }, [])
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsSubmitting(true)
@@ -97,7 +124,7 @@ export function PedidoForm({ onSuccess }: { onSuccess?: () => void }) {
         options: {
           scopes: 'https://www.googleapis.com/auth/calendar.events',
           queryParams: { access_type: 'offline', prompt: 'consent' },
-          redirectTo: window.location.href,
+          redirectTo: `${window.location.origin}/pedidos/novo`,
         },
       })
       if (error) throw error
@@ -143,28 +170,129 @@ export function PedidoForm({ onSuccess }: { onSuccess?: () => void }) {
             control={form.control}
             name="patient_id"
             render={({ field }) => (
-              <FormItem>
-                <FormLabel>ID do Paciente</FormLabel>
-                <FormControl>
-                  <Input placeholder="UUID do Paciente" {...field} />
-                </FormControl>
+              <FormItem className="flex flex-col">
+                <FormLabel>Paciente</FormLabel>
+                <Popover open={patientOpen} onOpenChange={setPatientOpen}>
+                  <PopoverTrigger asChild>
+                    <FormControl>
+                      <Button
+                        variant="outline"
+                        role="combobox"
+                        aria-expanded={patientOpen}
+                        className={cn(
+                          'w-full justify-between font-normal',
+                          !field.value && 'text-muted-foreground',
+                        )}
+                      >
+                        <span className="truncate">
+                          {field.value
+                            ? patients.find((p) => p.id === field.value)?.full_name
+                            : 'Selecione o paciente'}
+                        </span>
+                        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                      </Button>
+                    </FormControl>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
+                    <Command>
+                      <CommandInput placeholder="Buscar paciente..." />
+                      <CommandList>
+                        <CommandEmpty>Nenhum paciente encontrado.</CommandEmpty>
+                        <CommandGroup>
+                          {patients.map((p) => (
+                            <CommandItem
+                              key={p.id}
+                              value={`${p.full_name} ${p.medical_record}`}
+                              onSelect={() => {
+                                form.setValue('patient_id', p.id)
+                                setPatientOpen(false)
+                              }}
+                            >
+                              <Check
+                                className={cn(
+                                  'mr-2 h-4 w-4',
+                                  p.id === field.value ? 'opacity-100' : 'opacity-0',
+                                )}
+                              />
+                              {p.full_name} ({p.medical_record})
+                            </CommandItem>
+                          ))}
+                        </CommandGroup>
+                      </CommandList>
+                    </Command>
+                  </PopoverContent>
+                </Popover>
                 <FormMessage />
               </FormItem>
             )}
           />
+
           <FormField
             control={form.control}
             name="procedure_id"
             render={({ field }) => (
-              <FormItem>
-                <FormLabel>ID do Procedimento</FormLabel>
-                <FormControl>
-                  <Input placeholder="UUID do Procedimento" {...field} />
-                </FormControl>
+              <FormItem className="flex flex-col">
+                <FormLabel>Procedimento</FormLabel>
+                <Popover open={procedureOpen} onOpenChange={setProcedureOpen}>
+                  <PopoverTrigger asChild>
+                    <FormControl>
+                      <Button
+                        variant="outline"
+                        role="combobox"
+                        aria-expanded={procedureOpen}
+                        className={cn(
+                          'w-full justify-between font-normal',
+                          !field.value && 'text-muted-foreground',
+                        )}
+                      >
+                        <span className="truncate">
+                          {field.value
+                            ? procedures.find((p) => p.id === field.value)?.name
+                            : 'Selecione o procedimento'}
+                        </span>
+                        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                      </Button>
+                    </FormControl>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
+                    <Command>
+                      <CommandInput placeholder="Buscar procedimento..." />
+                      <CommandList>
+                        <CommandEmpty>Nenhum procedimento encontrado.</CommandEmpty>
+                        <CommandGroup>
+                          {procedures.map((p) => (
+                            <CommandItem
+                              key={p.id}
+                              value={`${p.name} ${p.tuss_code}`}
+                              onSelect={() => {
+                                form.setValue('procedure_id', p.id)
+                                setProcedureOpen(false)
+                              }}
+                            >
+                              <Check
+                                className={cn(
+                                  'mr-2 h-4 w-4',
+                                  p.id === field.value ? 'opacity-100' : 'opacity-0',
+                                )}
+                              />
+                              <div className="flex flex-col">
+                                <span>{p.name}</span>
+                                <span className="text-xs text-muted-foreground">
+                                  TUSS: {p.tuss_code}
+                                </span>
+                              </div>
+                            </CommandItem>
+                          ))}
+                        </CommandGroup>
+                      </CommandList>
+                    </Command>
+                  </PopoverContent>
+                </Popover>
                 <FormMessage />
               </FormItem>
             )}
           />
+
           <FormField
             control={form.control}
             name="cid10_primary"
