@@ -408,8 +408,11 @@ export function TransicaoPedidoCircurgico({ pedidoId }: { pedidoId: string }) {
 
       if (responseError) {
         if (responseError.camposPermitidos) {
+          const invalidFields = Object.keys(camposDinamicos).filter(
+            (k) => !responseError.camposPermitidos.includes(k),
+          )
           toast.error(
-            `Campo não permitido. Permitidos: ${responseError.camposPermitidos.join(', ')}`,
+            `Campo não permitido: ${invalidFields.join(', ') || 'desconhecido'}. Permitidos: ${responseError.camposPermitidos.join(', ')}`,
           )
         } else if (responseError.transicoesPermitidas) {
           toast.error(
@@ -419,7 +422,19 @@ export function TransicaoPedidoCircurgico({ pedidoId }: { pedidoId: string }) {
           toast.error(`Erro ao atualizar pedido: ${responseError.message || responseError}`)
         }
       } else {
-        toast.success(`Pedido transicionado para ${STATUS_LABELS[novoEstado] || novoEstado}`)
+        // Feedback Visual com base na resposta da Edge Function
+        if (data?.notificationSent === true && data?.notifiedGroups?.length > 0) {
+          toast.success(
+            `Pedido transicionado para ${STATUS_LABELS[novoEstado] || novoEstado} e notificação enviada`,
+          )
+        } else if (data?.notificationSent === false) {
+          toast.warning(
+            `Pedido transicionado, mas notificação falhou. ${data?.notificationWarning || ''}`,
+          )
+        } else {
+          toast.success(`Pedido transicionado para ${STATUS_LABELS[novoEstado] || novoEstado}`)
+        }
+
         setNovoEstado('')
         // Notice: component UI will update automatically via Realtime channel
       }

@@ -56,6 +56,122 @@ const transicoesPermitidas: Record<Estado, Estado[]> = {
   '10_CANCELADO': [],
 }
 
+// LGPD Compliance: Telegram notifications contain NO patient PII
+// Telegram is an operational notification channel, not for transmitting clinical data.
+const CHAT_MAP: Record<Estado, string[]> = {
+  '1_RASCUNHO': [],
+  '2_AGUARDANDO_OPME': ['BILLING'],
+  '3_EM_AUDITORIA': ['BILLING', 'COORDINATORS'],
+  '4_PENDENCIA_TECNICA': ['CIRURGIOES'],
+  '5_AUTORIZADO': ['CIRURGIOES', 'COORDINATORS'],
+  '6_AGUARDANDO_MAPA': ['COORDINATORS'],
+  '7_AGENDADO_CC': ['CIRURGIOES', 'COORDINATORS'],
+  '8_EM_EXECUCAO': ['COORDINATORS'],
+  '9_REALIZADO': ['BILLING'],
+  '10_CANCELADO': ['CIRURGIOES', 'BILLING', 'COORDINATORS'],
+}
+
+const escapeMD = (text: string) => {
+  if (!text) return ''
+  return text.replace(/[_*[\]()~`>#+\-=|{}.!]/g, '\\$&')
+}
+
+async function notifyTelegramBySector(
+  pedidoId: string,
+  novoEstado: string,
+  supabase: any,
+  botToken: string,
+) {
+  const targetGroups = CHAT_MAP[novoEstado as Estado] || []
+  if (targetGroups.length === 0) {
+    return { notificationSent: true, notified: [] }
+  }
+
+  // Fetch only non-PII operational/clinical data
+  const { data: pedido, error } = await supabase
+    .from('pedidos_cirurgia')
+    .select(`
+      id,
+      cid10_primary,
+      operating_room,
+      patients ( medical_record ),
+      procedures ( name ),
+      profiles!pedidos_cirurgia_surgeon_id_fkey ( name, crm )
+    `)
+    .eq('id', pedidoId)
+    .single()
+
+  if (error || !pedido) {
+    return {
+      notificationSent: false,
+      notificationWarning: 'Falha ao recuperar dados para notificação',
+    }
+  }
+
+  const medRecord = escapeMD(pedido.patients?.medical_record || 'N/A')
+  const procName = escapeMD(pedido.procedures?.name || 'N/A')
+  const surgeonName = escapeMD(pedido.profiles?.name || 'N/A')
+  const surgeonCrm = escapeMD(pedido.profiles?.crm || 'N/A')
+  const cid10 = escapeMD(pedido.cid10_primary || 'N/A')
+  const opRoom = escapeMD(pedido.operating_room || 'N/A')
+  const pedidoIdEscaped = escapeMD(pedido.id)
+  const statusTo = escapeMD(novoEstado)
+
+  const message =
+    `🏥 *SISTCIR v2 \\- Transição de Estado*\n\n` +
+    `*Novo Status:* ${statusTo}\n` +
+    `*Prontuário:* ${medRecord}\n` +
+    `*Cirurgião:* ${surgeonName} \\(CRM: ${surgeonCrm}\\)\n` +
+    `*Procedimento:* ${procName}\n` +
+    `*CID\\-10:* ${cid10}\n` +
+    `*Sala Operatória:* ${opRoom}\n\n` +
+    `_Pedido ID: ${pedidoIdEscaped}_`
+
+  const errors: string[] = []
+  const notified: string[] = []
+
+  const promises = targetGroups.map(async (group) => {
+    const chatId = Deno.env.get(`TELEGRAM_CHAT_${group}`)
+    if (!chatId) {
+      errors.push(`Missing chat ID for group: ${group}`)
+      return
+    }
+
+    try {
+      const res = await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          chat_id: chatId,
+          text: message,
+          parse_mode: 'MarkdownV2',
+        }),
+      })
+
+      if (!res.ok) {
+        const errData = await res.text()
+        errors.push(`Telegram API error for ${group}: ${errData}`)
+      } else {
+        notified.push(group)
+      }
+    } catch (err: any) {
+      errors.push(`Failed to send to ${group}: ${err.message}`)
+    }
+  })
+
+  await Promise.all(promises)
+
+  if (errors.length > 0) {
+    return {
+      notificationSent: false,
+      notificationWarning: `Falha ao enviar notificação para: ${targetGroups.join(', ')}. Detalhes: ${errors.join(' | ')}`,
+      notified,
+    }
+  }
+
+  return { notificationSent: true, notified }
+}
+
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
@@ -63,15 +179,11 @@ const corsHeaders = {
 }
 
 Deno.serve(async (req) => {
-  console.log('=== INÍCIO DA REQUISIÇÃO ===')
-  console.log('Método:', req.method)
-
   if (req.method === 'OPTIONS') {
     return new Response(null, { status: 200, headers: corsHeaders })
   }
 
   if (req.method !== 'POST' && req.method !== 'PUT') {
-    console.log('Método não permitido:', req.method)
     return new Response(JSON.stringify({ error: 'Método não permitido' }), {
       status: 405,
       headers: corsHeaders,
@@ -84,7 +196,6 @@ Deno.serve(async (req) => {
     const supabase = createClient(supabaseUrl, supabaseServiceKey)
 
     const body = await req.json()
-    console.log('Body recebido:', JSON.stringify(body))
 
     const id = body.id
     const novoEstado = body.status
@@ -92,19 +203,13 @@ Deno.serve(async (req) => {
       Object.entries(body).filter(([key]) => !['id', 'status'].includes(key)),
     )
 
-    console.log('ID:', id)
-    console.log('Novo estado:', novoEstado)
-    console.log('Updates:', JSON.stringify(updates))
-
     if (!id) {
-      console.log('ERRO: ID ausente')
       return new Response(JSON.stringify({ error: 'ID do pedido é obrigatório' }), {
         status: 400,
         headers: corsHeaders,
       })
     }
 
-    console.log('=== BUSCANDO PEDIDO ===')
     const { data: currentRecord, error: fetchError } = await supabase
       .from('pedidos_cirurgia')
       .select('*')
@@ -112,7 +217,6 @@ Deno.serve(async (req) => {
       .single()
 
     if (fetchError || !currentRecord) {
-      console.log('ERRO ao buscar pedido:', fetchError)
       return new Response(JSON.stringify({ error: 'Pedido não encontrado' }), {
         status: 404,
         headers: corsHeaders,
@@ -120,15 +224,9 @@ Deno.serve(async (req) => {
     }
 
     const estadoAtual = currentRecord.status as Estado
-    console.log('Estado atual do pedido:', estadoAtual)
 
-    // Se houver novo estado, validar transição
     if (novoEstado && novoEstado !== estadoAtual) {
-      console.log('=== VALIDANDO TRANSIÇÃO ===')
-      console.log('Transição solicitada:', estadoAtual, '→', novoEstado)
-
       if (!transicoesPermitidas[estadoAtual]?.includes(novoEstado)) {
-        console.log('ERRO: Transição não permitida')
         return new Response(
           JSON.stringify({
             error: 'Transição de estado não permitida',
@@ -139,21 +237,15 @@ Deno.serve(async (req) => {
           { status: 400, headers: corsHeaders },
         )
       }
-      console.log('✓ Transição validada')
     }
 
-    // CORREÇÃO: Validar campos contra o estado FINAL (novo ou atual)
-    console.log('=== VALIDANDO CAMPOS ===')
     const estadoFinal = novoEstado || estadoAtual
     const camposPermitidos = camposAtualizaveis[estadoFinal]
-    console.log('Estado final:', estadoFinal)
-    console.log('Campos permitidos:', camposPermitidos)
 
     const camposInvalidos = Object.keys(updates).filter(
       (field) => !camposPermitidos.includes(field),
     )
     if (camposInvalidos.length > 0) {
-      console.log('ERRO: Campos não permitidos:', camposInvalidos)
       return new Response(
         JSON.stringify({
           error: `Campos não permitidos para atualização: ${camposInvalidos.join(', ')}`,
@@ -162,10 +254,7 @@ Deno.serve(async (req) => {
         { status: 400, headers: corsHeaders },
       )
     }
-    console.log('✓ Campos validados')
 
-    // Preparar dados para atualização
-    console.log('=== PREPARANDO ATUALIZAÇÃO ===')
     const updateData: Record<string, any> = {
       ...updates,
       updated_at: new Date().toISOString(),
@@ -175,10 +264,6 @@ Deno.serve(async (req) => {
       updateData.status = novoEstado
     }
 
-    console.log('Dados para atualizar:', JSON.stringify(updateData))
-
-    // Atualizar o registro
-    console.log('=== EXECUTANDO UPDATE ===')
     const { data: updatedRecord, error: updateError } = await supabase
       .from('pedidos_cirurgia')
       .update(updateData)
@@ -187,7 +272,6 @@ Deno.serve(async (req) => {
       .single()
 
     if (updateError) {
-      console.log('ERRO ao atualizar:', updateError)
       return new Response(
         JSON.stringify({
           error: 'Erro ao atualizar o pedido',
@@ -197,10 +281,6 @@ Deno.serve(async (req) => {
       )
     }
 
-    console.log('✓ Pedido atualizado com sucesso')
-
-    // Inserir auditoria
-    console.log('=== REGISTRANDO AUDITORIA ===')
     const auditData = {
       pedido_id: id,
       acao: novoEstado ? `Transição: ${estadoAtual} → ${novoEstado}` : 'Atualização de dados',
@@ -209,24 +289,36 @@ Deno.serve(async (req) => {
       criado_em: new Date().toISOString(),
     }
 
-    const { error: auditError } = await supabase
-      .from('pedidos_cirurgia_auditoria')
-      .insert(auditData)
+    await supabase.from('pedidos_cirurgia_auditoria').insert(auditData)
 
-    if (auditError) {
-      console.log('Aviso: Erro ao registrar auditoria:', auditError)
-    } else {
-      console.log('✓ Auditoria registrada')
+    let notificationSent = undefined
+    let notificationWarning = undefined
+    let notifiedGroups: string[] = []
+
+    // Only notify if there's a state transition
+    if (novoEstado && novoEstado !== estadoAtual) {
+      const botToken = Deno.env.get('TELEGRAM_BOT_TOKEN')
+      if (botToken) {
+        const notifResult = await notifyTelegramBySector(id, novoEstado, supabase, botToken)
+        notificationSent = notifResult.notificationSent
+        notificationWarning = notifResult.notificationWarning
+        notifiedGroups = notifResult.notified
+      } else {
+        console.warn('Aviso: TELEGRAM_BOT_TOKEN não configurado.')
+      }
     }
 
-    console.log('=== REQUISIÇÃO CONCLUÍDA COM SUCESSO ===')
-    return new Response(JSON.stringify({ success: true, data: updatedRecord }), {
-      status: 200,
-      headers: corsHeaders,
-    })
+    return new Response(
+      JSON.stringify({
+        success: true,
+        data: updatedRecord,
+        notificationSent,
+        notificationWarning,
+        notifiedGroups,
+      }),
+      { status: 200, headers: corsHeaders },
+    )
   } catch (error) {
-    console.log('=== ERRO GERAL ===')
-    console.log('Erro:', error)
     return new Response(
       JSON.stringify({
         error: 'Erro interno do servidor',

@@ -4,10 +4,19 @@
     "create-users": 7,
     "admin-manage-users": 10,
     "notify-telegram": 5,
-    "functions": 4,
+    "functions": 5,
     "admin-reset-password": 4,
-    "send-email-welcome": 1,
+    "send-email-welcome": 3,
     "send-email-surgery-created": 1,
-    "send-email-surgery-cancelled": 1
+    "send-email-surgery-cancelled": 1,
+    "get-relatorio-status": 5,
+    "get-relatorio-cirurgioes": 5,
+    "get-relatorio-procedimentos": 5,
+    "get-relatorio-sla": 5,
+    "get-relatorio-conversao": 5,
+    "get-relatorio-tempo-autorizacao": 5,
+    "check-disponibilidade-agendamento": 1,
+    "create-pedido-cirurgia": 5,
+    "update-pedido-cirurgia": 15
   }
 }
