@@ -126,17 +126,27 @@ export default function PedidoDetail() {
         {(s === '3_EM_AUDITORIA' || s === '4_PENDENCIA_TECNICA') && hasRole('billing') && (
           <Button
             size="sm"
-            className="bg-lime-600 hover:bg-lime-700"
+            className="bg-lime-600 hover:bg-lime-700 text-white"
             onClick={() => handleStatusChange('5_AUTORIZADO', 'Marcar Autorizado')}
           >
             Marcar Autorizado
           </Button>
         )}
 
+        {s === '5_AUTORIZADO' && hasRole('coordinator') && (
+          <Button
+            size="sm"
+            className="bg-blue-600 hover:bg-blue-700 text-white"
+            onClick={() => handleStatusChange('6_AGUARDANDO_MAPA', 'Aguardando Mapa')}
+          >
+            Aguardando Mapa
+          </Button>
+        )}
+
         {s === '6_AGUARDANDO_MAPA' && hasRole('coordinator') && (
           <Button
             size="sm"
-            className="bg-blue-600 hover:bg-blue-700"
+            className="bg-blue-600 hover:bg-blue-700 text-white"
             onClick={() => handleStatusChange('7_AGENDADO_CC', 'Alocar Sala/Robô')}
           >
             Alocar Sala/Robô
@@ -154,7 +164,7 @@ export default function PedidoDetail() {
             </Button>
             <Button
               size="sm"
-              className="bg-purple-600 hover:bg-purple-700"
+              className="bg-purple-600 hover:bg-purple-700 text-white"
               onClick={() => handleStatusChange('8_EM_EXECUCAO', 'Iniciar Procedimento')}
             >
               Iniciar Procedimento
@@ -165,7 +175,7 @@ export default function PedidoDetail() {
         {s === '8_EM_EXECUCAO' && hasRole('nursing') && (
           <Button
             size="sm"
-            className="bg-emerald-600 hover:bg-emerald-700"
+            className="bg-emerald-600 hover:bg-emerald-700 text-white"
             onClick={() => handleStatusChange('9_REALIZADO', 'Marcar Realizado')}
           >
             Marcar Realizado
