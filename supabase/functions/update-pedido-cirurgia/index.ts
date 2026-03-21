@@ -1,4 +1,5 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { SignJWT, importPKCS8 } from 'npm:jose@5.2.3'
 
 type Estado =
   | '1_RASCUNHO'
@@ -57,7 +58,6 @@ const transicoesPermitidas: Record<Estado, Estado[]> = {
 }
 
 // LGPD Compliance: Telegram notifications contain NO patient PII
-// Telegram is an operational notification channel, not for transmitting clinical data.
 const CHAT_MAP: Record<Estado, string[]> = {
   '1_RASCUNHO': [],
   '2_AGUARDANDO_OPME': ['BILLING'],
@@ -76,36 +76,10 @@ const escapeMD = (text: string) => {
   return text.replace(/[_*[\]()~`>#+\-=|{}.!]/g, '\\$&')
 }
 
-async function notifyTelegramBySector(
-  pedidoId: string,
-  novoEstado: string,
-  supabase: any,
-  botToken: string,
-) {
+async function notifyTelegramBySector(pedido: any, novoEstado: string, botToken: string) {
   const targetGroups = CHAT_MAP[novoEstado as Estado] || []
   if (targetGroups.length === 0) {
     return { notificationSent: true, notified: [] }
-  }
-
-  // Fetch only non-PII operational/clinical data
-  const { data: pedido, error } = await supabase
-    .from('pedidos_cirurgia')
-    .select(`
-      id,
-      cid10_primary,
-      operating_room,
-      patients ( medical_record ),
-      procedures ( name ),
-      profiles!pedidos_cirurgia_surgeon_id_fkey ( name, crm )
-    `)
-    .eq('id', pedidoId)
-    .single()
-
-  if (error || !pedido) {
-    return {
-      notificationSent: false,
-      notificationWarning: 'Falha ao recuperar dados para notificação',
-    }
   }
 
   const medRecord = escapeMD(pedido.patients?.medical_record || 'N/A')
@@ -170,6 +144,205 @@ async function notifyTelegramBySector(
   }
 
   return { notificationSent: true, notified }
+}
+
+// LGPD/HIPAA Compliance: Google Calendar events contain NO patient PII
+// This is strictly an operational sync tool.
+// Guia de Configuração: Set GOOGLE_SERVICE_ACCOUNT_KEY in Supabase secrets with the SA JSON config.
+async function syncGoogleCalendar(
+  supabase: any,
+  pedido: any,
+  action: 'CREATE' | 'UPDATE' | 'DELETE',
+) {
+  const results = { synced: false, updated: false, deleted: false, warning: '' }
+  const warnings: string[] = []
+
+  const buildGoogleEvent = () => {
+    if (!pedido.scheduled_date) return {}
+    const startDate = new Date(pedido.scheduled_date)
+    const previsao = parseInt(pedido.previsao_tempo_minutos, 10)
+    const duration = isNaN(previsao) ? 60 : previsao
+    const endDate = new Date(startDate.getTime() + duration * 60000)
+
+    return {
+      summary: `Cirurgia - Prontuário ${pedido.patients?.medical_record || 'N/A'}`,
+      description: `Cirurgião: ${pedido.profiles?.name || 'N/A'} (CRM: ${pedido.profiles?.crm || 'N/A'})\nProcedimento: ${pedido.procedures?.name || 'N/A'}\nCID-10: ${pedido.cid10_primary || 'N/A'}\nSala: ${pedido.operating_room || 'N/A'}\n\nPedido ID: ${pedido.id}`,
+      start: { dateTime: startDate.toISOString() },
+      end: { dateTime: endDate.toISOString() },
+      location: pedido.operating_room || 'N/A',
+    }
+  }
+
+  const getSaToken = async (sa: any) => {
+    const privateKey = await importPKCS8(sa.private_key, 'RS256')
+    const jwt = await new SignJWT({
+      iss: sa.client_email,
+      scope: 'https://www.googleapis.com/auth/calendar.events',
+      aud: 'https://oauth2.googleapis.com/token',
+    })
+      .setProtectedHeader({ alg: 'RS256', typ: 'JWT', kid: sa.private_key_id })
+      .setIssuedAt()
+      .setExpirationTime('1h')
+      .sign(privateKey)
+
+    const res = await fetch('https://oauth2.googleapis.com/token', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({
+        grant_type: 'urn:ietf:params:oauth:grant-type:jwt-bearer',
+        assertion: jwt,
+      }),
+    })
+    if (!res.ok) throw new Error('Failed to get SA token')
+    const data = await res.json()
+    return data.access_token
+  }
+
+  const refreshOAuthToken = async (
+    refreshToken: string,
+    clientId: string,
+    clientSecret: string,
+  ) => {
+    const res = await fetch('https://oauth2.googleapis.com/token', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({
+        client_id: clientId,
+        client_secret: clientSecret,
+        refresh_token: refreshToken,
+        grant_type: 'refresh_token',
+      }),
+    })
+    if (!res.ok) throw new Error('Failed to refresh token')
+    const data = await res.json()
+    return data.access_token
+  }
+
+  const performSync = async (
+    type: string,
+    token: string,
+    calendarId: string,
+    surgeonId: string | null,
+  ) => {
+    let query = supabase
+      .from('pedidos_calendar_events')
+      .select('*')
+      .eq('pedido_id', pedido.id)
+      .eq('calendar_type', type)
+    if (surgeonId) query = query.eq('surgeon_id', surgeonId)
+
+    const { data: existing } = await query.maybeSingle()
+
+    const headers = {
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    }
+
+    try {
+      if (action === 'CREATE' || (action === 'UPDATE' && !existing)) {
+        const payload = buildGoogleEvent()
+        if (!payload.start) throw new Error('Data agendada ausente.')
+
+        const res = await fetch(
+          `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(calendarId)}/events`,
+          {
+            method: 'POST',
+            headers,
+            body: JSON.stringify(payload),
+          },
+        )
+        if (!res.ok) throw new Error(await res.text())
+        const event = await res.json()
+
+        await supabase.from('pedidos_calendar_events').insert({
+          pedido_id: pedido.id,
+          calendar_type: type,
+          surgeon_id: surgeonId,
+          google_event_id: event.id,
+          google_calendar_id: calendarId,
+          event_title: event.summary,
+          event_start: event.start.dateTime,
+          event_end: event.end.dateTime,
+          sync_status: 'SYNCED',
+        })
+        results.synced = true
+      } else if (action === 'UPDATE' && existing) {
+        const payload = buildGoogleEvent()
+        if (!payload.start) throw new Error('Data agendada ausente.')
+
+        const res = await fetch(
+          `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(calendarId)}/events/${existing.google_event_id}`,
+          {
+            method: 'PUT',
+            headers,
+            body: JSON.stringify(payload),
+          },
+        )
+        if (!res.ok) throw new Error(await res.text())
+
+        await supabase
+          .from('pedidos_calendar_events')
+          .update({
+            event_title: payload.summary,
+            event_start: payload.start.dateTime,
+            event_end: payload.end.dateTime,
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', existing.id)
+        results.updated = true
+      } else if (action === 'DELETE' && existing) {
+        const res = await fetch(
+          `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(calendarId)}/events/${existing.google_event_id}`,
+          {
+            method: 'DELETE',
+            headers,
+          },
+        )
+        if (!res.ok && res.status !== 404) throw new Error(await res.text())
+
+        await supabase.from('pedidos_calendar_events').delete().eq('id', existing.id)
+        results.deleted = true
+      }
+    } catch (e: any) {
+      warnings.push(`Erro no calendário ${type}: ${e.message}`)
+      if (existing) {
+        await supabase
+          .from('pedidos_calendar_events')
+          .update({ sync_status: 'FAILED', sync_error: e.message })
+          .eq('id', existing.id)
+      }
+    }
+  }
+
+  const saKeyStr = Deno.env.get('GOOGLE_SERVICE_ACCOUNT_KEY')
+  if (saKeyStr) {
+    try {
+      const saKey = JSON.parse(saKeyStr)
+      const token = await getSaToken(saKey)
+      await performSync('SERVICE_ACCOUNT', token, saKey.client_email, null)
+    } catch (e: any) {
+      warnings.push(`Erro Service Account: ${e.message}`)
+    }
+  }
+
+  const refreshToken = pedido.profiles?.google_calendar_refresh_token
+  const clientId = Deno.env.get('GOOGLE_CLIENT_ID')
+  const clientSecret = Deno.env.get('GOOGLE_CLIENT_SECRET')
+
+  if (refreshToken && clientId && clientSecret) {
+    try {
+      const token = await refreshOAuthToken(refreshToken, clientId, clientSecret)
+      await performSync('PERSONAL', token, 'primary', pedido.profiles.id)
+    } catch (e) {
+      warnings.push('Sincronização com calendário pessoal expirou. Reautentique.')
+    }
+  }
+
+  if (warnings.length > 0) {
+    results.warning = warnings.join(' | ')
+  }
+
+  return results
 }
 
 const corsHeaders = {
@@ -291,20 +464,103 @@ Deno.serve(async (req) => {
 
     await supabase.from('pedidos_cirurgia_auditoria').insert(auditData)
 
+    // Fetch the COMPLETE joined record to send notifications and sync calendar
+    const { data: pedidoCompleto, error: errCompleto } = await supabase
+      .from('pedidos_cirurgia')
+      .select(`
+        id,
+        scheduled_date,
+        previsao_tempo_minutos,
+        operating_room,
+        cid10_primary,
+        status,
+        patients ( medical_record ),
+        procedures ( name ),
+        profiles!pedidos_cirurgia_surgeon_id_fkey ( id, name, crm, google_calendar_refresh_token )
+      `)
+      .eq('id', id)
+      .single()
+
+    if (errCompleto || !pedidoCompleto) {
+      console.error('Falha ao recuperar dados completos para integrações:', errCompleto)
+    }
+
+    const promises: Promise<any>[] = []
+
+    if (pedidoCompleto) {
+      let calendarAction: 'CREATE' | 'UPDATE' | 'DELETE' | 'NONE' = 'NONE'
+      const novoEstadoFinal = novoEstado || estadoAtual
+
+      if (novoEstado === '10_CANCELADO') {
+        calendarAction = 'DELETE'
+      } else if (novoEstadoFinal === '6_AGUARDANDO_MAPA' || novoEstadoFinal === '7_AGENDADO_CC') {
+        const { data: existingEvents } = await supabase
+          .from('pedidos_calendar_events')
+          .select('id')
+          .eq('pedido_id', id)
+
+        if (!existingEvents || existingEvents.length === 0) {
+          calendarAction = 'CREATE'
+        } else if (
+          updates.scheduled_date !== undefined ||
+          updates.operating_room !== undefined ||
+          updates.previsao_tempo_minutos !== undefined ||
+          novoEstado !== undefined
+        ) {
+          calendarAction = 'UPDATE'
+        }
+      }
+
+      if (
+        (calendarAction === 'CREATE' || calendarAction === 'UPDATE') &&
+        !pedidoCompleto.scheduled_date
+      ) {
+        calendarAction = 'NONE'
+      }
+
+      if (novoEstado && novoEstado !== estadoAtual) {
+        const botToken = Deno.env.get('TELEGRAM_BOT_TOKEN')
+        if (botToken) {
+          promises.push(
+            notifyTelegramBySector(pedidoCompleto, novoEstado, botToken).then((r) => ({
+              type: 'telegram',
+              result: r,
+            })),
+          )
+        }
+      }
+
+      if (calendarAction !== 'NONE') {
+        promises.push(
+          syncGoogleCalendar(supabase, pedidoCompleto, calendarAction).then((r) => ({
+            type: 'calendar',
+            result: r,
+          })),
+        )
+      }
+    }
+
+    const results = await Promise.all(promises)
+
     let notificationSent = undefined
     let notificationWarning = undefined
     let notifiedGroups: string[] = []
+    let calendarSynced = false
+    let calendarUpdated = false
+    let calendarDeleted = false
+    let calendarWarning = undefined
 
-    // Only notify if there's a state transition
-    if (novoEstado && novoEstado !== estadoAtual) {
-      const botToken = Deno.env.get('TELEGRAM_BOT_TOKEN')
-      if (botToken) {
-        const notifResult = await notifyTelegramBySector(id, novoEstado, supabase, botToken)
-        notificationSent = notifResult.notificationSent
-        notificationWarning = notifResult.notificationWarning
-        notifiedGroups = notifResult.notified
-      } else {
-        console.warn('Aviso: TELEGRAM_BOT_TOKEN não configurado.')
+    for (const r of results) {
+      if (r.type === 'telegram') {
+        notificationSent = r.result.notificationSent
+        notificationWarning = r.result.notificationWarning
+        notifiedGroups = r.result.notified
+      }
+      if (r.type === 'calendar') {
+        calendarSynced = r.result.synced
+        calendarUpdated = r.result.updated
+        calendarDeleted = r.result.deleted
+        calendarWarning = r.result.warning
       }
     }
 
@@ -315,6 +571,10 @@ Deno.serve(async (req) => {
         notificationSent,
         notificationWarning,
         notifiedGroups,
+        calendarSynced,
+        calendarUpdated,
+        calendarDeleted,
+        calendarWarning,
       }),
       { status: 200, headers: corsHeaders },
     )

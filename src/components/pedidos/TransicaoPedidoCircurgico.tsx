@@ -17,7 +17,6 @@ import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { Loader2, ArrowRightCircle } from 'lucide-react'
 
-// Map of user friendly status names
 const STATUS_LABELS: Record<string, string> = {
   '1_RASCUNHO': 'Rascunho',
   '2_AGUARDANDO_OPME': 'Aguardando OPME',
@@ -31,7 +30,6 @@ const STATUS_LABELS: Record<string, string> = {
   '10_CANCELADO': 'Cancelado',
 }
 
-// State machine allowed transitions
 const TRANSICOES_PERMITIDAS: Record<string, string[]> = {
   '1_RASCUNHO': ['2_AGUARDANDO_OPME', '10_CANCELADO'],
   '2_AGUARDANDO_OPME': ['3_EM_AUDITORIA', '1_RASCUNHO', '10_CANCELADO'],
@@ -45,7 +43,6 @@ const TRANSICOES_PERMITIDAS: Record<string, string[]> = {
   '10_CANCELADO': [],
 }
 
-// Dynamic fields mapped by state
 const CAMPOS_POR_ESTADO: Record<string, string[]> = {
   '1_RASCUNHO': [
     'patient_id',
@@ -77,7 +74,6 @@ const CAMPOS_POR_ESTADO: Record<string, string[]> = {
   '10_CANCELADO': ['cancellation_reason'],
 }
 
-// User friendly field labels
 const FIELD_LABELS: Record<string, string> = {
   patient_id: 'ID do Paciente',
   surgeon_id: 'ID do Cirurgião',
@@ -106,7 +102,6 @@ const FIELD_LABELS: Record<string, string> = {
 export function TransicaoPedidoCircurgico({ pedidoId }: { pedidoId: string }) {
   const { user } = useAuth()
 
-  // Local state
   const [pedido, setPedido] = useState<any>(null)
   const [novoEstado, setNovoEstado] = useState<string>('')
   const [camposDinamicos, setCamposDinamicos] = useState<any>({})
@@ -114,7 +109,6 @@ export function TransicaoPedidoCircurgico({ pedidoId }: { pedidoId: string }) {
   const [submitting, setSubmitting] = useState<boolean>(false)
   const [erro, setErro] = useState<string | null>(null)
 
-  // Reference data for select inputs
   const [procedures, setProcedures] = useState<any[]>([])
   const [pacotesOpme, setPacotesOpme] = useState<any[]>([])
   const [diagnosticos, setDiagnosticos] = useState<any[]>([])
@@ -143,7 +137,6 @@ export function TransicaoPedidoCircurgico({ pedidoId }: { pedidoId: string }) {
         return
       }
 
-      // Segurança Frontend: validar se o usuário logado é o cirurgião do pedido
       if (pedRes.data.surgeon_id !== user.id) {
         toast.error('Acesso negado')
         setErro('Você não tem permissão para visualizar as transições deste pedido.')
@@ -163,7 +156,6 @@ export function TransicaoPedidoCircurgico({ pedidoId }: { pedidoId: string }) {
     carregarPedido()
   }, [carregarPedido])
 
-  // Realtime subscription setup
   useEffect(() => {
     if (!pedidoId) return
 
@@ -191,7 +183,6 @@ export function TransicaoPedidoCircurgico({ pedidoId }: { pedidoId: string }) {
     }
   }, [pedidoId])
 
-  // Populate dynamic fields when target state changes
   useEffect(() => {
     if (novoEstado && pedido) {
       const fields = CAMPOS_POR_ESTADO[novoEstado] || []
@@ -212,7 +203,6 @@ export function TransicaoPedidoCircurgico({ pedidoId }: { pedidoId: string }) {
     setCamposDinamicos((prev: any) => ({ ...prev, [field]: value }))
   }
 
-  // Safely format ISO dates to "YYYY-MM-DDTHH:mm" for datetime-local inputs
   const formatDateTimeInput = (dateString: string) => {
     if (!dateString) return ''
     try {
@@ -225,7 +215,6 @@ export function TransicaoPedidoCircurgico({ pedidoId }: { pedidoId: string }) {
     }
   }
 
-  // Parse HTML datetime-local "YYYY-MM-DDTHH:mm" back to valid ISO string
   const parseDateTimeInput = (localDateTimeString: string) => {
     if (!localDateTimeString) return ''
     const d = new Date(localDateTimeString)
@@ -371,7 +360,6 @@ export function TransicaoPedidoCircurgico({ pedidoId }: { pedidoId: string }) {
   const handleSubmit = async () => {
     if (!novoEstado) return
 
-    // Validação Frontend Específica
     if (
       novoEstado === '10_CANCELADO' &&
       (!camposDinamicos.cancellation_reason || camposDinamicos.cancellation_reason.trim() === '')
@@ -382,7 +370,6 @@ export function TransicaoPedidoCircurgico({ pedidoId }: { pedidoId: string }) {
 
     setSubmitting(true)
 
-    // Build payload to edge function
     const payload = {
       id: pedidoId,
       status: novoEstado,
@@ -394,13 +381,12 @@ export function TransicaoPedidoCircurgico({ pedidoId }: { pedidoId: string }) {
         body: payload,
       })
 
-      // Attempt to extract structured error response if available
       let errObj = error
       if (error && error.context && typeof error.context.json === 'function') {
         try {
           errObj = await error.context.json()
         } catch (e) {
-          /* ignore parse error */
+          /* ignore */
         }
       }
 
@@ -422,21 +408,37 @@ export function TransicaoPedidoCircurgico({ pedidoId }: { pedidoId: string }) {
           toast.error(`Erro ao atualizar pedido: ${responseError.message || responseError}`)
         }
       } else {
-        // Feedback Visual com base na resposta da Edge Function
+        // Feedback Visual - Telegram
         if (data?.notificationSent === true && data?.notifiedGroups?.length > 0) {
-          toast.success(
-            `Pedido transicionado para ${STATUS_LABELS[novoEstado] || novoEstado} e notificação enviada`,
-          )
+          toast.success(`Notificação Telegram enviada (${data.notifiedGroups.join(', ')})`)
         } else if (data?.notificationSent === false) {
-          toast.warning(
-            `Pedido transicionado, mas notificação falhou. ${data?.notificationWarning || ''}`,
-          )
-        } else {
-          toast.success(`Pedido transicionado para ${STATUS_LABELS[novoEstado] || novoEstado}`)
+          toast.warning(`Falha na notificação Telegram: ${data?.notificationWarning || ''}`)
         }
 
+        // Feedback Visual - Google Calendar
+        if (data?.calendarSynced || data?.calendarUpdated || data?.calendarDeleted) {
+          const actionStr = data.calendarDeleted
+            ? 'removido do'
+            : data.calendarUpdated
+              ? 'atualizado no'
+              : 'criado no'
+          toast.success(`Evento ${actionStr} Google Calendar`)
+        }
+
+        if (data?.calendarWarning) {
+          toast.warning('Aviso de Sincronização de Agenda', {
+            description: data.calendarWarning,
+            action: data.calendarWarning.includes('expirou')
+              ? {
+                  label: 'Reautenticar',
+                  onClick: () => (window.location.href = '/minha-conta'),
+                }
+              : undefined,
+          })
+        }
+
+        toast.success(`Pedido transicionado para ${STATUS_LABELS[novoEstado] || novoEstado}`)
         setNovoEstado('')
-        // Notice: component UI will update automatically via Realtime channel
       }
     } catch (err: any) {
       toast.error(`Erro inesperado: ${err.message}`)
