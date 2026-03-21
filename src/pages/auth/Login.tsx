@@ -39,7 +39,7 @@ export default function Login() {
             access_type: 'offline',
             prompt: 'consent',
           },
-          redirectTo: window.location.origin,
+          redirectTo: `${window.location.origin}/`,
         },
       })
       if (error) throw error

@@ -69,42 +69,54 @@ export function PedidoForm({ onSuccess }: { onSuccess?: () => void }) {
     loadData()
   }, [])
 
-  async function onSubmit(values: z.infer<typeof formSchema>) {
+  async function onSubmit() {
     setIsSubmitting(true)
     try {
       const {
         data: { user },
       } = await supabase.auth.getUser()
+
       if (!user) throw new Error('Não autenticado')
 
-      const payload = {
-        ...values,
-        surgeon_id: user.id,
-        status: '1_RASCUNHO' as any,
-        datas_propostas: [
-          { data: new Date().toISOString().split('T')[0], turno: 'manhã' },
-          { data: new Date().toISOString().split('T')[0], turno: 'tarde' },
-          { data: new Date().toISOString().split('T')[0], turno: 'manhã' },
-        ],
-        reserva_uti: false,
-        anexo_guia_url: 'N/A',
-        anexo_guia_tipo: 'pdf',
-        alergias_paciente: false,
-      }
-
-      // Supabase Edge Function handles the actual creation with all validations
-      // The SDK auto-injects the JWT, avoiding 401 Unauthorized errors
       const { data, error } = await supabase.functions.invoke('create-pedido-cirurgia', {
-        body: payload,
+        body: {
+          patient_id: form.getValues('patient_id'),
+          procedure_id: form.getValues('procedure_id'),
+          cid10_primary: form.getValues('cid10_primary'),
+          clinical_indication: form.getValues('clinical_indication'),
+          operating_room: form.getValues('operating_room'),
+          previsao_tempo_minutos: form.getValues('previsao_tempo_minutos'),
+          surgeon_id: user.id,
+          status: '1_RASCUNHO',
+          datas_propostas: [
+            { data: new Date().toISOString().split('T')[0], turno: 'manhã' },
+            { data: new Date().toISOString().split('T')[0], turno: 'tarde' },
+            { data: new Date().toISOString().split('T')[0], turno: 'manhã' },
+          ],
+          reserva_uti: false,
+          anexo_guia_url: 'N/A',
+          anexo_guia_tipo: 'pdf',
+          alergias_paciente: false,
+        },
       })
 
-      if (error) throw error
-      if (data?.error) throw new Error(data.error)
+      if (error) {
+        console.error('Erro ao criar cirurgia:', error)
+        toast.error(`Erro: ${error.message}`)
+        return
+      }
 
-      toast.success('Pedido criado com sucesso!')
+      if (data?.error) {
+        console.error('Erro ao criar cirurgia:', data.error)
+        toast.error(`Erro: ${data.error}`)
+        return
+      }
+
+      toast.success('Cirurgia criada com sucesso!')
       onSuccess?.()
-    } catch (error: any) {
-      toast.error('Erro ao salvar', { description: error.message })
+    } catch (err: any) {
+      console.error('Erro inesperado:', err)
+      toast.error('Erro ao criar cirurgia', { description: err.message })
     } finally {
       setIsSubmitting(false)
     }
@@ -117,7 +129,7 @@ export function PedidoForm({ onSuccess }: { onSuccess?: () => void }) {
         options: {
           scopes: 'https://www.googleapis.com/auth/calendar.events',
           queryParams: { access_type: 'offline', prompt: 'consent' },
-          redirectTo: window.location.origin,
+          redirectTo: `${window.location.origin}/`,
         },
       })
       if (error) throw error

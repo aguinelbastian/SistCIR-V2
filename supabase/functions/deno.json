@@ -1,15 +1,17 @@
 {
   "_versions": {
-    "notify-sector": 18,
-    "create-users": 10,
-    "admin-manage-users": 13,
-    "notify-telegram": 8,
-    "functions": 8,
-    "admin-reset-password": 7,
-    "send-email-welcome": 6,
-    "send-email-surgery-created": 4,
-    "send-email-surgery-cancelled": 4,
-    "get-relatorio-status": 8,
+    "notify-sector": 15,
+    "create-users": 7,
+    "admin-manage-users": 10,
+    "notify-telegram": 5,
+    "functions": 4,
+    "admin-reset-password": 4,
+    "send-email-welcome": 1,
+    "send-email-surgery-created": 1,
+    "send-email-surgery-cancelled": 1
+  }
+}
+"get-relatorio-status": 8,
     "get-relatorio-cirurgioes": 8,
     "get-relatorio-procedimentos": 8,
     "get-relatorio-sla": 8,
