@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
+import { useNavigate } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import {
@@ -37,6 +38,7 @@ const formSchema = z.object({
 })
 
 export function PedidoForm({ onSuccess }: { onSuccess?: () => void }) {
+  const navigate = useNavigate()
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [patients, setPatients] = useState<any[]>([])
   const [procedures, setProcedures] = useState<any[]>([])
@@ -69,7 +71,7 @@ export function PedidoForm({ onSuccess }: { onSuccess?: () => void }) {
     loadData()
   }, [])
 
-  async function onSubmit() {
+  async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsSubmitting(true)
     try {
       const {
@@ -80,12 +82,7 @@ export function PedidoForm({ onSuccess }: { onSuccess?: () => void }) {
 
       const { data, error } = await supabase.functions.invoke('create-pedido-cirurgia', {
         body: {
-          patient_id: form.getValues('patient_id'),
-          procedure_id: form.getValues('procedure_id'),
-          cid10_primary: form.getValues('cid10_primary'),
-          clinical_indication: form.getValues('clinical_indication'),
-          operating_room: form.getValues('operating_room'),
-          previsao_tempo_minutos: form.getValues('previsao_tempo_minutos'),
+          ...values,
           surgeon_id: user.id,
           status: '1_RASCUNHO',
           datas_propostas: [
@@ -101,19 +98,20 @@ export function PedidoForm({ onSuccess }: { onSuccess?: () => void }) {
       })
 
       if (error) {
-        console.error('Erro ao criar cirurgia:', error)
+        console.error('Erro ao criar cirurgia (função):', error)
         toast.error(`Erro: ${error.message}`)
         return
       }
 
-      if (data?.error) {
-        console.error('Erro ao criar cirurgia:', data.error)
-        toast.error(`Erro: ${data.error}`)
+      if (data?.code && data?.code >= 400) {
+        console.error('Erro ao criar cirurgia (dados):', data.message || data.error)
+        toast.error(`Erro: ${data.message || data.error}`)
         return
       }
 
       toast.success('Cirurgia criada com sucesso!')
       onSuccess?.()
+      navigate('/pedidos')
     } catch (err: any) {
       console.error('Erro inesperado:', err)
       toast.error('Erro ao criar cirurgia', { description: err.message })

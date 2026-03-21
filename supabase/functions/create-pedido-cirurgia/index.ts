@@ -1,9 +1,4 @@
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
-
-const supabaseAdmin = createClient(
-  Deno.env.get('SUPABASE_URL')!,
-  Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
-)
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.6'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -18,72 +13,92 @@ interface AgendamentoProposta {
 }
 
 interface OPMEAdicional {
-  descricao: string
-  quantidade: number
-  fabricante?: string
-  fornecedor?: string
+  opme_item_id: string
+  quantity: number
+  lot_used?: string
+  notes?: string
 }
 
 interface CreatePedidoRequest {
-  // Paciente (referência)
   patient_id: string
-
-  // Equipe
   surgeon_id: string
   proctor_id?: string
   proctor_crm?: string
-
-  // Agendamento
   datas_propostas: AgendamentoProposta[]
   previsao_tempo_minutos: number
   tempo_internacao_dias?: number
   operating_room: string
-
-  // Procedimento
   procedure_id: string
   cid10_primary: string
   clinical_indication: string
   reserva_uti: boolean
   diagnostico_cid10_id?: string
-
-  // Pacote OPME
   pacote_opme_id?: string
-
-  // OPME Adicional
   opme_adicional?: OPMEAdicional[]
-
-  // Anexo
   anexo_guia_url: string
-  anexo_guia_tipo: string // pdf, txt, docx, gdoc
-
-  // Alergias
+  anexo_guia_tipo: string
   alergias_paciente: boolean
   alergias_descricao?: string
 }
 
-Deno.serve(async (req) => {
+Deno.serve(async (req: Request) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
   }
 
   if (req.method !== 'POST') {
-    return new Response(JSON.stringify({ error: 'Method not allowed' }), {
+    return new Response(JSON.stringify({ code: 405, message: 'Method not allowed' }), {
       status: 405,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     })
   }
 
   try {
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')
+    const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')
+
+    if (!supabaseUrl || !supabaseAnonKey) {
+      throw new Error('Supabase environment variables missing')
+    }
+
+    // Extrair token do header Authorization
+    const authHeader = req.headers.get('authorization')
+    if (!authHeader) {
+      return new Response(JSON.stringify({ code: 401, message: 'Missing authorization header' }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      })
+    }
+
+    // Criar cliente Supabase com o token do usuário
+    const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+      global: {
+        headers: {
+          authorization: authHeader,
+        },
+      },
+    })
+
+    // Verificar se o usuário está autenticado
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser()
+    if (authError || !user) {
+      return new Response(JSON.stringify({ code: 401, message: 'Unauthorized' }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      })
+    }
+
     const payload = (await req.json()) as CreatePedidoRequest
 
     // ============================================================================
     // VALIDAÇÕES
     // ============================================================================
 
-    // Validar campos obrigatórios
     const camposObrigatorios = [
       'patient_id',
-      'surgeon_id',
       'datas_propostas',
       'previsao_tempo_minutos',
       'operating_room',
@@ -98,90 +113,88 @@ Deno.serve(async (req) => {
     for (const campo of camposObrigatorios) {
       const valor = payload[campo as keyof CreatePedidoRequest]
 
-      // Tratamento especial para booleanos
       if (campo === 'alergias_paciente' || campo === 'reserva_uti') {
         if (typeof valor !== 'boolean') {
           return new Response(
             JSON.stringify({
-              error: `Campo obrigatório ausente ou inválido: ${campo} (deve ser boolean)`,
+              code: 400,
+              message: `Campo obrigatório ausente ou inválido: ${campo} (deve ser boolean)`,
             }),
             { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
           )
         }
       } else {
-        // Para outros campos
         if (valor === undefined || valor === null || valor === '') {
-          return new Response(JSON.stringify({ error: `Campo obrigatório ausente: ${campo}` }), {
-            status: 400,
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          })
+          return new Response(
+            JSON.stringify({ code: 400, message: `Campo obrigatório ausente: ${campo}` }),
+            { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+          )
         }
       }
     }
 
-    // Validar reserva_uti (obrigatório)
     if (typeof payload.reserva_uti !== 'boolean') {
       return new Response(
         JSON.stringify({
-          error: 'Campo obrigatório ausente ou inválido: reserva_uti (deve ser boolean)',
+          code: 400,
+          message: 'Campo obrigatório ausente ou inválido: reserva_uti (deve ser boolean)',
         }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
       )
     }
 
-    // Validar datas propostas
     if (!Array.isArray(payload.datas_propostas) || payload.datas_propostas.length !== 3) {
-      return new Response(JSON.stringify({ error: 'Deve haver exatamente 3 datas propostas' }), {
-        status: 400,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      })
+      return new Response(
+        JSON.stringify({ code: 400, message: 'Deve haver exatamente 3 datas propostas' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+      )
     }
 
     for (const proposta of payload.datas_propostas) {
       if (!proposta.data || !proposta.turno) {
         return new Response(
-          JSON.stringify({ error: 'Data e turno são obrigatórios em cada proposta' }),
+          JSON.stringify({ code: 400, message: 'Data e turno são obrigatórios em cada proposta' }),
           { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
         )
       }
       if (!['manhã', 'tarde'].includes(proposta.turno)) {
-        return new Response(JSON.stringify({ error: 'Turno deve ser "manhã" ou "tarde"' }), {
-          status: 400,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        })
+        return new Response(
+          JSON.stringify({ code: 400, message: 'Turno deve ser "manhã" ou "tarde"' }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+        )
       }
     }
 
-    // Validar alergias (se sim, descrição é obrigatória)
     if (payload.alergias_paciente && !payload.alergias_descricao) {
       return new Response(
         JSON.stringify({
-          error: 'Descrição de alergias é obrigatória quando alergias_paciente = true',
+          code: 400,
+          message: 'Descrição de alergias é obrigatória quando alergias_paciente = true',
         }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
       )
     }
 
-    // Validar anexo
-    const tiposValidos = ['pdf', 'txt', 'docx', 'gdoc']
+    const tiposValidos = ['pdf', 'txt', 'docx', 'gdoc', 'N/A']
     if (!tiposValidos.includes(payload.anexo_guia_tipo)) {
       return new Response(
         JSON.stringify({
-          error: `Tipo de anexo inválido. Aceitos: ${tiposValidos.join(', ')}`,
+          code: 400,
+          message: `Tipo de anexo inválido. Aceitos: ${tiposValidos.join(', ')}`,
         }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
       )
     }
 
     // ============================================================================
-    // CRIAR PEDIDO CIRÚRGICO (Usando APENAS campos que existem)
+    // CRIAR PEDIDO CIRÚRGICO
     // ============================================================================
 
-    const { data: pedido, error: erroPedido } = await supabaseAdmin
+    const { data: pedido, error: erroPedido } = await supabase
       .from('pedidos_cirurgia')
       .insert({
         patient_id: payload.patient_id,
-        surgeon_id: payload.surgeon_id,
+        surgeon_id: user.id, // Garante o uso do ID do token validado
         proctor_id: payload.proctor_id || null,
         proctor_crm: payload.proctor_crm || null,
         previsao_tempo_minutos: payload.previsao_tempo_minutos,
@@ -198,17 +211,21 @@ Deno.serve(async (req) => {
         alergias_paciente: payload.alergias_paciente,
         alergias_descricao: payload.alergias_descricao || null,
         status: '1_RASCUNHO',
-        created_at: new Date().toISOString(),
       })
       .select()
       .single()
 
-    if (erroPedido) throw erroPedido
+    if (erroPedido) {
+      return new Response(JSON.stringify({ code: 400, message: erroPedido.message }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      })
+    }
 
     const pedidoId = pedido.id
 
     // ============================================================================
-    // CRIAR AGENDAMENTO PROPOSTAS (3 datas/turnos)
+    // CRIAR AGENDAMENTO PROPOSTAS
     // ============================================================================
 
     const agendamentosInsert = payload.datas_propostas.map((proposta, index) => ({
@@ -216,44 +233,47 @@ Deno.serve(async (req) => {
       numero_proposta: index + 1,
       data_proposta: proposta.data,
       turno: proposta.turno,
-      criado_em: new Date().toISOString(),
     }))
 
-    const { error: erroAgendamento } = await supabaseAdmin
+    const { error: erroAgendamento } = await supabase
       .from('agendamento_propostas')
       .insert(agendamentosInsert)
 
-    if (erroAgendamento) throw erroAgendamento
+    if (erroAgendamento) {
+      return new Response(JSON.stringify({ code: 400, message: erroAgendamento.message }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      })
+    }
 
     // ============================================================================
-    // CRIAR OPME ADICIONAL (Se houver)
+    // CRIAR OPME ADICIONAL
     // ============================================================================
 
     if (payload.opme_adicional && payload.opme_adicional.length > 0) {
-      // Nota: opme_adicional agora espera { opme_item_id, quantity }
-      // em vez de { descricao, quantidade, fabricante, fornecedor }
-
       const opmeInsert = payload.opme_adicional.map((item) => ({
         pedido_id: pedidoId,
-        opme_item_id: item.opme_item_id, // UUID do item OPME do catálogo
+        opme_item_id: item.opme_item_id,
         quantity: item.quantity,
         lot_used: item.lot_used || null,
         notes: item.notes || null,
-        added_by: payload.surgeon_id, // Quem adicionou (cirurgião)
-        created_at: new Date().toISOString(),
+        added_by: user.id,
       }))
 
-      const { error: erroOPME } = await supabaseAdmin.from('pedido_opme_items').insert(opmeInsert)
+      const { error: erroOPME } = await supabase.from('pedido_opme_items').insert(opmeInsert)
 
-      if (erroOPME) throw erroOPME
+      if (erroOPME) {
+        return new Response(JSON.stringify({ code: 400, message: erroOPME.message }), {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        })
+      }
     }
-    // ============================================================================
-    // RESPOSTA DE SUCESSO
-    // ============================================================================
 
     return new Response(
       JSON.stringify({
         success: true,
+        data: pedido,
         pedido_id: pedidoId,
         status: '1_RASCUNHO',
         mensagem: 'Pedido cirúrgico criado com sucesso. Aguardando aprovação da enfermagem.',
@@ -261,11 +281,11 @@ Deno.serve(async (req) => {
       }),
       { status: 201, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
     )
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error:', error)
-    return new Response(JSON.stringify({ error: error.message || 'Internal server error' }), {
-      status: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    })
+    return new Response(
+      JSON.stringify({ code: 500, message: error.message || 'Internal server error' }),
+      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+    )
   }
 })
