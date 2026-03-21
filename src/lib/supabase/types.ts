@@ -9,6 +9,55 @@ export type Database = {
   }
   public: {
     Tables: {
+      agendamento_propostas: {
+        Row: {
+          criado_em: string | null
+          data_proposta: string
+          id: string
+          numero_proposta: number
+          pedido_id: string
+          turno: string
+        }
+        Insert: {
+          criado_em?: string | null
+          data_proposta: string
+          id?: string
+          numero_proposta: number
+          pedido_id: string
+          turno: string
+        }
+        Update: {
+          criado_em?: string | null
+          data_proposta?: string
+          id?: string
+          numero_proposta?: number
+          pedido_id?: string
+          turno?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'agendamento_propostas_pedido_id_fkey'
+            columns: ['pedido_id']
+            isOneToOne: false
+            referencedRelation: 'mv_kpi_cirurgias'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'agendamento_propostas_pedido_id_fkey'
+            columns: ['pedido_id']
+            isOneToOne: false
+            referencedRelation: 'pedidos_cirurgia'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'agendamento_propostas_pedido_id_fkey'
+            columns: ['pedido_id']
+            isOneToOne: false
+            referencedRelation: 'v_pedidos_pendentes_sla'
+            referencedColumns: ['id']
+          },
+        ]
+      }
       audit_log: {
         Row: {
           action: string
@@ -119,6 +168,33 @@ export type Database = {
         }
         Relationships: []
       }
+      diagnosticos_cid10: {
+        Row: {
+          ativo: boolean | null
+          codigo_cid10: string
+          criado_em: string | null
+          descricao: string
+          especialidade: string | null
+          id: string
+        }
+        Insert: {
+          ativo?: boolean | null
+          codigo_cid10: string
+          criado_em?: string | null
+          descricao: string
+          especialidade?: string | null
+          id?: string
+        }
+        Update: {
+          ativo?: boolean | null
+          codigo_cid10?: string
+          criado_em?: string | null
+          descricao?: string
+          especialidade?: string | null
+          id?: string
+        }
+        Relationships: []
+      }
       opme_items: {
         Row: {
           code: string
@@ -172,6 +248,68 @@ export type Database = {
           updated_at?: string | null
         }
         Relationships: []
+      }
+      pacotes_opme: {
+        Row: {
+          ativo: boolean | null
+          criado_em: string | null
+          descricao: string | null
+          id: string
+          nome: string
+        }
+        Insert: {
+          ativo?: boolean | null
+          criado_em?: string | null
+          descricao?: string | null
+          id?: string
+          nome: string
+        }
+        Update: {
+          ativo?: boolean | null
+          criado_em?: string | null
+          descricao?: string | null
+          id?: string
+          nome?: string
+        }
+        Relationships: []
+      }
+      pacotes_opme_itens: {
+        Row: {
+          criado_em: string | null
+          descricao: string
+          fabricante: string | null
+          fornecedor: string | null
+          id: string
+          pacote_id: string
+          quantidade: number
+        }
+        Insert: {
+          criado_em?: string | null
+          descricao: string
+          fabricante?: string | null
+          fornecedor?: string | null
+          id?: string
+          pacote_id: string
+          quantidade?: number
+        }
+        Update: {
+          criado_em?: string | null
+          descricao?: string
+          fabricante?: string | null
+          fornecedor?: string | null
+          id?: string
+          pacote_id?: string
+          quantidade?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'pacotes_opme_itens_pacote_id_fkey'
+            columns: ['pacote_id']
+            isOneToOne: false
+            referencedRelation: 'pacotes_opme'
+            referencedColumns: ['id']
+          },
+        ]
       }
       patients: {
         Row: {
@@ -299,7 +437,11 @@ export type Database = {
       pedidos_cirurgia: {
         Row: {
           adjuvant_procedures: Json | null
+          alergias_descricao: string | null
+          alergias_paciente: boolean | null
           anesthesiologist_name: string | null
+          anexo_guia_tipo: string | null
+          anexo_guia_url: string | null
           asa_classification: string | null
           assistant_surgeons: Json | null
           authorization_date: string | null
@@ -312,6 +454,7 @@ export type Database = {
           clinical_summary: string | null
           consent_form_path: string | null
           created_at: string | null
+          diagnostico_cid10_id: string | null
           estimated_room_time_min: number | null
           exam_reports_paths: string[] | null
           google_calendar_event_id: string | null
@@ -324,22 +467,30 @@ export type Database = {
           needs_frozen_section: boolean | null
           needs_icu: boolean | null
           operating_room: string | null
+          pacote_opme_id: string | null
           patient_id: string
+          previsao_tempo_minutos: number | null
           procedure_id: string
           proctor_crm: string | null
           proctor_id: string | null
+          reserva_uti: boolean | null
           robot_platform: string | null
           scheduled_date: string | null
           secretary_id: string | null
           status: Database['public']['Enums']['surgery_status'] | null
           surgeon_id: string
           surgical_technique: string | null
+          tempo_internacao_dias: number | null
           tiss_xml_path: string | null
           updated_at: string | null
         }
         Insert: {
           adjuvant_procedures?: Json | null
+          alergias_descricao?: string | null
+          alergias_paciente?: boolean | null
           anesthesiologist_name?: string | null
+          anexo_guia_tipo?: string | null
+          anexo_guia_url?: string | null
           asa_classification?: string | null
           assistant_surgeons?: Json | null
           authorization_date?: string | null
@@ -352,6 +503,7 @@ export type Database = {
           clinical_summary?: string | null
           consent_form_path?: string | null
           created_at?: string | null
+          diagnostico_cid10_id?: string | null
           estimated_room_time_min?: number | null
           exam_reports_paths?: string[] | null
           google_calendar_event_id?: string | null
@@ -364,22 +516,30 @@ export type Database = {
           needs_frozen_section?: boolean | null
           needs_icu?: boolean | null
           operating_room?: string | null
+          pacote_opme_id?: string | null
           patient_id: string
+          previsao_tempo_minutos?: number | null
           procedure_id: string
           proctor_crm?: string | null
           proctor_id?: string | null
+          reserva_uti?: boolean | null
           robot_platform?: string | null
           scheduled_date?: string | null
           secretary_id?: string | null
           status?: Database['public']['Enums']['surgery_status'] | null
           surgeon_id: string
           surgical_technique?: string | null
+          tempo_internacao_dias?: number | null
           tiss_xml_path?: string | null
           updated_at?: string | null
         }
         Update: {
           adjuvant_procedures?: Json | null
+          alergias_descricao?: string | null
+          alergias_paciente?: boolean | null
           anesthesiologist_name?: string | null
+          anexo_guia_tipo?: string | null
+          anexo_guia_url?: string | null
           asa_classification?: string | null
           assistant_surgeons?: Json | null
           authorization_date?: string | null
@@ -392,6 +552,7 @@ export type Database = {
           clinical_summary?: string | null
           consent_form_path?: string | null
           created_at?: string | null
+          diagnostico_cid10_id?: string | null
           estimated_room_time_min?: number | null
           exam_reports_paths?: string[] | null
           google_calendar_event_id?: string | null
@@ -404,20 +565,38 @@ export type Database = {
           needs_frozen_section?: boolean | null
           needs_icu?: boolean | null
           operating_room?: string | null
+          pacote_opme_id?: string | null
           patient_id?: string
+          previsao_tempo_minutos?: number | null
           procedure_id?: string
           proctor_crm?: string | null
           proctor_id?: string | null
+          reserva_uti?: boolean | null
           robot_platform?: string | null
           scheduled_date?: string | null
           secretary_id?: string | null
           status?: Database['public']['Enums']['surgery_status'] | null
           surgeon_id?: string
           surgical_technique?: string | null
+          tempo_internacao_dias?: number | null
           tiss_xml_path?: string | null
           updated_at?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: 'pedidos_cirurgia_diagnostico_cid10_id_fkey'
+            columns: ['diagnostico_cid10_id']
+            isOneToOne: false
+            referencedRelation: 'diagnosticos_cid10'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'pedidos_cirurgia_pacote_opme_id_fkey'
+            columns: ['pacote_opme_id']
+            isOneToOne: false
+            referencedRelation: 'pacotes_opme'
+            referencedColumns: ['id']
+          },
           {
             foreignKeyName: 'pedidos_cirurgia_patient_id_fkey'
             columns: ['patient_id']
@@ -437,6 +616,58 @@ export type Database = {
             columns: ['surgeon_id']
             isOneToOne: false
             referencedRelation: 'profiles'
+            referencedColumns: ['id']
+          },
+        ]
+      }
+      pedidos_cirurgia_auditoria: {
+        Row: {
+          acao: string
+          campos_alterados: string[]
+          created_at: string | null
+          criado_em: string
+          id: string
+          pedido_id: string
+          usuario_id: string
+        }
+        Insert: {
+          acao: string
+          campos_alterados: string[]
+          created_at?: string | null
+          criado_em: string
+          id?: string
+          pedido_id: string
+          usuario_id: string
+        }
+        Update: {
+          acao?: string
+          campos_alterados?: string[]
+          created_at?: string | null
+          criado_em?: string
+          id?: string
+          pedido_id?: string
+          usuario_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'pedidos_cirurgia_auditoria_pedido_id_fkey'
+            columns: ['pedido_id']
+            isOneToOne: false
+            referencedRelation: 'mv_kpi_cirurgias'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'pedidos_cirurgia_auditoria_pedido_id_fkey'
+            columns: ['pedido_id']
+            isOneToOne: false
+            referencedRelation: 'pedidos_cirurgia'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'pedidos_cirurgia_auditoria_pedido_id_fkey'
+            columns: ['pedido_id']
+            isOneToOne: false
+            referencedRelation: 'v_pedidos_pendentes_sla'
             referencedColumns: ['id']
           },
         ]
@@ -848,6 +1079,13 @@ export const Constants = {
 // --- COLUMN TYPES (actual PostgreSQL types) ---
 // Use this to know the real database type when writing migrations.
 // "string" in TypeScript types above may be uuid, text, varchar, timestamptz, etc.
+// Table: agendamento_propostas
+//   id: uuid (not null, default: gen_random_uuid())
+//   pedido_id: uuid (not null)
+//   numero_proposta: integer (not null)
+//   data_proposta: date (not null)
+//   turno: character varying (not null)
+//   criado_em: timestamp without time zone (nullable, default: now())
 // Table: audit_log
 //   id: uuid (not null, default: gen_random_uuid())
 //   pedido_id: uuid (not null)
@@ -871,6 +1109,13 @@ export const Constants = {
 //   previous_hash: text (nullable)
 //   record_hash: text (nullable)
 //   created_at: timestamp with time zone (nullable, default: now())
+// Table: diagnosticos_cid10
+//   id: uuid (not null, default: gen_random_uuid())
+//   codigo_cid10: character varying (not null)
+//   descricao: text (not null)
+//   especialidade: character varying (nullable)
+//   ativo: boolean (nullable, default: true)
+//   criado_em: timestamp without time zone (nullable, default: now())
 // Table: opme_items
 //   id: uuid (not null, default: uuid_generate_v4())
 //   name: text (not null)
@@ -887,6 +1132,20 @@ export const Constants = {
 //   description: text (not null)
 //   manufacturer: text (not null)
 //   is_active: boolean (not null, default: true)
+// Table: pacotes_opme
+//   id: uuid (not null, default: gen_random_uuid())
+//   nome: character varying (not null)
+//   descricao: text (nullable)
+//   ativo: boolean (nullable, default: true)
+//   criado_em: timestamp without time zone (nullable, default: now())
+// Table: pacotes_opme_itens
+//   id: uuid (not null, default: gen_random_uuid())
+//   pacote_id: uuid (not null)
+//   descricao: text (not null)
+//   quantidade: integer (not null, default: 1)
+//   fabricante: character varying (nullable)
+//   fornecedor: character varying (nullable)
+//   criado_em: timestamp without time zone (nullable, default: now())
 // Table: patients
 //   id: uuid (not null, default: uuid_generate_v4())
 //   full_name: text (not null)
@@ -951,6 +1210,23 @@ export const Constants = {
 //   google_drive_doc_id: text (nullable)
 //   created_at: timestamp with time zone (nullable, default: now())
 //   updated_at: timestamp with time zone (nullable, default: now())
+//   pacote_opme_id: uuid (nullable)
+//   anexo_guia_url: text (nullable)
+//   anexo_guia_tipo: character varying (nullable)
+//   alergias_paciente: boolean (nullable, default: false)
+//   alergias_descricao: text (nullable)
+//   previsao_tempo_minutos: integer (nullable)
+//   tempo_internacao_dias: integer (nullable)
+//   diagnostico_cid10_id: uuid (nullable)
+//   reserva_uti: boolean (nullable)
+// Table: pedidos_cirurgia_auditoria
+//   id: uuid (not null, default: gen_random_uuid())
+//   pedido_id: uuid (not null)
+//   acao: text (not null)
+//   campos_alterados: _text (not null)
+//   usuario_id: uuid (not null)
+//   criado_em: timestamp with time zone (not null)
+//   created_at: timestamp with time zone (nullable, default: now())
 // Table: procedures
 //   id: uuid (not null, default: uuid_generate_v4())
 //   name: text (not null)
@@ -1030,16 +1306,32 @@ export const Constants = {
 //   tempo_maximo_horas: numeric (nullable)
 
 // --- CONSTRAINTS ---
+// Table: agendamento_propostas
+//   CHECK agendamento_propostas_numero_proposta_check: CHECK ((numero_proposta = ANY (ARRAY[1, 2, 3])))
+//   FOREIGN KEY agendamento_propostas_pedido_id_fkey: FOREIGN KEY (pedido_id) REFERENCES pedidos_cirurgia(id) ON DELETE CASCADE
+//   UNIQUE agendamento_propostas_pedido_id_numero_proposta_key: UNIQUE (pedido_id, numero_proposta)
+//   PRIMARY KEY agendamento_propostas_pkey: PRIMARY KEY (id)
+//   CHECK agendamento_propostas_turno_check: CHECK (((turno)::text = ANY ((ARRAY['manhã'::character varying, 'tarde'::character varying])::text[])))
 // Table: audit_log
 //   FOREIGN KEY audit_log_changed_by_fkey: FOREIGN KEY (changed_by) REFERENCES profiles(id)
 //   FOREIGN KEY audit_log_pedido_id_fkey: FOREIGN KEY (pedido_id) REFERENCES pedidos_cirurgia(id) ON DELETE CASCADE
 //   PRIMARY KEY audit_log_pkey: PRIMARY KEY (id)
 // Table: audit_logs
 //   PRIMARY KEY audit_logs_pkey: PRIMARY KEY (id)
+// Table: diagnosticos_cid10
+//   UNIQUE diagnosticos_cid10_codigo_cid10_key: UNIQUE (codigo_cid10)
+//   PRIMARY KEY diagnosticos_cid10_pkey: PRIMARY KEY (id)
 // Table: opme_items
 //   UNIQUE opme_items_code_unique: UNIQUE (code)
 //   CHECK opme_items_item_type_check: CHECK ((item_type = ANY (ARRAY['pinça_clicada'::text, 'uso_unico'::text, 'grampeador'::text, 'drape'::text, 'outro'::text])))
 //   PRIMARY KEY opme_items_pkey: PRIMARY KEY (id)
+// Table: pacotes_opme
+//   CHECK pacotes_opme_nome_check: CHECK (((nome)::text = ANY ((ARRAY['Ouro'::character varying, 'Prata'::character varying])::text[])))
+//   UNIQUE pacotes_opme_nome_key: UNIQUE (nome)
+//   PRIMARY KEY pacotes_opme_pkey: PRIMARY KEY (id)
+// Table: pacotes_opme_itens
+//   FOREIGN KEY pacotes_opme_itens_pacote_id_fkey: FOREIGN KEY (pacote_id) REFERENCES pacotes_opme(id) ON DELETE CASCADE
+//   PRIMARY KEY pacotes_opme_itens_pkey: PRIMARY KEY (id)
 // Table: patients
 //   UNIQUE patients_cpf_hash_key: UNIQUE (cpf_hash)
 //   FOREIGN KEY patients_created_by_fkey: FOREIGN KEY (created_by) REFERENCES auth.users(id)
@@ -1054,14 +1346,19 @@ export const Constants = {
 // Table: pedidos_cirurgia
 //   CHECK pedidos_cirurgia_asa_classification_check: CHECK ((asa_classification = ANY (ARRAY['ASA I'::text, 'ASA II'::text, 'ASA III'::text, 'ASA IV'::text, 'ASA V'::text])))
 //   FOREIGN KEY pedidos_cirurgia_cancellation_actor_id_fkey: FOREIGN KEY (cancellation_actor_id) REFERENCES auth.users(id)
+//   FOREIGN KEY pedidos_cirurgia_diagnostico_cid10_id_fkey: FOREIGN KEY (diagnostico_cid10_id) REFERENCES diagnosticos_cid10(id)
 //   CHECK pedidos_cirurgia_guide_type_check: CHECK ((guide_type = ANY (ARRAY['TISS'::text, 'AIH'::text, 'Particular'::text])))
 //   CHECK pedidos_cirurgia_laterality_check: CHECK ((laterality = ANY (ARRAY['Direito'::text, 'Esquerdo'::text, 'Bilateral'::text, 'N/A'::text])))
+//   FOREIGN KEY pedidos_cirurgia_pacote_opme_id_fkey: FOREIGN KEY (pacote_opme_id) REFERENCES pacotes_opme(id)
 //   FOREIGN KEY pedidos_cirurgia_patient_id_fkey: FOREIGN KEY (patient_id) REFERENCES patients(id)
 //   PRIMARY KEY pedidos_cirurgia_pkey: PRIMARY KEY (id)
 //   FOREIGN KEY pedidos_cirurgia_procedure_id_fkey: FOREIGN KEY (procedure_id) REFERENCES procedures(id)
 //   FOREIGN KEY pedidos_cirurgia_proctor_id_fkey: FOREIGN KEY (proctor_id) REFERENCES auth.users(id)
 //   FOREIGN KEY pedidos_cirurgia_secretary_id_fkey: FOREIGN KEY (secretary_id) REFERENCES auth.users(id)
 //   FOREIGN KEY pedidos_cirurgia_surgeon_id_fkey: FOREIGN KEY (surgeon_id) REFERENCES profiles(id) ON DELETE RESTRICT
+// Table: pedidos_cirurgia_auditoria
+//   FOREIGN KEY pedidos_cirurgia_auditoria_pedido_id_fkey: FOREIGN KEY (pedido_id) REFERENCES pedidos_cirurgia(id) ON DELETE CASCADE
+//   PRIMARY KEY pedidos_cirurgia_auditoria_pkey: PRIMARY KEY (id)
 // Table: procedures
 //   PRIMARY KEY procedures_pkey: PRIMARY KEY (id)
 //   UNIQUE procedures_tuss_code_key: UNIQUE (tuss_code)
@@ -1078,6 +1375,11 @@ export const Constants = {
 //   UNIQUE user_roles_user_id_role_key: UNIQUE (user_id, role)
 
 // --- ROW LEVEL SECURITY POLICIES ---
+// Table: agendamento_propostas
+//   Policy "agendamento_propostas_insert_surgeon" (INSERT, PERMISSIVE) roles={public}
+//     WITH CHECK: ((( SELECT pedidos_cirurgia.surgeon_id    FROM pedidos_cirurgia   WHERE (pedidos_cirurgia.id = agendamento_propostas.pedido_id)) = auth.uid()) OR has_role('admin'::text))
+//   Policy "agendamento_propostas_select_surgeon" (SELECT, PERMISSIVE) roles={public}
+//     USING: ((( SELECT pedidos_cirurgia.surgeon_id    FROM pedidos_cirurgia   WHERE (pedidos_cirurgia.id = agendamento_propostas.pedido_id)) = auth.uid()) OR has_role('admin'::text))
 // Table: audit_log
 //   Policy "Authenticated users can insert audit_log" (INSERT, PERMISSIVE) roles={authenticated}
 //     WITH CHECK: (changed_by = auth.uid())
@@ -1088,6 +1390,9 @@ export const Constants = {
 //     WITH CHECK: true
 //   Policy "audit_logs_select_admin" (SELECT, PERMISSIVE) roles={public}
 //     USING: has_role('admin'::text)
+// Table: diagnosticos_cid10
+//   Policy "diagnosticos_cid10_select" (SELECT, PERMISSIVE) roles={public}
+//     USING: (auth.role() = 'authenticated'::text)
 // Table: opme_items
 //   Policy "Authenticated users can read opme_items" (SELECT, PERMISSIVE) roles={authenticated}
 //     USING: true
@@ -1099,6 +1404,12 @@ export const Constants = {
 //     WITH CHECK: (EXISTS ( SELECT 1    FROM user_roles ur   WHERE ((ur.user_id = auth.uid()) AND (ur.role = ANY (ARRAY['opme'::user_role_type, 'admin'::user_role_type])) AND (ur.is_active = true))))
 //   Policy "opme_items_select" (SELECT, PERMISSIVE) roles={authenticated}
 //     USING: true
+// Table: pacotes_opme
+//   Policy "pacotes_opme_select" (SELECT, PERMISSIVE) roles={public}
+//     USING: (auth.role() = 'authenticated'::text)
+// Table: pacotes_opme_itens
+//   Policy "pacotes_opme_itens_select" (SELECT, PERMISSIVE) roles={public}
+//     USING: (auth.role() = 'authenticated'::text)
 // Table: patients
 //   Policy "patients_delete" (DELETE, PERMISSIVE) roles={public}
 //     USING: has_role('admin'::text)
@@ -1140,6 +1451,9 @@ export const Constants = {
 //     USING: (has_role('opme'::text) AND (status = '2_AGUARDANDO_OPME'::surgery_status))
 //   Policy "pedidos_update_surgeon" (UPDATE, PERMISSIVE) roles={public}
 //     USING: ((surgeon_id = auth.uid()) AND has_role('surgeon'::text))
+// Table: pedidos_cirurgia_auditoria
+//   Policy "Usuários podem ler auditoria de seus pedidos" (SELECT, PERMISSIVE) roles={public}
+//     USING: (EXISTS ( SELECT 1    FROM pedidos_cirurgia   WHERE ((pedidos_cirurgia.id = pedidos_cirurgia_auditoria.pedido_id) AND (pedidos_cirurgia.surgeon_id = auth.uid()))))
 // Table: procedures
 //   Policy "procedures_delete" (DELETE, PERMISSIVE) roles={public}
 //     USING: has_role('admin'::text)
@@ -1389,6 +1703,31 @@ export const Constants = {
 //   END;
 //   $function$
 //
+// FUNCTION preencher_opme_automatico()
+//   CREATE OR REPLACE FUNCTION public.preencher_opme_automatico()
+//    RETURNS trigger
+//    LANGUAGE plpgsql
+//   AS $function$
+//   BEGIN
+//     -- Se status mudou para 2_AGUARDANDO_OPME e há pacote_opme_id
+//     IF NEW.status::text = '2_AGUARDANDO_OPME' AND NEW.pacote_opme_id IS NOT NULL THEN
+//       -- Limpar itens anteriores (se houver)
+//       DELETE FROM pedido_opme_items WHERE pedido_id = NEW.id;
+//
+//       -- Inserir itens do pacote com mapeamento correto
+//       INSERT INTO pedido_opme_items (pedido_id, opme_item_id, quantity, created_at)
+//       SELECT
+//         NEW.id,
+//         poi.id,
+//         poi.quantidade,
+//         NOW()
+//       FROM pacotes_opme_itens poi
+//       WHERE poi.pacote_id = NEW.pacote_opme_id;
+//     END IF;
+//     RETURN NEW;
+//   END;
+//   $function$
+//
 // FUNCTION update_surgical_requests_timestamp()
 //   CREATE OR REPLACE FUNCTION public.update_surgical_requests_timestamp()
 //    RETURNS trigger
@@ -1408,23 +1747,41 @@ export const Constants = {
 //   notify-telegram-audit: CREATE TRIGGER "notify-telegram-audit" AFTER INSERT ON public.audit_log FOR EACH ROW EXECUTE FUNCTION supabase_functions.http_request('https://iumxxwtcohabjgynxciv.supabase.co/functions/v1/notify-telegram', 'POST', '{"Content-type":"application/json"}', '{}', '5000')
 // Table: pedidos_cirurgia
 //   trg_audit_pedidos: CREATE TRIGGER trg_audit_pedidos AFTER INSERT OR DELETE OR UPDATE ON public.pedidos_cirurgia FOR EACH ROW EXECUTE FUNCTION fn_audit_pedidos()
+//   trigger_preencher_opme: CREATE TRIGGER trigger_preencher_opme AFTER UPDATE ON public.pedidos_cirurgia FOR EACH ROW EXECUTE FUNCTION preencher_opme_automatico()
 // Table: profiles
 //   Send Welcome Email on New User: CREATE TRIGGER "Send Welcome Email on New User" AFTER INSERT ON public.profiles FOR EACH ROW EXECUTE FUNCTION supabase_functions.http_request('https://iumxxwtcohabjgynxciv.supabase.co/functions/v1/send-email-welcome', 'POST', '{"Content-type":"application/json"}', '{}', '5000')
 // Table: user_roles
 //   trg_audit_roles: CREATE TRIGGER trg_audit_roles AFTER INSERT OR DELETE OR UPDATE ON public.user_roles FOR EACH ROW EXECUTE FUNCTION fn_audit_roles()
 
 // --- INDEXES ---
+// Table: agendamento_propostas
+//   CREATE UNIQUE INDEX agendamento_propostas_pedido_id_numero_proposta_key ON public.agendamento_propostas USING btree (pedido_id, numero_proposta)
+//   CREATE INDEX idx_agendamento_propostas_pedido ON public.agendamento_propostas USING btree (pedido_id)
 // Table: audit_logs
 //   CREATE INDEX idx_audit_logs_actor ON public.audit_logs USING btree (actor_id)
 //   CREATE INDEX idx_audit_logs_created ON public.audit_logs USING btree (created_at DESC)
 //   CREATE INDEX idx_audit_logs_event ON public.audit_logs USING btree (event_type)
 //   CREATE INDEX idx_audit_logs_record ON public.audit_logs USING btree (record_id)
+// Table: diagnosticos_cid10
+//   CREATE UNIQUE INDEX diagnosticos_cid10_codigo_cid10_key ON public.diagnosticos_cid10 USING btree (codigo_cid10)
+//   CREATE INDEX idx_diagnosticos_cid10_codigo ON public.diagnosticos_cid10 USING btree (codigo_cid10)
+//   CREATE INDEX idx_diagnosticos_cid10_descricao ON public.diagnosticos_cid10 USING gin (to_tsvector('portuguese'::regconfig, descricao))
 // Table: opme_items
 //   CREATE UNIQUE INDEX opme_items_code_unique ON public.opme_items USING btree (code)
+// Table: pacotes_opme
+//   CREATE UNIQUE INDEX pacotes_opme_nome_key ON public.pacotes_opme USING btree (nome)
+// Table: pacotes_opme_itens
+//   CREATE INDEX idx_pacotes_opme_itens_pacote ON public.pacotes_opme_itens USING btree (pacote_id)
 // Table: patients
 //   CREATE UNIQUE INDEX patients_cpf_hash_key ON public.patients USING btree (cpf_hash)
 // Table: pedido_opme_items
 //   CREATE UNIQUE INDEX pedido_opme_items_unique ON public.pedido_opme_items USING btree (pedido_id, opme_item_id)
+// Table: pedidos_cirurgia
+//   CREATE INDEX idx_pedidos_diagnostico_cid10 ON public.pedidos_cirurgia USING btree (diagnostico_cid10_id)
+//   CREATE INDEX idx_pedidos_pacote_opme ON public.pedidos_cirurgia USING btree (pacote_opme_id)
+// Table: pedidos_cirurgia_auditoria
+//   CREATE INDEX idx_auditoria_criado_em ON public.pedidos_cirurgia_auditoria USING btree (criado_em DESC)
+//   CREATE INDEX idx_auditoria_pedido_id ON public.pedidos_cirurgia_auditoria USING btree (pedido_id)
 // Table: procedures
 //   CREATE UNIQUE INDEX procedures_tuss_code_key ON public.procedures USING btree (tuss_code)
 // Table: sectors
