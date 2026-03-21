@@ -399,7 +399,9 @@ export function TransicaoPedidoCircurgico({ pedidoId }: { pedidoId: string }) {
       if (error && error.context && typeof error.context.json === 'function') {
         try {
           errObj = await error.context.json()
-        } catch (e) {}
+        } catch (e) {
+          /* ignore parse error */
+        }
       }
 
       const responseError = errObj || data?.error
