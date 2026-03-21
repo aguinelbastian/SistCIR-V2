@@ -92,21 +92,14 @@ export function PedidoForm({ onSuccess }: { onSuccess?: () => void }) {
         alergias_paciente: false,
       }
 
-      // Edge Function handles the actual creation with all validations
-      const sessionData = await supabase.auth.getSession()
-      const res = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-pedido-cirurgia`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${sessionData.data.session?.access_token}`,
-          },
-          body: JSON.stringify(payload),
-        },
-      )
+      // Supabase Edge Function handles the actual creation with all validations
+      // The SDK auto-injects the JWT, avoiding 401 Unauthorized errors
+      const { data, error } = await supabase.functions.invoke('create-pedido-cirurgia', {
+        body: payload,
+      })
 
-      if (!res.ok) throw new Error(await res.text())
+      if (error) throw error
+      if (data?.error) throw new Error(data.error)
 
       toast.success('Pedido criado com sucesso!')
       onSuccess?.()
@@ -124,7 +117,7 @@ export function PedidoForm({ onSuccess }: { onSuccess?: () => void }) {
         options: {
           scopes: 'https://www.googleapis.com/auth/calendar.events',
           queryParams: { access_type: 'offline', prompt: 'consent' },
-          redirectTo: `${window.location.origin}/pedidos/novo`,
+          redirectTo: window.location.origin,
         },
       })
       if (error) throw error
@@ -204,7 +197,7 @@ export function PedidoForm({ onSuccess }: { onSuccess?: () => void }) {
                               key={p.id}
                               value={`${p.full_name} ${p.medical_record}`}
                               onSelect={() => {
-                                form.setValue('patient_id', p.id)
+                                form.setValue('patient_id', p.id, { shouldValidate: true })
                                 setPatientOpen(false)
                               }}
                             >
@@ -265,7 +258,7 @@ export function PedidoForm({ onSuccess }: { onSuccess?: () => void }) {
                               key={p.id}
                               value={`${p.name} ${p.tuss_code}`}
                               onSelect={() => {
-                                form.setValue('procedure_id', p.id)
+                                form.setValue('procedure_id', p.id, { shouldValidate: true })
                                 setProcedureOpen(false)
                               }}
                             >
