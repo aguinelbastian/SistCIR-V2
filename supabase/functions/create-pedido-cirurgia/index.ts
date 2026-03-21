@@ -27,7 +27,7 @@ interface CreatePedidoRequest {
   datas_propostas: AgendamentoProposta[]
   previsao_tempo_minutos: number
   tempo_internacao_dias?: number
-  operating_room: string
+  operating_room?: string
   procedure_id: string
   cid10_primary: string
   clinical_indication: string
@@ -108,7 +108,6 @@ Deno.serve(async (req: Request) => {
       'patient_id',
       'datas_propostas',
       'previsao_tempo_minutos',
-      'operating_room',
       'procedure_id',
       'cid10_primary',
       'clinical_indication',
@@ -206,7 +205,7 @@ Deno.serve(async (req: Request) => {
         proctor_crm: payload.proctor_crm || null,
         previsao_tempo_minutos: payload.previsao_tempo_minutos,
         tempo_internacao_dias: payload.tempo_internacao_dias || null,
-        operating_room: payload.operating_room,
+        operating_room: payload.operating_room || null,
         procedure_id: payload.procedure_id,
         cid10_primary: payload.cid10_primary,
         clinical_indication: payload.clinical_indication,
