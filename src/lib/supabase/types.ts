@@ -434,6 +434,79 @@ export type Database = {
           },
         ]
       }
+      pedidos_calendar_events: {
+        Row: {
+          calendar_type: string
+          created_at: string | null
+          event_description: string | null
+          event_end: string
+          event_start: string
+          event_title: string
+          google_calendar_id: string
+          google_event_id: string
+          id: string
+          pedido_id: string
+          surgeon_id: string | null
+          sync_error: string | null
+          sync_status: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          calendar_type: string
+          created_at?: string | null
+          event_description?: string | null
+          event_end: string
+          event_start: string
+          event_title: string
+          google_calendar_id: string
+          google_event_id: string
+          id?: string
+          pedido_id: string
+          surgeon_id?: string | null
+          sync_error?: string | null
+          sync_status?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          calendar_type?: string
+          created_at?: string | null
+          event_description?: string | null
+          event_end?: string
+          event_start?: string
+          event_title?: string
+          google_calendar_id?: string
+          google_event_id?: string
+          id?: string
+          pedido_id?: string
+          surgeon_id?: string | null
+          sync_error?: string | null
+          sync_status?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'pedidos_calendar_events_pedido_id_fkey'
+            columns: ['pedido_id']
+            isOneToOne: false
+            referencedRelation: 'mv_kpi_cirurgias'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'pedidos_calendar_events_pedido_id_fkey'
+            columns: ['pedido_id']
+            isOneToOne: false
+            referencedRelation: 'pedidos_cirurgia'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'pedidos_calendar_events_pedido_id_fkey'
+            columns: ['pedido_id']
+            isOneToOne: false
+            referencedRelation: 'v_pedidos_pendentes_sla'
+            referencedColumns: ['id']
+          },
+        ]
+      }
       pedidos_cirurgia: {
         Row: {
           adjuvant_procedures: Json | null
@@ -714,6 +787,7 @@ export type Database = {
           created_at: string
           crm: string | null
           email: string
+          google_calendar_refresh_token: string | null
           id: string
           is_active: boolean
           last_sign_in_at: string | null
@@ -727,6 +801,7 @@ export type Database = {
           created_at?: string
           crm?: string | null
           email: string
+          google_calendar_refresh_token?: string | null
           id: string
           is_active?: boolean
           last_sign_in_at?: string | null
@@ -740,6 +815,7 @@ export type Database = {
           created_at?: string
           crm?: string | null
           email?: string
+          google_calendar_refresh_token?: string | null
           id?: string
           is_active?: boolean
           last_sign_in_at?: string | null
@@ -1171,6 +1247,21 @@ export const Constants = {
 //   authorized_at: timestamp with time zone (nullable)
 //   notes: text (nullable)
 //   added_by: uuid (not null)
+// Table: pedidos_calendar_events
+//   id: uuid (not null, default: gen_random_uuid())
+//   pedido_id: uuid (not null)
+//   calendar_type: character varying (not null)
+//   surgeon_id: uuid (nullable)
+//   google_event_id: text (not null)
+//   google_calendar_id: text (not null)
+//   event_title: character varying (not null)
+//   event_description: text (nullable)
+//   event_start: timestamp without time zone (not null)
+//   event_end: timestamp without time zone (not null)
+//   sync_status: character varying (nullable, default: 'SYNCED'::character varying)
+//   sync_error: text (nullable)
+//   created_at: timestamp without time zone (nullable, default: now())
+//   updated_at: timestamp without time zone (nullable, default: now())
 // Table: pedidos_cirurgia
 //   id: uuid (not null, default: uuid_generate_v4())
 //   patient_id: uuid (not null)
@@ -1249,6 +1340,7 @@ export const Constants = {
 //   photo_url: text (nullable)
 //   last_sign_in_at: timestamp with time zone (nullable)
 //   requested_at: timestamp with time zone (nullable, default: now())
+//   google_calendar_refresh_token: text (nullable)
 // Table: sectors
 //   id: uuid (not null, default: uuid_generate_v4())
 //   name: text (not null)
@@ -1343,6 +1435,11 @@ export const Constants = {
 //   PRIMARY KEY pedido_opme_items_pkey: PRIMARY KEY (id)
 //   CHECK pedido_opme_items_quantity_check: CHECK ((quantity > 0))
 //   UNIQUE pedido_opme_items_unique: UNIQUE (pedido_id, opme_item_id)
+// Table: pedidos_calendar_events
+//   UNIQUE pedidos_calendar_events_pedido_id_calendar_type_surgeon_id_key: UNIQUE (pedido_id, calendar_type, surgeon_id)
+//   FOREIGN KEY pedidos_calendar_events_pedido_id_fkey: FOREIGN KEY (pedido_id) REFERENCES pedidos_cirurgia(id) ON DELETE CASCADE
+//   PRIMARY KEY pedidos_calendar_events_pkey: PRIMARY KEY (id)
+//   FOREIGN KEY pedidos_calendar_events_surgeon_id_fkey: FOREIGN KEY (surgeon_id) REFERENCES auth.users(id)
 // Table: pedidos_cirurgia
 //   CHECK pedidos_cirurgia_asa_classification_check: CHECK ((asa_classification = ANY (ARRAY['ASA I'::text, 'ASA II'::text, 'ASA III'::text, 'ASA IV'::text, 'ASA V'::text])))
 //   FOREIGN KEY pedidos_cirurgia_cancellation_actor_id_fkey: FOREIGN KEY (cancellation_actor_id) REFERENCES auth.users(id)
@@ -1432,6 +1529,16 @@ export const Constants = {
 //     WITH CHECK: (EXISTS ( SELECT 1    FROM user_roles ur   WHERE ((ur.user_id = auth.uid()) AND (ur.role = ANY (ARRAY['opme'::user_role_type, 'admin'::user_role_type])) AND (ur.is_active = true))))
 //   Policy "pedido_opme_items_select" (SELECT, PERMISSIVE) roles={authenticated}
 //     USING: true
+// Table: pedidos_calendar_events
+//   Policy "allow_delete_calendar_events" (DELETE, PERMISSIVE) roles={authenticated}
+//     USING: true
+//   Policy "allow_insert_calendar_events" (INSERT, PERMISSIVE) roles={authenticated}
+//     WITH CHECK: true
+//   Policy "allow_update_calendar_events" (UPDATE, PERMISSIVE) roles={authenticated}
+//     USING: true
+//     WITH CHECK: true
+//   Policy "surgeon_see_own_events" (SELECT, PERMISSIVE) roles={authenticated}
+//     USING: ((surgeon_id = auth.uid()) OR ((calendar_type)::text = 'SERVICE_ACCOUNT'::text) OR (EXISTS ( SELECT 1    FROM user_roles   WHERE ((user_roles.user_id = auth.uid()) AND (user_roles.role = 'admin'::user_role_type)))))
 // Table: pedidos_cirurgia
 //   Policy "pedidos_insert" (INSERT, PERMISSIVE) roles={public}
 //     WITH CHECK: (has_any_role(ARRAY['surgeon'::text, 'secretary'::text]) AND (surgeon_id = auth.uid()))
@@ -1471,6 +1578,8 @@ export const Constants = {
 //   Policy "Admin can update any profile" (UPDATE, PERMISSIVE) roles={authenticated}
 //     USING: (EXISTS ( SELECT 1    FROM user_roles   WHERE ((user_roles.user_id = auth.uid()) AND (user_roles.role = 'admin'::user_role_type) AND (user_roles.is_active = true))))
 //     WITH CHECK: (EXISTS ( SELECT 1    FROM user_roles   WHERE ((user_roles.user_id = auth.uid()) AND (user_roles.role = 'admin'::user_role_type) AND (user_roles.is_active = true))))
+//   Policy "Users can insert their own profile" (INSERT, PERMISSIVE) roles={public}
+//     WITH CHECK: (auth.uid() = id)
 //   Policy "profiles_select_all" (SELECT, PERMISSIVE) roles={public}
 //     USING: true
 //   Policy "profiles_select_dashboard" (SELECT, PERMISSIVE) roles={authenticated}
@@ -1776,6 +1885,10 @@ export const Constants = {
 //   CREATE UNIQUE INDEX patients_cpf_hash_key ON public.patients USING btree (cpf_hash)
 // Table: pedido_opme_items
 //   CREATE UNIQUE INDEX pedido_opme_items_unique ON public.pedido_opme_items USING btree (pedido_id, opme_item_id)
+// Table: pedidos_calendar_events
+//   CREATE INDEX idx_pedidos_calendar_events_pedido_id ON public.pedidos_calendar_events USING btree (pedido_id)
+//   CREATE INDEX idx_pedidos_calendar_events_surgeon_id ON public.pedidos_calendar_events USING btree (surgeon_id)
+//   CREATE UNIQUE INDEX pedidos_calendar_events_pedido_id_calendar_type_surgeon_id_key ON public.pedidos_calendar_events USING btree (pedido_id, calendar_type, surgeon_id)
 // Table: pedidos_cirurgia
 //   CREATE INDEX idx_pedidos_diagnostico_cid10 ON public.pedidos_cirurgia USING btree (diagnostico_cid10_id)
 //   CREATE INDEX idx_pedidos_pacote_opme ON public.pedidos_cirurgia USING btree (pacote_opme_id)

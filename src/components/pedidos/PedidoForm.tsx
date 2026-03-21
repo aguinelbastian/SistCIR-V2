@@ -1,0 +1,217 @@
+import { useState } from 'react'
+import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import * as z from 'zod'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form'
+import { toast } from 'sonner'
+import { api } from '@/services/api'
+import { supabase } from '@/lib/supabase/client'
+import { Calendar } from 'lucide-react'
+
+// Schema without google_calendar_refresh_token requirement
+const formSchema = z.object({
+  patient_id: z.string().min(1, 'Selecione um paciente'),
+  procedure_id: z.string().min(1, 'Selecione um procedimento'),
+  cid10_primary: z.string().min(1, 'CID-10 é obrigatório'),
+  clinical_indication: z.string().min(1, 'Indicação clínica é obrigatória'),
+  operating_room: z.string().optional(),
+  previsao_tempo_minutos: z.coerce.number().min(1, 'Obrigatório'),
+})
+
+export function PedidoForm({ onSuccess }: { onSuccess?: () => void }) {
+  const [isSubmitting, setIsSubmitting] = useState(false)
+
+  const form = useForm<z.infer<typeof formSchema>>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      patient_id: '',
+      procedure_id: '',
+      cid10_primary: '',
+      clinical_indication: '',
+      operating_room: '',
+      previsao_tempo_minutos: 60,
+    },
+  })
+
+  async function onSubmit(values: z.infer<typeof formSchema>) {
+    setIsSubmitting(true)
+    try {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser()
+      if (!user) throw new Error('Não autenticado')
+
+      const payload = {
+        ...values,
+        surgeon_id: user.id,
+        status: '1_RASCUNHO' as any,
+        datas_propostas: [
+          { data: new Date().toISOString().split('T')[0], turno: 'manhã' },
+          { data: new Date().toISOString().split('T')[0], turno: 'tarde' },
+          { data: new Date().toISOString().split('T')[0], turno: 'manhã' },
+        ],
+        reserva_uti: false,
+        anexo_guia_url: 'N/A',
+        anexo_guia_tipo: 'pdf',
+        alergias_paciente: false,
+      }
+
+      // Edge Function handles the actual creation with all validations
+      const sessionData = await supabase.auth.getSession()
+      const res = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-pedido-cirurgia`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${sessionData.data.session?.access_token}`,
+          },
+          body: JSON.stringify(payload),
+        },
+      )
+
+      if (!res.ok) throw new Error(await res.text())
+
+      toast.success('Pedido criado com sucesso!')
+      onSuccess?.()
+    } catch (error: any) {
+      toast.error('Erro ao salvar', { description: error.message })
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  const handleSyncGoogle = async () => {
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          scopes: 'https://www.googleapis.com/auth/calendar.events',
+          queryParams: { access_type: 'offline', prompt: 'consent' },
+          redirectTo: window.location.href,
+        },
+      })
+      if (error) throw error
+    } catch (error: any) {
+      toast.error('Erro ao conectar com Google Calendar', { description: error.message })
+    }
+  }
+
+  return (
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+        <div className="flex flex-col sm:flex-row justify-between sm:items-center bg-muted/30 p-4 rounded-lg border gap-4">
+          <div>
+            <h4 className="font-medium flex items-center gap-2">
+              <Calendar className="w-4 h-4 text-primary" /> Integração Google Calendar
+            </h4>
+            <p className="text-sm text-muted-foreground mt-1">
+              Sincronize sua agenda pessoal (Opcional, não impede a criação de pedidos)
+            </p>
+          </div>
+          <Button type="button" variant="outline" onClick={handleSyncGoogle}>
+            <svg
+              className="mr-2 h-4 w-4"
+              aria-hidden="true"
+              focusable="false"
+              data-prefix="fab"
+              data-icon="google"
+              role="img"
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 488 512"
+            >
+              <path
+                fill="currentColor"
+                d="M488 261.8C488 403.3 391.1 504 248 504 110.8 504 0 393.2 0 256S110.8 8 248 8c66.8 0 123 24.5 166.3 64.9l-67.5 64.9C258.5 52.6 94.3 116.6 94.3 256c0 86.5 69.1 156.6 153.7 156.6 98.2 0 135-70.4 140.8-106.9H248v-85.3h236.1c2.3 12.7 3.9 24.9 3.9 41.4z"
+              ></path>
+            </svg>
+            Conectar Google
+          </Button>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <FormField
+            control={form.control}
+            name="patient_id"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>ID do Paciente</FormLabel>
+                <FormControl>
+                  <Input placeholder="UUID do Paciente" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="procedure_id"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>ID do Procedimento</FormLabel>
+                <FormControl>
+                  <Input placeholder="UUID do Procedimento" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="cid10_primary"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>CID-10 Principal</FormLabel>
+                <FormControl>
+                  <Input placeholder="Ex: C61.9" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="previsao_tempo_minutos"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Tempo Previsto (minutos)</FormLabel>
+                <FormControl>
+                  <Input type="number" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="clinical_indication"
+            render={({ field }) => (
+              <FormItem className="md:col-span-2">
+                <FormLabel>Indicação Clínica</FormLabel>
+                <FormControl>
+                  <Input placeholder="Descreva a indicação cirúrgica" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
+
+        <div className="flex justify-end gap-2 pt-4">
+          <Button type="submit" disabled={isSubmitting} size="lg">
+            {isSubmitting ? 'Salvando...' : 'Salvar Pedido'}
+          </Button>
+        </div>
+      </form>
+    </Form>
+  )
+}

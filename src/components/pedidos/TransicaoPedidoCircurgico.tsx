@@ -357,6 +357,22 @@ export function TransicaoPedidoCircurgico({ pedidoId }: { pedidoId: string }) {
     }
   }
 
+  const handleReauthGoogle = async () => {
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          scopes: 'https://www.googleapis.com/auth/calendar.events',
+          queryParams: { access_type: 'offline', prompt: 'consent' },
+          redirectTo: window.location.href,
+        },
+      })
+      if (error) throw error
+    } catch (e: any) {
+      toast.error('Erro ao reautenticar Google', { description: e.message })
+    }
+  }
+
   const handleSubmit = async () => {
     if (!novoEstado) return
 
@@ -431,7 +447,7 @@ export function TransicaoPedidoCircurgico({ pedidoId }: { pedidoId: string }) {
             action: data.calendarWarning.includes('expirou')
               ? {
                   label: 'Reautenticar',
-                  onClick: () => (window.location.href = '/minha-conta'),
+                  onClick: handleReauthGoogle,
                 }
               : undefined,
           })
