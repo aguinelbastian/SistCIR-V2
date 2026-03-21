@@ -1,4 +1,4 @@
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.6'
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -62,7 +62,7 @@ Deno.serve(async (req: Request) => {
     }
 
     // Extrair token do header Authorization
-    const authHeader = req.headers.get('authorization')
+    const authHeader = req.headers.get('Authorization') || req.headers.get('authorization')
     if (!authHeader) {
       return new Response(JSON.stringify({ code: 401, message: 'Missing authorization header' }), {
         status: 401,
@@ -70,11 +70,17 @@ Deno.serve(async (req: Request) => {
       })
     }
 
+    const token = authHeader.replace(/^Bearer\s+/i, '')
+
     // Criar cliente Supabase com o token do usuário
     const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false,
+      },
       global: {
         headers: {
-          authorization: authHeader,
+          Authorization: `Bearer ${token}`,
         },
       },
     })
@@ -83,12 +89,13 @@ Deno.serve(async (req: Request) => {
     const {
       data: { user },
       error: authError,
-    } = await supabase.auth.getUser()
+    } = await supabase.auth.getUser(token)
     if (authError || !user) {
-      return new Response(JSON.stringify({ code: 401, message: 'Unauthorized' }), {
-        status: 401,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      })
+      console.error('Auth error:', authError)
+      return new Response(
+        JSON.stringify({ code: 401, message: 'Unauthorized', details: authError?.message }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+      )
     }
 
     const payload = (await req.json()) as CreatePedidoRequest

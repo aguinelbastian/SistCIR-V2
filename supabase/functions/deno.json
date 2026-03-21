@@ -16,7 +16,7 @@
     "get-relatorio-conversao": 8,
     "get-relatorio-tempo-autorizacao": 8,
     "check-disponibilidade-agendamento": 4,
-    "create-pedido-cirurgia": 9,
+    "create-pedido-cirurgia": 10,
     "update-pedido-cirurgia": 20
   }
 }
