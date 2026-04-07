@@ -81,7 +81,19 @@ export function SurgicalRoomForm({ initialData, roomId }: Props) {
         .eq('id', roomId)
       error = updateErr
     } else {
-      const { error: insertErr } = await supabase.from('surgical_rooms').insert(payload)
+      const { data: hospitalId } = await supabase.rpc('get_default_hospital_id')
+      if (!hospitalId) {
+        toast({
+          title: 'Erro',
+          description: 'Não foi possível obter o hospital padrão.',
+          variant: 'destructive',
+        })
+        setLoading(false)
+        return
+      }
+      const { error: insertErr } = await supabase
+        .from('surgical_rooms')
+        .insert({ ...payload, hospital_id: hospitalId })
       error = insertErr
     }
 

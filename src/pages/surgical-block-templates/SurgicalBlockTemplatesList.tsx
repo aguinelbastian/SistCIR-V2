@@ -80,9 +80,10 @@ export default function SurgicalBlockTemplatesList() {
     try {
       const { count } = await supabase
         .from('surgical_block_exceptions')
-        .select('*', { count: 'exact', head: true })
+        .select('id', { count: 'exact' })
         .eq('surgical_block_template_id', tpl.id)
         .gte('exception_date', new Date().toISOString().split('T')[0])
+        .limit(1)
 
       setExceptionsCount(count || 0)
     } catch (err) {
