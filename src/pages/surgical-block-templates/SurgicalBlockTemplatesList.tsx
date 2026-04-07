@@ -309,4 +309,9 @@ export default function SurgicalBlockTemplatesList() {
                 'Confirmar Geração'
               )}
             </Button>
-          </DialogF
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
+  )
+}
