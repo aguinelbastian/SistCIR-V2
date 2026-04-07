@@ -15,6 +15,8 @@ export async function getRoboticSystemById(id: string) {
   return data as RoboticSystem
 }
 
+export const getRoboticSystem = getRoboticSystemById
+
 export async function createRoboticSystem(system: Partial<RoboticSystem>) {
   const { data, error } = await supabase.from('robotic_systems').insert([system]).select().single()
 
