@@ -1,1 +1,26 @@
-{}
+{
+  "_versions": {
+    "notify-sector": 20,
+    "create-users": 12,
+    "admin-manage-users": 15,
+    "notify-telegram": 10,
+    "functions": 10,
+    "admin-reset-password": 9,
+    "send-email-welcome": 8,
+    "send-email-surgery-created": 6,
+    "send-email-surgery-cancelled": 6,
+    "get-relatorio-status": 10,
+    "get-relatorio-cirurgioes": 10,
+    "get-relatorio-procedimentos": 10,
+    "get-relatorio-sla": 10,
+    "get-relatorio-conversao": 10,
+    "get-relatorio-tempo-autorizacao": 10,
+    "check-disponibilidade-agendamento": 6,
+    "create-pedido-cirurgia": 13,
+    "update-pedido-cirurgia": 22,
+    "create_test_surgeons": 3,
+    "generate-google-docs": 8,
+    "authorize-google-oauth": 3,
+    "google-oauth-callback": 2
+  }
+}
