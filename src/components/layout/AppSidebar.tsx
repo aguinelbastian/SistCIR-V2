@@ -9,6 +9,7 @@ import {
   Package,
   UserCircle,
   TrendingUp,
+  Clock,
 } from 'lucide-react'
 import {
   Sidebar,
@@ -146,6 +147,17 @@ export function AppSidebar() {
                         <Link to="/sistemas-roboticos">
                           <Activity className="w-4 h-4 mr-3 text-purple-500" />
                           <span>Sistemas Robóticos</span>
+                        </Link>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                    <SidebarMenuItem>
+                      <SidebarMenuButton
+                        asChild
+                        isActive={location.pathname.startsWith('/blocos-cirurgicos')}
+                      >
+                        <Link to="/blocos-cirurgicos">
+                          <Clock className="w-4 h-4 mr-3 text-emerald-500" />
+                          <span>Blocos Cirúrgicos</span>
                         </Link>
                       </SidebarMenuButton>
                     </SidebarMenuItem>

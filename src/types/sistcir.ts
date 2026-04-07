@@ -49,6 +49,24 @@ export interface SurgicalRoom {
   updated_at: string
 }
 
+export interface SurgicalBlock {
+  id: string
+  surgical_room_id: string
+  block_date: string
+  block_start_time: string
+  block_end_time: string
+  duration_minutes: number
+  assigned_surgeon_id?: string
+  assigned_proctor_id?: string
+  is_available: boolean
+  notes?: string
+  created_at: string
+  updated_at: string
+  surgical_rooms?: { room_name: string; room_number: string }
+  assigned_surgeon?: { name: string | null }
+  assigned_proctor?: { name: string | null }
+}
+
 export interface Patient {
   id: string
   medical_record: string

@@ -29,6 +29,9 @@ import SurgicalRoomEdit from './pages/surgical-rooms/SurgicalRoomEdit'
 import RoboticSystemsList from './pages/robotic-systems/RoboticSystemsList'
 import RoboticSystemCreate from './pages/robotic-systems/RoboticSystemCreate'
 import RoboticSystemEdit from './pages/robotic-systems/RoboticSystemEdit'
+import SurgicalBlocksList from './pages/surgical-blocks/SurgicalBlocksList'
+import SurgicalBlockCreate from './pages/surgical-blocks/SurgicalBlockCreate'
+import SurgicalBlockEdit from './pages/surgical-blocks/SurgicalBlockEdit'
 
 const App = () => (
   <BrowserRouter future={{ v7_startTransition: false, v7_relativeSplatPath: false }}>
@@ -63,6 +66,9 @@ const App = () => (
               <Route path="/sistemas-roboticos" element={<RoboticSystemsList />} />
               <Route path="/sistemas-roboticos/novo" element={<RoboticSystemCreate />} />
               <Route path="/sistemas-roboticos/:id/editar" element={<RoboticSystemEdit />} />
+              <Route path="/blocos-cirurgicos" element={<SurgicalBlocksList />} />
+              <Route path="/blocos-cirurgicos/novo" element={<SurgicalBlockCreate />} />
+              <Route path="/blocos-cirurgicos/:id/editar" element={<SurgicalBlockEdit />} />
             </Route>
           </Route>
 
