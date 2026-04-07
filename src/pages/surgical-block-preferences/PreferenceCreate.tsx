@@ -123,7 +123,6 @@ export default function PreferenceCreate() {
             num_cirurgioes_interessados,
             surgical_rooms ( room_name )
           `)
-          .neq('status_bloco', 'ALOCADO')
           .gte('block_date', new Date().toISOString().split('T')[0])
           .order('block_date', { ascending: true })
           .order('block_start_time', { ascending: true })

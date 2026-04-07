@@ -98,19 +98,39 @@ export function PedidoForm({ onSuccess }: { onSuccess?: () => void }) {
         if (pRes.data) setPatients(pRes.data)
         if (prRes.data) setProcedures(prRes.data)
 
-        // Fetch blocks available from today onwards
+        // Fetch blocks available from today onwards using the v_blocos_disponiveis view
         const today = new Date().toISOString().split('T')[0]
         const { data: bData } = await supabase
-          .from('surgical_blocks')
-          .select(
-            'id, block_date, block_start_time, block_end_time, is_available, surgical_rooms(room_name)',
-          )
-          .eq('is_available', true)
+          .from('v_blocos_disponiveis')
+          .select(`
+            bloco_id,
+            block_date,
+            block_start_time,
+            block_end_time,
+            surgical_room_id,
+            hospital_id,
+            status_bloco,
+            num_cirurgioes_interessados,
+            surgical_rooms ( room_name )
+          `)
           .gte('block_date', today)
           .order('block_date', { ascending: true })
           .order('block_start_time', { ascending: true })
 
-        if (bData) setBlocks(bData)
+        if (bData) {
+          // Map to match the expected structure for backwards compatibility
+          const mappedBlocks = bData.map((b: any) => ({
+            id: b.bloco_id,
+            block_date: b.block_date,
+            block_start_time: b.block_start_time,
+            block_end_time: b.block_end_time,
+            is_available: b.status_bloco !== 'ALOCADO',
+            status_bloco: b.status_bloco,
+            num_cirurgioes_interessados: b.num_cirurgioes_interessados,
+            surgical_rooms: b.surgical_rooms,
+          }))
+          setBlocks(mappedBlocks)
+        }
       } catch (error) {
         console.error('Erro ao carregar dados:', error)
       }
@@ -582,24 +602,64 @@ export function PedidoForm({ onSuccess }: { onSuccess?: () => void }) {
                               key={block.id}
                               className="flex flex-col sm:flex-row sm:items-center justify-between p-3 text-sm border rounded bg-background hover:border-primary/50 transition-colors gap-2"
                             >
-                              <div className="flex flex-wrap gap-x-4 gap-y-1">
-                                <span className="font-medium whitespace-nowrap">
-                                  {formatDate(block.block_date)}
-                                </span>
-                                <span className="whitespace-nowrap text-muted-foreground">
-                                  {block.surgical_rooms?.room_name}
-                                </span>
-                                <span className="whitespace-nowrap">
-                                  {block.block_start_time.slice(0, 5)} -{' '}
-                                  {block.block_end_time.slice(0, 5)}
-                                </span>
+                              <div className="flex flex-col gap-1">
+                                <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
+                                  <div
+                                    className={cn(
+                                      'w-3 h-3 rounded-full shrink-0',
+                                      block.status_bloco === 'ALOCADO'
+                                        ? 'bg-red-500'
+                                        : block.status_bloco === 'RESERVADO_PREFERENCIA'
+                                          ? 'bg-yellow-500'
+                                          : 'bg-green-500',
+                                    )}
+                                  />
+                                  <span
+                                    className={cn(
+                                      'font-medium whitespace-nowrap',
+                                      block.status_bloco === 'ALOCADO' &&
+                                        'line-through text-muted-foreground',
+                                    )}
+                                  >
+                                    {formatDate(block.block_date)}
+                                  </span>
+                                  <span className="whitespace-nowrap text-muted-foreground">
+                                    {block.surgical_rooms?.room_name}
+                                  </span>
+                                  <span className="whitespace-nowrap font-mono text-xs mt-0.5">
+                                    {block.block_start_time.slice(0, 5)} -{' '}
+                                    {block.block_end_time.slice(0, 5)}
+                                  </span>
+                                </div>
+                                {block.status_bloco === 'RESERVADO_PREFERENCIA' && (
+                                  <span className="text-xs text-yellow-600 font-medium ml-7">
+                                    ({block.num_cirurgioes_interessados} cirurgiões interessados)
+                                  </span>
+                                )}
+                                {block.status_bloco === 'ALOCADO' && (
+                                  <span className="text-xs text-red-500 font-medium ml-7">
+                                    Já alocado
+                                  </span>
+                                )}
                               </div>
                               <Button
                                 type="button"
                                 size="sm"
                                 variant="secondary"
                                 className="shrink-0"
-                                onClick={() => handleAddBlock(block.id)}
+                                disabled={block.status_bloco === 'ALOCADO'}
+                                onClick={() => {
+                                  if (block.status_bloco === 'ALOCADO') {
+                                    toast.error('Este bloco já está alocado. Selecione outro.')
+                                    return
+                                  }
+                                  if (block.status_bloco === 'RESERVADO_PREFERENCIA') {
+                                    toast.warning(
+                                      `${block.num_cirurgioes_interessados} cirurgiões já demonstraram interesse neste bloco.`,
+                                    )
+                                  }
+                                  handleAddBlock(block.id)
+                                }}
                               >
                                 <Plus className="w-4 h-4 mr-1" /> Adicionar
                               </Button>

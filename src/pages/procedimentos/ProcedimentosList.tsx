@@ -1,6 +1,5 @@
-import { useEffect, useState } from 'react'
-import { Plus, Loader2 } from 'lucide-react'
-import { Card, CardContent } from '@/components/ui/card'
+import { useState, useEffect } from 'react'
+import { supabase } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import {
   Table,
@@ -10,244 +9,319 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import { Badge } from '@/components/ui/badge'
+import { Input } from '@/components/ui/input'
+import { Plus, Edit, Trash2, Search } from 'lucide-react'
+import { toast } from 'sonner'
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
   DialogFooter,
 } from '@/components/ui/dialog'
-import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Switch } from '@/components/ui/switch'
-import { supabase } from '@/lib/supabase/client'
-import { toast } from 'sonner'
-import { useAuth } from '@/hooks/use-auth'
+import { Badge } from '@/components/ui/badge'
 
 export default function ProcedimentosList() {
-  const [items, setItems] = useState<any[]>([])
-  const [isLoading, setIsLoading] = useState(true)
-  const [isDialogOpen, setIsDialogOpen] = useState(false)
+  const [procedimentos, setProcedimentos] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+  const [search, setSearch] = useState('')
+  const [canEdit, setCanEdit] = useState(false)
+
+  const [isOpen, setIsOpen] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const { hasRole } = useAuth()
-
-  const canCreate = hasRole('admin') || hasRole('nursing')
-
+  const [currentId, setCurrentId] = useState<string | null>(null)
   const [formData, setFormData] = useState({
-    tuss_code: '',
     name: '',
+    tuss_code: '',
     surgical_time_minutes: 60,
     setup_time_minutes: 30,
     requires_robot: true,
     requires_proctor: false,
   })
 
-  const fetchProcedimentos = async () => {
-    setIsLoading(true)
-    try {
-      const { data, error } = await supabase.from('procedures').select('*').order('name')
-      if (error) throw error
-      setItems(data || [])
-    } catch (error) {
-      console.error(error)
-      toast.error('Erro ao carregar procedimentos')
-    } finally {
-      setIsLoading(false)
-    }
-  }
-
   useEffect(() => {
+    async function checkRole() {
+      const { data } = await supabase.rpc('get_user_roles')
+      if (
+        data &&
+        (data.includes('admin') || data.includes('nursing') || data.includes('facility_manager'))
+      ) {
+        setCanEdit(true)
+      }
+    }
+    checkRole()
     fetchProcedimentos()
   }, [])
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!formData.name || !formData.tuss_code) {
-      toast.error('Nome e TUSS são obrigatórios')
-      return
+  const fetchProcedimentos = async () => {
+    setLoading(true)
+    const { data, error } = await supabase.from('procedures').select('*').order('name')
+
+    if (error) {
+      toast.error('Erro ao buscar procedimentos')
+    } else {
+      setProcedimentos(data || [])
     }
+    setLoading(false)
+  }
 
-    setIsSubmitting(true)
-    try {
-      const { error } = await supabase.from('procedures').insert([formData])
-      if (error) throw error
+  const handleDelete = async (id: string) => {
+    if (!confirm('Deseja realmente excluir este procedimento?')) return
+    const { error } = await supabase.from('procedures').delete().eq('id', id)
+    if (error) {
+      toast.error('Erro ao excluir: ' + error.message)
+    } else {
+      toast.success('Procedimento excluído com sucesso')
+      fetchProcedimentos()
+    }
+  }
 
-      toast.success('Procedimento criado com sucesso!')
-      setIsDialogOpen(false)
+  const openForm = (proc?: any) => {
+    if (proc) {
+      setCurrentId(proc.id)
       setFormData({
-        tuss_code: '',
+        name: proc.name,
+        tuss_code: proc.tuss_code,
+        surgical_time_minutes: proc.surgical_time_minutes || 60,
+        setup_time_minutes: proc.setup_time_minutes || 30,
+        requires_robot: proc.requires_robot,
+        requires_proctor: proc.requires_proctor,
+      })
+    } else {
+      setCurrentId(null)
+      setFormData({
         name: '',
+        tuss_code: '',
         surgical_time_minutes: 60,
         setup_time_minutes: 30,
         requires_robot: true,
         requires_proctor: false,
       })
+    }
+    setIsOpen(true)
+  }
+
+  const onSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setIsSubmitting(true)
+    try {
+      if (currentId) {
+        const { error } = await supabase.from('procedures').update(formData).eq('id', currentId)
+        if (error) throw error
+        toast.success('Procedimento atualizado')
+      } else {
+        const { error } = await supabase.from('procedures').insert([formData])
+        if (error) throw error
+        toast.success('Procedimento criado')
+      }
+      setIsOpen(false)
       fetchProcedimentos()
-    } catch (error: any) {
-      console.error(error)
-      toast.error(error.message || 'Erro ao criar procedimento')
+    } catch (err: any) {
+      toast.error('Erro ao salvar: ' + err.message)
     } finally {
       setIsSubmitting(false)
     }
   }
 
+  const filtered = procedimentos.filter(
+    (p) => p.name.toLowerCase().includes(search.toLowerCase()) || p.tuss_code.includes(search),
+  )
+
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+    <div className="p-6 max-w-7xl mx-auto space-y-6">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Procedimentos</h1>
-          <p className="text-muted-foreground">Catálogo de procedimentos cirúrgicos do sistema.</p>
+          <p className="text-muted-foreground mt-2">
+            Catálogo de procedimentos cirúrgicos e códigos TUSS.
+          </p>
         </div>
-
-        {canCreate && (
-          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-            <DialogTrigger asChild>
-              <Button>
-                <Plus className="w-4 h-4 mr-2" />
-                Novo Procedimento
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-[425px]">
-              <form onSubmit={handleSubmit}>
-                <DialogHeader>
-                  <DialogTitle>Novo Procedimento</DialogTitle>
-                </DialogHeader>
-                <div className="grid gap-4 py-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="tuss_code">Código TUSS *</Label>
-                    <Input
-                      id="tuss_code"
-                      value={formData.tuss_code}
-                      onChange={(e) => setFormData({ ...formData, tuss_code: e.target.value })}
-                      placeholder="Ex: 31005462"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="name">Nome do Procedimento *</Label>
-                    <Input
-                      id="name"
-                      value={formData.name}
-                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                      placeholder="Ex: Prostatectomia Radical"
-                    />
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="surgical_time_minutes">Tempo Cirúrgico (min) *</Label>
-                      <Input
-                        id="surgical_time_minutes"
-                        type="number"
-                        min="1"
-                        value={formData.surgical_time_minutes}
-                        onChange={(e) =>
-                          setFormData({
-                            ...formData,
-                            surgical_time_minutes: parseInt(e.target.value),
-                          })
-                        }
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="setup_time_minutes">Tempo Setup (min)</Label>
-                      <Input
-                        id="setup_time_minutes"
-                        type="number"
-                        min="0"
-                        value={formData.setup_time_minutes}
-                        onChange={(e) =>
-                          setFormData({ ...formData, setup_time_minutes: parseInt(e.target.value) })
-                        }
-                      />
-                    </div>
-                  </div>
-
-                  <div className="flex items-center justify-between mt-2">
-                    <Label htmlFor="requires_robot" className="cursor-pointer">
-                      Requer Robô?
-                    </Label>
-                    <Switch
-                      id="requires_robot"
-                      checked={formData.requires_robot}
-                      onCheckedChange={(val) => setFormData({ ...formData, requires_robot: val })}
-                    />
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <Label htmlFor="requires_proctor" className="cursor-pointer">
-                      Requer Proctor?
-                    </Label>
-                    <Switch
-                      id="requires_proctor"
-                      checked={formData.requires_proctor}
-                      onCheckedChange={(val) => setFormData({ ...formData, requires_proctor: val })}
-                    />
-                  </div>
-                </div>
-                <DialogFooter>
-                  <Button type="submit" disabled={isSubmitting}>
-                    {isSubmitting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
-                    Salvar
-                  </Button>
-                </DialogFooter>
-              </form>
-            </DialogContent>
-          </Dialog>
-        )}
+        <div className="flex items-center gap-3">
+          <div className="relative">
+            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Input
+              type="search"
+              placeholder="Buscar procedimento..."
+              className="w-64 pl-8"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+          </div>
+          {canEdit && (
+            <Button onClick={() => openForm()}>
+              <Plus className="w-4 h-4 mr-2" /> Novo
+            </Button>
+          )}
+        </div>
       </div>
 
-      <Card>
-        <CardContent className="p-0">
-          <Table>
-            <TableHeader>
+      <Dialog open={isOpen} onOpenChange={setIsOpen}>
+        <DialogContent>
+          <form onSubmit={onSubmit} className="space-y-4">
+            <DialogHeader>
+              <DialogTitle>{currentId ? 'Editar Procedimento' : 'Novo Procedimento'}</DialogTitle>
+            </DialogHeader>
+            <div className="grid gap-4 py-4">
+              <div className="space-y-2">
+                <Label>Nome do Procedimento</Label>
+                <Input
+                  required
+                  value={formData.name}
+                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Código TUSS</Label>
+                <Input
+                  required
+                  value={formData.tuss_code}
+                  onChange={(e) => setFormData({ ...formData, tuss_code: e.target.value })}
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Tempo Cirúrgico (min)</Label>
+                  <Input
+                    type="number"
+                    required
+                    min={1}
+                    value={formData.surgical_time_minutes}
+                    onChange={(e) =>
+                      setFormData({ ...formData, surgical_time_minutes: parseInt(e.target.value) })
+                    }
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Tempo Setup (min)</Label>
+                  <Input
+                    type="number"
+                    required
+                    min={0}
+                    value={formData.setup_time_minutes}
+                    onChange={(e) =>
+                      setFormData({ ...formData, setup_time_minutes: parseInt(e.target.value) })
+                    }
+                  />
+                </div>
+              </div>
+              <div className="flex items-center gap-6 pt-2">
+                <Label className="flex items-center gap-2 cursor-pointer font-normal">
+                  <Input
+                    type="checkbox"
+                    className="w-4 h-4"
+                    checked={formData.requires_robot}
+                    onChange={(e) => setFormData({ ...formData, requires_robot: e.target.checked })}
+                  />
+                  Requer Robô
+                </Label>
+                <Label className="flex items-center gap-2 cursor-pointer font-normal">
+                  <Input
+                    type="checkbox"
+                    className="w-4 h-4"
+                    checked={formData.requires_proctor}
+                    onChange={(e) =>
+                      setFormData({ ...formData, requires_proctor: e.target.checked })
+                    }
+                  />
+                  Requer Proctor
+                </Label>
+              </div>
+            </div>
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => setIsOpen(false)}>
+                Cancelar
+              </Button>
+              <Button type="submit" disabled={isSubmitting}>
+                {isSubmitting ? 'Salvando...' : 'Salvar'}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      <div className="border rounded-md bg-white shadow-sm overflow-hidden">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>TUSS</TableHead>
+              <TableHead>Nome</TableHead>
+              <TableHead>Tempo Estimado</TableHead>
+              <TableHead>Requisitos</TableHead>
+              {canEdit && <TableHead className="w-[100px]"></TableHead>}
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {loading ? (
               <TableRow>
-                <TableHead>TUSS</TableHead>
-                <TableHead>Nome</TableHead>
-                <TableHead>Tempo (min)</TableHead>
-                <TableHead>Requer Robô</TableHead>
-                <TableHead>Requer Proctor</TableHead>
+                <TableCell colSpan={5} className="text-center py-8">
+                  Carregando...
+                </TableCell>
               </TableRow>
-            </TableHeader>
-            <TableBody>
-              {isLoading ? (
-                <TableRow>
-                  <TableCell colSpan={5} className="h-24 text-center">
-                    Carregando...
+            ) : filtered.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={5} className="text-center py-8">
+                  Nenhum procedimento encontrado.
+                </TableCell>
+              </TableRow>
+            ) : (
+              filtered.map((proc) => (
+                <TableRow key={proc.id}>
+                  <TableCell className="font-mono text-sm">{proc.tuss_code}</TableCell>
+                  <TableCell className="font-medium">{proc.name}</TableCell>
+                  <TableCell>
+                    {proc.surgical_time_minutes}m cirurgia
+                    <br />
+                    <span className="text-xs text-muted-foreground">
+                      +{proc.setup_time_minutes}m setup
+                    </span>
                   </TableCell>
-                </TableRow>
-              ) : items.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={5} className="h-24 text-center text-muted-foreground">
-                    Nenhum procedimento encontrado.
+                  <TableCell>
+                    <div className="flex flex-wrap gap-2">
+                      {proc.requires_robot && (
+                        <Badge
+                          variant="secondary"
+                          className="bg-blue-50 text-blue-700 hover:bg-blue-50 border-blue-200"
+                        >
+                          Robô
+                        </Badge>
+                      )}
+                      {proc.requires_proctor && (
+                        <Badge
+                          variant="secondary"
+                          className="bg-purple-50 text-purple-700 hover:bg-purple-50 border-purple-200"
+                        >
+                          Proctor
+                        </Badge>
+                      )}
+                      {!proc.requires_robot && !proc.requires_proctor && (
+                        <span className="text-muted-foreground text-sm">-</span>
+                      )}
+                    </div>
                   </TableCell>
+                  {canEdit && (
+                    <TableCell>
+                      <div className="flex items-center gap-2 justify-end">
+                        <Button variant="ghost" size="icon" onClick={() => openForm(proc)}>
+                          <Edit className="w-4 h-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="text-red-500 hover:bg-red-50"
+                          onClick={() => handleDelete(proc.id)}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    </TableCell>
+                  )}
                 </TableRow>
-              ) : (
-                items.map((p) => (
-                  <TableRow key={p.id}>
-                    <TableCell className="font-mono text-muted-foreground">{p.tuss_code}</TableCell>
-                    <TableCell className="font-medium">{p.name}</TableCell>
-                    <TableCell>{p.surgical_time_minutes}m</TableCell>
-                    <TableCell>
-                      {p.requires_robot ? (
-                        <Badge>Sim</Badge>
-                      ) : (
-                        <Badge variant="secondary">Não</Badge>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      {p.requires_proctor ? (
-                        <Badge variant="destructive">Sim</Badge>
-                      ) : (
-                        <Badge variant="outline">Não</Badge>
-                      )}
-                    </TableCell>
-                  </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
+              ))
+            )}
+          </TableBody>
+        </Table>
+      </div>
     </div>
   )
 }
