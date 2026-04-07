@@ -11,6 +11,8 @@ import {
   TrendingUp,
   Clock,
   Calendar,
+  LayoutTemplate,
+  CalendarOff,
 } from 'lucide-react'
 import {
   Sidebar,
@@ -159,6 +161,28 @@ export function AppSidebar() {
                         <Link to="/blocos-cirurgicos">
                           <Clock className="w-4 h-4 mr-3 text-emerald-500" />
                           <span>Blocos Cirúrgicos</span>
+                        </Link>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                    <SidebarMenuItem>
+                      <SidebarMenuButton
+                        asChild
+                        isActive={location.pathname.startsWith('/modelos-blocos')}
+                      >
+                        <Link to="/modelos-blocos">
+                          <LayoutTemplate className="w-4 h-4 mr-3 text-pink-500" />
+                          <span>Modelos de Blocos</span>
+                        </Link>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                    <SidebarMenuItem>
+                      <SidebarMenuButton
+                        asChild
+                        isActive={location.pathname.startsWith('/excecoes-blocos')}
+                      >
+                        <Link to="/excecoes-blocos">
+                          <CalendarOff className="w-4 h-4 mr-3 text-yellow-500" />
+                          <span>Exceções de Blocos</span>
                         </Link>
                       </SidebarMenuButton>
                     </SidebarMenuItem>

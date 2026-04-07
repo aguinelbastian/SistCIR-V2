@@ -35,6 +35,12 @@ import SurgicalBlockEdit from './pages/surgical-blocks/SurgicalBlockEdit'
 import ResourceAllocationsList from './pages/resource-allocations/ResourceAllocationsList'
 import ResourceAllocationCreate from './pages/resource-allocations/ResourceAllocationCreate'
 import ResourceAllocationEdit from './pages/resource-allocations/ResourceAllocationEdit'
+import SurgicalBlockTemplatesList from './pages/surgical-block-templates/SurgicalBlockTemplatesList'
+import SurgicalBlockTemplateCreate from './pages/surgical-block-templates/SurgicalBlockTemplateCreate'
+import SurgicalBlockTemplateEdit from './pages/surgical-block-templates/SurgicalBlockTemplateEdit'
+import SurgicalBlockExceptionsList from './pages/surgical-block-exceptions/SurgicalBlockExceptionsList'
+import SurgicalBlockExceptionCreate from './pages/surgical-block-exceptions/SurgicalBlockExceptionCreate'
+import SurgicalBlockExceptionEdit from './pages/surgical-block-exceptions/SurgicalBlockExceptionEdit'
 
 const App = () => (
   <BrowserRouter future={{ v7_startTransition: false, v7_relativeSplatPath: false }}>
@@ -75,6 +81,12 @@ const App = () => (
               <Route path="/alocacao-recursos" element={<ResourceAllocationsList />} />
               <Route path="/alocacao-recursos/nova" element={<ResourceAllocationCreate />} />
               <Route path="/alocacao-recursos/:id/editar" element={<ResourceAllocationEdit />} />
+              <Route path="/modelos-blocos" element={<SurgicalBlockTemplatesList />} />
+              <Route path="/modelos-blocos/novo" element={<SurgicalBlockTemplateCreate />} />
+              <Route path="/modelos-blocos/:id/editar" element={<SurgicalBlockTemplateEdit />} />
+              <Route path="/excecoes-blocos" element={<SurgicalBlockExceptionsList />} />
+              <Route path="/excecoes-blocos/nova" element={<SurgicalBlockExceptionCreate />} />
+              <Route path="/excecoes-blocos/:id/editar" element={<SurgicalBlockExceptionEdit />} />
             </Route>
           </Route>
 
