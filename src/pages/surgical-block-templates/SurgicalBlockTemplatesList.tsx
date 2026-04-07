@@ -23,6 +23,7 @@ import {
 } from '@/components/ui/dialog'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { toast } from 'sonner'
+import { HospitalSelector } from '@/components/HospitalSelector'
 
 const DAY_LABELS: Record<string, string> = {
   MONDAY: 'Segunda-feira',
