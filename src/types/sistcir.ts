@@ -18,6 +18,20 @@ export type UserRole =
   | 'nursing'
   | 'coordinator'
   | 'admin'
+  | 'facility_manager'
+
+export interface SurgicalRoom {
+  id: string
+  room_number: string
+  room_name: string
+  facility_id: string
+  robotic_system_id?: string
+  capacity_patients: number
+  is_active: boolean
+  notes?: string
+  created_at: string
+  updated_at: string
+}
 
 export interface Patient {
   id: string

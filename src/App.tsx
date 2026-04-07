@@ -23,6 +23,9 @@ import UsersPage from './pages/admin/UsersPage'
 import AdminOpmeList from './pages/admin/AdminOpmeList'
 import MinhaConta from './pages/account/MinhaConta'
 import RelatoriosPage from './pages/relatorios/RelatoriosPage'
+import SurgicalRoomsList from './pages/surgical-rooms/SurgicalRoomsList'
+import SurgicalRoomCreate from './pages/surgical-rooms/SurgicalRoomCreate'
+import SurgicalRoomEdit from './pages/surgical-rooms/SurgicalRoomEdit'
 
 const App = () => (
   <BrowserRouter future={{ v7_startTransition: false, v7_relativeSplatPath: false }}>
@@ -51,6 +54,9 @@ const App = () => (
               <Route path="/pedidos" element={<PedidosList />} />
               <Route path="/pedidos/novo" element={<PedidoCreate />} />
               <Route path="/pedidos/:id" element={<PedidoDetail />} />
+              <Route path="/salas-cirurgicas" element={<SurgicalRoomsList />} />
+              <Route path="/salas-cirurgicas/nova" element={<SurgicalRoomCreate />} />
+              <Route path="/salas-cirurgicas/:id/editar" element={<SurgicalRoomEdit />} />
             </Route>
           </Route>
 

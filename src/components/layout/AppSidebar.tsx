@@ -125,6 +125,19 @@ export function AppSidebar() {
                     </SidebarMenuButton>
                   </SidebarMenuItem>
                 )}
+                {(hasRole('admin') || hasRole('facility_manager')) && (
+                  <SidebarMenuItem>
+                    <SidebarMenuButton
+                      asChild
+                      isActive={location.pathname.startsWith('/salas-cirurgicas')}
+                    >
+                      <Link to="/salas-cirurgicas">
+                        <Activity className="w-4 h-4 mr-3 text-blue-500" />
+                        <span>Salas Cirúrgicas</span>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                )}
               </SidebarMenu>
             </SidebarGroupContent>
           </SidebarGroup>
