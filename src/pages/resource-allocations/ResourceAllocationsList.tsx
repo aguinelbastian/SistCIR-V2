@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Plus, Edit, Trash2 } from 'lucide-react'
+import { Plus, Edit, Trash2, Info } from 'lucide-react'
 import { supabase } from '@/lib/supabase/client'
 import { useToast } from '@/hooks/use-toast'
 import { Button } from '@/components/ui/button'
@@ -27,6 +27,9 @@ export default function ResourceAllocationsList() {
         id,
         allocation_status,
         estimated_duration_minutes,
+        selected_preference_order,
+        is_fallback_allocation,
+        fallback_reason,
         pedidos_cirurgia ( patients ( full_name ) ),
         surgical_rooms ( room_name ),
         robotic_systems ( system_name ),
@@ -85,6 +88,7 @@ export default function ResourceAllocationsList() {
               <TableHead>Sala / Robô</TableHead>
               <TableHead>Cirurgião</TableHead>
               <TableHead>Duração</TableHead>
+              <TableHead>Tipo de Alocação</TableHead>
               <TableHead>Status</TableHead>
               <TableHead className="w-[100px]"></TableHead>
             </TableRow>
@@ -116,6 +120,38 @@ export default function ResourceAllocationsList() {
                   </TableCell>
                   <TableCell>{alloc.profiles?.name}</TableCell>
                   <TableCell>{alloc.estimated_duration_minutes} min</TableCell>
+                  <TableCell>
+                    {alloc.is_fallback_allocation ? (
+                      <div className="flex items-center group relative cursor-help">
+                        <Badge
+                          variant="secondary"
+                          className="bg-slate-200 hover:bg-slate-300 text-slate-700"
+                        >
+                          Fallback <Info className="w-3 h-3 ml-1" />
+                        </Badge>
+                        <div className="hidden group-hover:block absolute z-10 w-48 p-2 bg-slate-800 text-white text-xs rounded shadow-lg bottom-full left-1/2 -translate-x-1/2 mb-1">
+                          <p className="font-semibold">Alocado fora das preferências</p>
+                          <p className="mt-1 opacity-90">
+                            Motivo: {alloc.fallback_reason || 'Não informado'}
+                          </p>
+                        </div>
+                      </div>
+                    ) : alloc.selected_preference_order ? (
+                      <Badge
+                        className={
+                          alloc.selected_preference_order === 1
+                            ? 'bg-blue-500 hover:bg-blue-600'
+                            : alloc.selected_preference_order === 2
+                              ? 'bg-orange-500 hover:bg-orange-600'
+                              : 'bg-pink-500 hover:bg-pink-600'
+                        }
+                      >
+                        {alloc.selected_preference_order}ª Preferência
+                      </Badge>
+                    ) : (
+                      <Badge variant="outline">Normal</Badge>
+                    )}
+                  </TableCell>
                   <TableCell>
                     <Badge
                       variant={
