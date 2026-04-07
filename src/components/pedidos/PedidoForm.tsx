@@ -22,10 +22,21 @@ import {
   CommandList,
 } from '@/components/ui/command'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
+import { Badge } from '@/components/ui/badge'
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { toast } from 'sonner'
 import { api } from '@/services/api'
 import { supabase } from '@/lib/supabase/client'
-import { Calendar, Check, ChevronsUpDown } from 'lucide-react'
+import {
+  Calendar,
+  Check,
+  ChevronsUpDown,
+  ArrowUp,
+  ArrowDown,
+  Trash2,
+  Plus,
+  AlertCircle,
+} from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 const formSchema = z.object({
@@ -35,16 +46,35 @@ const formSchema = z.object({
   clinical_indication: z.string().min(1, 'Indicação clínica é obrigatória'),
   operating_room: z.string().optional(),
   previsao_tempo_minutos: z.coerce.number().min(1, 'Obrigatório'),
+  block_preferences: z
+    .array(z.string())
+    .length(3, 'Você deve selecionar exatamente 3 preferências de horário.')
+    .refine(
+      (val) => new Set(val).size === val.length,
+      'Não é permitido selecionar o mesmo bloco mais de uma vez.',
+    ),
 })
+
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
+
+const formatDate = (dateString: string) => {
+  const [year, month, day] = dateString.split('-')
+  return `${day}/${month}/${year}`
+}
 
 export function PedidoForm({ onSuccess }: { onSuccess?: () => void }) {
   const navigate = useNavigate()
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [patients, setPatients] = useState<any[]>([])
   const [procedures, setProcedures] = useState<any[]>([])
+  const [blocks, setBlocks] = useState<any[]>([])
 
   const [patientOpen, setPatientOpen] = useState(false)
   const [procedureOpen, setProcedureOpen] = useState(false)
+
+  const [successData, setSuccessData] = useState<{ pedidoId: string; preferences: any[] } | null>(
+    null,
+  )
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -55,8 +85,11 @@ export function PedidoForm({ onSuccess }: { onSuccess?: () => void }) {
       clinical_indication: '',
       operating_room: '',
       previsao_tempo_minutos: 60,
+      block_preferences: [],
     },
   })
+
+  const selectedBlocks = form.watch('block_preferences') || []
 
   useEffect(() => {
     async function loadData() {
@@ -64,6 +97,20 @@ export function PedidoForm({ onSuccess }: { onSuccess?: () => void }) {
         const [pRes, prRes] = await Promise.all([api.pacientes.list(), api.procedimentos.list()])
         if (pRes.data) setPatients(pRes.data)
         if (prRes.data) setProcedures(prRes.data)
+
+        // Fetch blocks available from today onwards
+        const today = new Date().toISOString().split('T')[0]
+        const { data: bData } = await supabase
+          .from('surgical_blocks')
+          .select(
+            'id, block_date, block_start_time, block_end_time, is_available, surgical_rooms(room_name)',
+          )
+          .eq('is_available', true)
+          .gte('block_date', today)
+          .order('block_date', { ascending: true })
+          .order('block_start_time', { ascending: true })
+
+        if (bData) setBlocks(bData)
       } catch (error) {
         console.error('Erro ao carregar dados:', error)
       }
@@ -71,47 +118,60 @@ export function PedidoForm({ onSuccess }: { onSuccess?: () => void }) {
     loadData()
   }, [])
 
+  async function submitWithRetry(values: any, maxRetries = 3) {
+    let lastError = null
+    for (let i = 0; i < maxRetries; i++) {
+      try {
+        const response = await supabase.functions.invoke('create-pedido-cirurgia', {
+          body: values,
+        })
+        if (response.error) throw response.error
+        if (response.data?.code && response.data?.code >= 400) {
+          throw new Error(response.data.message || response.data.error)
+        }
+        return response.data
+      } catch (error: any) {
+        lastError = error
+        if (i === maxRetries - 1) break
+        const backoff = Math.pow(2, i) * 1000
+        console.warn(`Tentativa ${i + 1} falhou. Tentando novamente em ${backoff}ms...`)
+        await sleep(backoff)
+      }
+    }
+    throw lastError
+  }
+
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsSubmitting(true)
     try {
       const {
         data: { user },
       } = await supabase.auth.getUser()
-
       if (!user) throw new Error('Não autenticado')
 
-      const { data, error } = await supabase.functions.invoke('create-pedido-cirurgia', {
-        body: {
-          ...values,
-          surgeon_id: user.id,
-          status: '1_RASCUNHO',
-          datas_propostas: [
-            { data: new Date().toISOString().split('T')[0], turno: 'manhã' },
-            { data: new Date().toISOString().split('T')[0], turno: 'tarde' },
-            { data: new Date().toISOString().split('T')[0], turno: 'manhã' },
-          ],
-          reserva_uti: false,
-          anexo_guia_url: 'N/A',
-          anexo_guia_tipo: 'pdf',
-          alergias_paciente: false,
-        },
+      const prefDetails = values.block_preferences.map((id) => {
+        const b = blocks.find((b) => b.id === id)
+        return {
+          date: formatDate(b.block_date),
+          room: b.surgical_rooms?.room_name || 'Desconhecida',
+          time: `${b.block_start_time.slice(0, 5)} - ${b.block_end_time.slice(0, 5)}`,
+        }
       })
 
-      if (error) {
-        console.error('Erro ao criar cirurgia (função):', error)
-        toast.error(`Erro: ${error.message}`)
-        return
+      const payload = {
+        ...values,
+        surgeon_id: user.id,
+        status: '1_RASCUNHO',
+        reserva_uti: false,
+        anexo_guia_url: 'N/A',
+        anexo_guia_tipo: 'pdf',
+        alergias_paciente: false,
       }
 
-      if (data?.code && data?.code >= 400) {
-        console.error('Erro ao criar cirurgia (dados):', data.message || data.error)
-        toast.error(`Erro: ${data.message || data.error}`)
-        return
-      }
+      const data = await submitWithRetry(payload)
 
-      toast.success('Cirurgia criada com sucesso!')
-      onSuccess?.()
-      navigate('/pedidos')
+      setSuccessData({ pedidoId: data.pedido_id || data.data?.id, preferences: prefDetails })
+      toast.success('Cirurgia criada com 3 preferências de horários registradas!')
     } catch (err: any) {
       console.error('Erro inesperado:', err)
       toast.error('Erro ao criar cirurgia', { description: err.message })
@@ -134,6 +194,95 @@ export function PedidoForm({ onSuccess }: { onSuccess?: () => void }) {
     } catch (error: any) {
       toast.error('Erro ao conectar com Google Calendar', { description: error.message })
     }
+  }
+
+  const handleAddBlock = (blockId: string) => {
+    if (selectedBlocks.length >= 3) {
+      toast.warning('Você já selecionou 3 preferências.')
+      return
+    }
+    if (selectedBlocks.includes(blockId)) {
+      toast.warning('Este bloco já foi selecionado.')
+      return
+    }
+    form.setValue('block_preferences', [...selectedBlocks, blockId], { shouldValidate: true })
+  }
+
+  const handleRemoveBlock = (blockId: string) => {
+    form.setValue(
+      'block_preferences',
+      selectedBlocks.filter((id) => id !== blockId),
+      { shouldValidate: true },
+    )
+  }
+
+  const moveBlock = (index: number, direction: 'up' | 'down') => {
+    const newBlocks = [...selectedBlocks]
+    if (direction === 'up' && index > 0) {
+      ;[newBlocks[index - 1], newBlocks[index]] = [newBlocks[index], newBlocks[index - 1]]
+    } else if (direction === 'down' && index < newBlocks.length - 1) {
+      ;[newBlocks[index + 1], newBlocks[index]] = [newBlocks[index], newBlocks[index + 1]]
+    }
+    form.setValue('block_preferences', newBlocks, { shouldValidate: true })
+  }
+
+  if (successData) {
+    return (
+      <div className="space-y-6 p-6 border rounded-lg bg-green-50/30 animate-fade-in-up">
+        <div className="flex items-center gap-3 text-green-700">
+          <Check className="w-8 h-8" />
+          <h3 className="text-2xl font-bold">Cirurgia criada com sucesso!</h3>
+        </div>
+        <p className="text-muted-foreground text-lg">
+          Suas 3 preferências de horários foram registradas:
+        </p>
+        <div className="space-y-3">
+          {successData.preferences.map((pref, i) => (
+            <div
+              key={i}
+              className="flex items-center gap-4 bg-background p-4 rounded-md shadow-sm border"
+            >
+              <Badge
+                className={cn(
+                  'text-sm px-3 py-1 text-white border-0',
+                  i === 0
+                    ? 'bg-blue-500 hover:bg-blue-600'
+                    : i === 1
+                      ? 'bg-orange-500 hover:bg-orange-600'
+                      : 'bg-rose-500 hover:bg-rose-600',
+                )}
+              >
+                {i + 1}ª Preferência
+              </Badge>
+              <div className="flex-1 flex flex-col sm:flex-row sm:gap-6 text-base font-medium">
+                <span>{pref.date}</span>
+                <span className="text-muted-foreground">{pref.room}</span>
+                <span>{pref.time}</span>
+              </div>
+            </div>
+          ))}
+        </div>
+        <Alert className="bg-blue-50 text-blue-800 border-blue-200">
+          <AlertCircle className="h-4 w-4 text-blue-800" />
+          <AlertTitle>Importante</AlertTitle>
+          <AlertDescription>
+            O administrador avaliará sua solicitação e escolherá um desses horários após a aprovação
+            final. Você será notificado sobre a decisão.
+          </AlertDescription>
+        </Alert>
+        <div className="flex justify-end pt-4">
+          <Button
+            size="lg"
+            onClick={() => {
+              onSuccess?.()
+              navigate('/pedidos')
+            }}
+          >
+            Ir para Meus Pedidos
+          </Button>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -335,10 +484,144 @@ export function PedidoForm({ onSuccess }: { onSuccess?: () => void }) {
               </FormItem>
             )}
           />
+
+          {/* NOVO: Preferências de Horários */}
+          <FormField
+            control={form.control}
+            name="block_preferences"
+            render={() => (
+              <FormItem className="md:col-span-2">
+                <FormLabel className="text-base font-semibold">Preferências de Horários</FormLabel>
+                <p className="text-sm text-muted-foreground pb-2">
+                  Selecione exatamente 3 blocos cirúrgicos disponíveis e defina a ordem de sua
+                  preferência.
+                </p>
+                <div className="space-y-4 border rounded-md p-4 bg-muted/10">
+                  <div className="space-y-2">
+                    {selectedBlocks.length === 0 && (
+                      <p className="text-sm text-muted-foreground">Nenhum bloco selecionado.</p>
+                    )}
+                    {selectedBlocks.map((blockId, index) => {
+                      const block = blocks.find((b) => b.id === blockId)
+                      if (!block) return null
+                      return (
+                        <div
+                          key={blockId}
+                          className="flex flex-col sm:flex-row sm:items-center gap-3 bg-background p-3 rounded-md border shadow-sm transition-all"
+                        >
+                          <Badge
+                            className={cn(
+                              'self-start sm:self-center text-white border-0',
+                              index === 0
+                                ? 'bg-blue-500 hover:bg-blue-600'
+                                : index === 1
+                                  ? 'bg-orange-500 hover:bg-orange-600'
+                                  : 'bg-rose-500 hover:bg-rose-600',
+                            )}
+                          >
+                            {index + 1}ª Preferência
+                          </Badge>
+                          <div className="flex-1 flex flex-wrap gap-x-4 gap-y-1 text-sm">
+                            <span className="font-medium whitespace-nowrap">
+                              {formatDate(block.block_date)}
+                            </span>
+                            <span className="whitespace-nowrap text-muted-foreground">
+                              {block.surgical_rooms?.room_name}
+                            </span>
+                            <span className="whitespace-nowrap">
+                              {block.block_start_time.slice(0, 5)} -{' '}
+                              {block.block_end_time.slice(0, 5)}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-1 self-end sm:self-center">
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8"
+                              onClick={() => moveBlock(index, 'up')}
+                              disabled={index === 0}
+                            >
+                              <ArrowUp className="w-4 h-4" />
+                            </Button>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8"
+                              onClick={() => moveBlock(index, 'down')}
+                              disabled={index === selectedBlocks.length - 1}
+                            >
+                              <ArrowDown className="w-4 h-4" />
+                            </Button>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 text-destructive hover:bg-destructive/10 hover:text-destructive"
+                              onClick={() => handleRemoveBlock(blockId)}
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+
+                  {selectedBlocks.length < 3 && (
+                    <div className="pt-4 border-t">
+                      <h5 className="text-sm font-medium mb-3">
+                        Blocos Disponíveis para Adicionar:
+                      </h5>
+                      <div className="grid grid-cols-1 gap-2 max-h-60 overflow-y-auto pr-2">
+                        {blocks
+                          .filter((b) => !selectedBlocks.includes(b.id))
+                          .map((block) => (
+                            <div
+                              key={block.id}
+                              className="flex flex-col sm:flex-row sm:items-center justify-between p-3 text-sm border rounded bg-background hover:border-primary/50 transition-colors gap-2"
+                            >
+                              <div className="flex flex-wrap gap-x-4 gap-y-1">
+                                <span className="font-medium whitespace-nowrap">
+                                  {formatDate(block.block_date)}
+                                </span>
+                                <span className="whitespace-nowrap text-muted-foreground">
+                                  {block.surgical_rooms?.room_name}
+                                </span>
+                                <span className="whitespace-nowrap">
+                                  {block.block_start_time.slice(0, 5)} -{' '}
+                                  {block.block_end_time.slice(0, 5)}
+                                </span>
+                              </div>
+                              <Button
+                                type="button"
+                                size="sm"
+                                variant="secondary"
+                                className="shrink-0"
+                                onClick={() => handleAddBlock(block.id)}
+                              >
+                                <Plus className="w-4 h-4 mr-1" /> Adicionar
+                              </Button>
+                            </div>
+                          ))}
+                        {blocks.filter((b) => !selectedBlocks.includes(b.id)).length === 0 && (
+                          <p className="text-sm text-muted-foreground">
+                            Não há mais blocos disponíveis para seleção.
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
         </div>
 
         <div className="flex justify-end gap-2 pt-4">
-          <Button type="submit" disabled={isSubmitting} size="lg">
+          <Button type="submit" disabled={isSubmitting} size="lg" className="w-full sm:w-auto">
             {isSubmitting ? 'Salvando...' : 'Salvar Pedido'}
           </Button>
         </div>
