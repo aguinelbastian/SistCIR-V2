@@ -41,6 +41,8 @@ import SurgicalBlockTemplateEdit from './pages/surgical-block-templates/Surgical
 import SurgicalBlockExceptionsList from './pages/surgical-block-exceptions/SurgicalBlockExceptionsList'
 import SurgicalBlockExceptionCreate from './pages/surgical-block-exceptions/SurgicalBlockExceptionCreate'
 import SurgicalBlockExceptionEdit from './pages/surgical-block-exceptions/SurgicalBlockExceptionEdit'
+import PreferencesList from './pages/surgical-block-preferences/PreferencesList'
+import PreferenceCreate from './pages/surgical-block-preferences/PreferenceCreate'
 
 const App = () => (
   <BrowserRouter future={{ v7_startTransition: false, v7_relativeSplatPath: false }}>
@@ -87,6 +89,8 @@ const App = () => (
               <Route path="/excecoes-blocos" element={<SurgicalBlockExceptionsList />} />
               <Route path="/excecoes-blocos/nova" element={<SurgicalBlockExceptionCreate />} />
               <Route path="/excecoes-blocos/:id/editar" element={<SurgicalBlockExceptionEdit />} />
+              <Route path="/preferencias-blocos" element={<PreferencesList />} />
+              <Route path="/preferencias-blocos/nova" element={<PreferenceCreate />} />
             </Route>
           </Route>
 

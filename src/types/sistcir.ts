@@ -99,3 +99,25 @@ export interface PedidoCirurgia {
     name: string | null
   }
 }
+
+export interface SurgicalBlockPreference {
+  id: string
+  pedido_cirurgia_id: string
+  surgical_block_id: string
+  preference_order: 1 | 2 | 3
+  facility_id: string
+  created_at: string
+  updated_at: string
+  pedidos_cirurgia?: {
+    patients?: { full_name?: string; medical_record?: string }
+    procedures?: { name?: string }
+    surgeon_id?: string
+    scheduled_date?: string | null
+  }
+  surgical_blocks?: {
+    block_date: string
+    block_start_time: string
+    block_end_time: string
+    surgical_rooms?: { room_name: string; room_number: string }
+  }
+}

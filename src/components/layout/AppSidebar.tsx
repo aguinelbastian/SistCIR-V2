@@ -38,6 +38,7 @@ export function AppSidebar() {
     { title: 'Pacientes', url: '/pacientes', icon: Users },
     { title: 'Procedimentos', url: '/procedimentos', icon: Activity },
     { title: 'Estoque OPME', url: '/opme', icon: Package },
+    { title: 'Preferências de Blocos', url: '/preferencias-blocos', icon: Activity },
   ]
 
   const showReports = hasRole('admin') || hasRole('coordinator')
