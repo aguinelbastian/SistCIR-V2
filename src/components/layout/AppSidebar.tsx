@@ -126,28 +126,30 @@ export function AppSidebar() {
                   </SidebarMenuItem>
                 )}
                 {(hasRole('admin') || hasRole('facility_manager')) && (
-                  <SidebarMenuItem>
-                    <SidebarMenuButton
-                      asChild
-                      isActive={location.pathname.startsWith('/salas-cirurgicas')}
-                    >
-                      <Link to="/salas-cirurgicas">
-                        <Activity className="w-4 h-4 mr-3 text-blue-500" />
-                        <span>Salas Cirúrgicas</span>
-                      </Link>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                  <SidebarMenuItem>
-                    <SidebarMenuButton
-                      asChild
-                      isActive={location.pathname.startsWith('/sistemas-roboticos')}
-                    >
-                      <Link to="/sistemas-roboticos">
-                        <Activity className="w-4 h-4 mr-3 text-purple-500" />
-                        <span>Sistemas Robóticos</span>
-                      </Link>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
+                  <>
+                    <SidebarMenuItem>
+                      <SidebarMenuButton
+                        asChild
+                        isActive={location.pathname.startsWith('/salas-cirurgicas')}
+                      >
+                        <Link to="/salas-cirurgicas">
+                          <Activity className="w-4 h-4 mr-3 text-blue-500" />
+                          <span>Salas Cirúrgicas</span>
+                        </Link>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                    <SidebarMenuItem>
+                      <SidebarMenuButton
+                        asChild
+                        isActive={location.pathname.startsWith('/sistemas-roboticos')}
+                      >
+                        <Link to="/sistemas-roboticos">
+                          <Activity className="w-4 h-4 mr-3 text-purple-500" />
+                          <span>Sistemas Robóticos</span>
+                        </Link>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  </>
                 )}
               </SidebarMenu>
             </SidebarGroupContent>
