@@ -64,7 +64,7 @@ export function SurgicalRoomForm({ initialData, roomId }: Props) {
     const loadOptions = async () => {
       const [{ data: fData }, { data: rData }] = await Promise.all([
         supabase.from('profiles').select('id, name').order('name'),
-        supabase.from('robotic_systems').select('id, name').order('name'),
+        supabase.from('robotic_systems').select('id, system_name').order('system_name'),
       ])
       if (fData) setFacilities(fData)
       if (rData) setRobots(rData)
@@ -160,7 +160,7 @@ export function SurgicalRoomForm({ initialData, roomId }: Props) {
                   <SelectItem value="none">Nenhum</SelectItem>
                   {robots.map((r) => (
                     <SelectItem key={r.id} value={r.id}>
-                      {r.name}
+                      {r.system_name}
                     </SelectItem>
                   ))}
                 </SelectContent>

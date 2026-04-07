@@ -28,7 +28,7 @@ export default function SurgicalRoomsList() {
     setLoading(true)
     const { data, error } = await supabase
       .from('surgical_rooms')
-      .select('*, profiles(name), robotic_systems(name)')
+      .select('*, profiles(name), robotic_systems(system_name)')
       .order('created_at', { ascending: false })
 
     if (error) {
@@ -105,7 +105,7 @@ export default function SurgicalRoomsList() {
                     <TableCell className="font-medium">{room.room_number}</TableCell>
                     <TableCell>{room.room_name}</TableCell>
                     <TableCell>{room.profiles?.name || 'N/A'}</TableCell>
-                    <TableCell>{room.robotic_systems?.name || 'N/A'}</TableCell>
+                    <TableCell>{room.robotic_systems?.system_name || 'N/A'}</TableCell>
                     <TableCell>{room.capacity_patients}</TableCell>
                     <TableCell>
                       {room.is_active ? (

@@ -50,7 +50,7 @@ export default function ResourceAllocationEdit() {
     defaultValues: {
       estimated_duration_minutes: 60,
       allocation_status: 'ALOCADO',
-      allocated_proctor_id: '',
+      allocated_proctor_id: 'none',
     },
   })
 
@@ -80,7 +80,7 @@ export default function ResourceAllocationEdit() {
           robotic_system_id: resAlloc.data.robotic_system_id,
           surgical_block_id: resAlloc.data.surgical_block_id,
           allocated_surgeon_id: resAlloc.data.allocated_surgeon_id,
-          allocated_proctor_id: resAlloc.data.allocated_proctor_id || '',
+          allocated_proctor_id: resAlloc.data.allocated_proctor_id || 'none',
           estimated_duration_minutes: resAlloc.data.estimated_duration_minutes,
           allocation_status: resAlloc.data.allocation_status,
         })
@@ -93,7 +93,8 @@ export default function ResourceAllocationEdit() {
     if (!id) return
     const payload = {
       ...values,
-      allocated_proctor_id: values.allocated_proctor_id || null,
+      allocated_proctor_id:
+        values.allocated_proctor_id === 'none' ? null : values.allocated_proctor_id,
     }
 
     const { error } = await supabase.from('resource_allocation').update(payload).eq('id', id)
@@ -244,14 +245,14 @@ export default function ResourceAllocationEdit() {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Proctor (Opcional)</FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value || ''}>
+                      <Select onValueChange={field.onChange} value={field.value || 'none'}>
                         <FormControl>
                           <SelectTrigger>
                             <SelectValue placeholder="Selecione..." />
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          <SelectItem value="">Nenhum</SelectItem>
+                          <SelectItem value="none">Nenhum</SelectItem>
                           {data.profiles.map((p) => (
                             <SelectItem key={p.id} value={p.id}>
                               {p.name}

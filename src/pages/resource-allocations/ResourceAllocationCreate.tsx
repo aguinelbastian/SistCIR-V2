@@ -48,7 +48,7 @@ export default function ResourceAllocationCreate() {
     defaultValues: {
       estimated_duration_minutes: 60,
       allocation_status: 'ALOCADO',
-      allocated_proctor_id: '',
+      allocated_proctor_id: 'none',
     },
   })
 
@@ -78,7 +78,8 @@ export default function ResourceAllocationCreate() {
     const payload = {
       ...values,
       allocated_by: user.id,
-      allocated_proctor_id: values.allocated_proctor_id || null,
+      allocated_proctor_id:
+        values.allocated_proctor_id === 'none' ? null : values.allocated_proctor_id,
     }
 
     const { error } = await supabase.from('resource_allocation').insert(payload)
@@ -234,7 +235,7 @@ export default function ResourceAllocationCreate() {
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          <SelectItem value="">Nenhum</SelectItem>
+                          <SelectItem value="none">Nenhum</SelectItem>
                           {data.profiles.map((p) => (
                             <SelectItem key={p.id} value={p.id}>
                               {p.name}
