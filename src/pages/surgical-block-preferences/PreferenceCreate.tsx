@@ -24,10 +24,8 @@ import {
 } from '@/components/ui/select'
 import { useToast } from '@/hooks/use-toast'
 import { Loader2, Plus, Trash2 } from 'lucide-react'
-import { HospitalSelector } from '@/components/hospital/HospitalSelector'
 
 const preferenceSchema = z.object({
-  hospital_id: z.string().min(1, 'Selecione o hospital'),
   pedido_cirurgia_id: z
     .string({ required_error: 'Selecione um pedido cirúrgico' })
     .min(1, 'Selecione um pedido cirúrgico'),
@@ -69,10 +67,11 @@ export default function PreferenceCreate() {
   const navigate = useNavigate()
   const { user, hasRole } = useAuth()
 
+  const [hospitalId, setHospitalId] = useState<string>('')
+
   const form = useForm<PreferenceFormValues>({
     resolver: zodResolver(preferenceSchema),
     defaultValues: {
-      hospital_id: '',
       pedido_cirurgia_id: '',
       preferences: [{ preference_order: 1, surgical_block_id: '' }],
     },
@@ -86,6 +85,9 @@ export default function PreferenceCreate() {
   useEffect(() => {
     async function loadData() {
       try {
+        const { data: defaultHospital } = await supabase.rpc('get_default_hospital_id')
+        if (defaultHospital) setHospitalId(defaultHospital)
+
         const isAdmin = hasRole('admin') || hasRole('facility_manager')
 
         let pedidosQuery = supabase
@@ -134,12 +136,11 @@ export default function PreferenceCreate() {
     if (user) loadData()
   }, [user, hasRole, toast])
 
-  const selectedHospitalId = form.watch('hospital_id')
   const selectedPedidoId = form.watch('pedido_cirurgia_id')
 
   const availableBlocks = useMemo(() => {
     const selectedPedido = pedidos.find((p) => p.id === selectedPedidoId)
-    const filteredBlocks = blocks.filter((b) => b.hospital_id === selectedHospitalId)
+    const filteredBlocks = hospitalId ? blocks.filter((b) => b.hospital_id === hospitalId) : blocks
 
     if (!selectedPedido) return filteredBlocks
 
@@ -148,16 +149,17 @@ export default function PreferenceCreate() {
       : new Date().toISOString().split('T')[0]
 
     return filteredBlocks.filter((b) => b.block_date >= refDate)
-  }, [selectedHospitalId, selectedPedidoId, pedidos, blocks])
+  }, [hospitalId, selectedPedidoId, pedidos, blocks])
 
   async function onSubmit(values: PreferenceFormValues) {
     try {
       setIsSubmitting(true)
 
+      if (!hospitalId) throw new Error('Hospital padrão não encontrado')
+
       const inserts = values.preferences.map((p) => {
-        const block = blocks.find((b) => b.id === p.surgical_block_id)
         return {
-          hospital_id: values.hospital_id,
+          hospital_id: hospitalId,
           pedido_cirurgia_id: values.pedido_cirurgia_id,
           surgical_block_id: p.surgical_block_id,
           preference_order: p.preference_order,
@@ -200,33 +202,11 @@ export default function PreferenceCreate() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <FormField
                   control={form.control}
-                  name="hospital_id"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Hospital</FormLabel>
-                      <FormControl>
-                        <HospitalSelector
-                          value={field.value}
-                          onChange={field.onChange}
-                          onValueChange={field.onChange}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
                   name="pedido_cirurgia_id"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Pedido de Cirurgia</FormLabel>
-                      <Select
-                        onValueChange={field.onChange}
-                        value={field.value}
-                        disabled={!form.watch('hospital_id')}
-                      >
+                      <Select onValueChange={field.onChange} value={field.value}>
                         <FormControl>
                           <SelectTrigger>
                             <SelectValue placeholder="Selecione a cirurgia..." />

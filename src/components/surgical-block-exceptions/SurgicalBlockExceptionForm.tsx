@@ -84,7 +84,9 @@ export function SurgicalBlockExceptionForm({ initialData }: { initialData?: any 
         if (error) throw error
         toast({ title: 'Sucesso', description: 'Exceção atualizada.' })
       } else {
-        const { error } = await supabase.from('surgical_block_exceptions' as any).insert([data])
+        const { data: hospitalId } = await supabase.rpc('get_default_hospital_id')
+        const payload = { ...data, hospital_id: hospitalId }
+        const { error } = await supabase.from('surgical_block_exceptions' as any).insert([payload])
         if (error) throw error
         toast({ title: 'Sucesso', description: 'Exceção registrada.' })
       }

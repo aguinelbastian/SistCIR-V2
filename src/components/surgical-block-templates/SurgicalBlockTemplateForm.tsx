@@ -91,9 +91,9 @@ export function SurgicalBlockTemplateForm({ initialData }: { initialData?: any }
         if (error) throw error
         toast({ title: 'Sucesso', description: 'Modelo atualizado.' })
       } else {
-        const { error } = await supabase
-          .from('surgical_block_templates' as any)
-          .insert([data as any])
+        const { data: hospitalId } = await supabase.rpc('get_default_hospital_id')
+        const payload = { ...data, hospital_id: hospitalId }
+        const { error } = await supabase.from('surgical_block_templates' as any).insert([payload])
         if (error) throw error
         toast({ title: 'Sucesso', description: 'Modelo criado.' })
       }

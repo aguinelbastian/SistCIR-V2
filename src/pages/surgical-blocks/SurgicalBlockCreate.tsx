@@ -90,6 +90,10 @@ export default function SurgicalBlockCreate() {
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     try {
+      const { data: hospitalId, error: hospitalError } =
+        await supabase.rpc('get_default_hospital_id')
+      if (hospitalError) throw new Error('Não foi possível obter o hospital padrão.')
+
       const payload = {
         surgical_room_id: values.surgical_room_id,
         block_date: values.block_date,
@@ -101,6 +105,7 @@ export default function SurgicalBlockCreate() {
           values.assigned_proctor_id !== 'none' ? values.assigned_proctor_id : null,
         is_available: values.is_available,
         notes: values.notes || null,
+        hospital_id: hospitalId,
       } as any
 
       const { error } = await supabase.from('surgical_blocks').insert([payload])
