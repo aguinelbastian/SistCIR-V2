@@ -30,15 +30,13 @@ export const getRoboticSystem = async (id: string) => {
 }
 
 export const createRoboticSystem = async (payload: Partial<RoboticSystem>) => {
-  const dbPayload = {
-    ...payload,
-    name: payload.system_name, // Fallback if schema hasn't fully updated yet
-  }
+  const dbPayload = { ...payload }
+  // @ts-expect-error - Removing name property in case it was passed
+  delete dbPayload.name
 
   const { data, error } = await supabase
     .from('robotic_systems')
-    // @ts-expect-error - Ignoring until types are updated by the backend
-    .insert(dbPayload)
+    .insert(dbPayload as any)
     .select()
     .single()
 
@@ -47,15 +45,13 @@ export const createRoboticSystem = async (payload: Partial<RoboticSystem>) => {
 }
 
 export const updateRoboticSystem = async (id: string, payload: Partial<RoboticSystem>) => {
-  const dbPayload = {
-    ...payload,
-    name: payload.system_name,
-  }
+  const dbPayload = { ...payload }
+  // @ts-expect-error - Removing name property in case it was passed
+  delete dbPayload.name
 
   const { data, error } = await supabase
     .from('robotic_systems')
-    // @ts-expect-error
-    .update(dbPayload)
+    .update(dbPayload as any)
     .eq('id', id)
     .select()
     .single()
