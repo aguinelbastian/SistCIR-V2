@@ -11,12 +11,13 @@ import { useAuth } from '@/hooks/use-auth'
 
 interface Props {
   value?: string
-  onValueChange: (value: string) => void
+  onValueChange?: (value: string) => void
+  onChange?: (value: string) => void
   disabled?: boolean
   allowAll?: boolean
 }
 
-export function HospitalSelector({ value, onValueChange, disabled, allowAll }: Props) {
+export function HospitalSelector({ value, onValueChange, onChange, disabled, allowAll }: Props) {
   const { user } = useAuth()
   const [hospitals, setHospitals] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
@@ -37,17 +38,27 @@ export function HospitalSelector({ value, onValueChange, disabled, allowAll }: P
         setHospitals(validHospitals)
 
         if (validHospitals.length === 1 && !value && !allowAll) {
-          onValueChange(validHospitals[0].id)
+          if (onValueChange) onValueChange(validHospitals[0].id)
+          if (onChange) onChange(validHospitals[0].id)
         }
       }
       setLoading(false)
     }
 
     fetchHospitals()
-  }, [user])
+  }, [user, value, allowAll, onValueChange, onChange])
+
+  const handleValueChange = (val: string) => {
+    if (onValueChange) onValueChange(val)
+    if (onChange) onChange(val)
+  }
 
   return (
-    <Select value={value} onValueChange={onValueChange} disabled={disabled || loading}>
+    <Select
+      value={value || undefined}
+      onValueChange={handleValueChange}
+      disabled={disabled || loading}
+    >
       <SelectTrigger>
         <SelectValue placeholder={loading ? 'Carregando...' : 'Selecione o hospital'} />
       </SelectTrigger>

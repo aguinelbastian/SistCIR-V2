@@ -127,7 +127,8 @@ export function SurgicalRoomForm({ initialData, roomId }: Props) {
               <Label>Hospital</Label>
               <HospitalSelector
                 value={watch('hospital_id')}
-                onValueChange={(v) => setValue('hospital_id', v)}
+                onChange={(v) => setValue('hospital_id', v, { shouldValidate: true })}
+                onValueChange={(v) => setValue('hospital_id', v, { shouldValidate: true })}
               />
               {errors.hospital_id && (
                 <p className="text-sm text-red-500">{errors.hospital_id.message}</p>

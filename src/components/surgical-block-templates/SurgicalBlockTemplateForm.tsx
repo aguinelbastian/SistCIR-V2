@@ -126,7 +126,11 @@ export function SurgicalBlockTemplateForm({ initialData }: { initialData?: any }
               <FormItem>
                 <FormLabel>Hospital</FormLabel>
                 <FormControl>
-                  <HospitalSelector value={field.value} onValueChange={field.onChange} />
+                  <HospitalSelector
+                    value={field.value}
+                    onChange={field.onChange}
+                    onValueChange={field.onChange}
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>
