@@ -47,7 +47,7 @@ export default function ResourceAllocationCreate() {
           .select(
             'id, surgeon_id, profiles!pedidos_cirurgia_surgeon_id_fkey(name), patients(full_name, medical_record), procedures(name)',
           )
-          .eq('status', '4_AGUARDANDO_MAPA'),  // ✅ CORRIGIDO: Apenas status 4
+          .eq('status', '6_AGUARDANDO_MAPA'),  // ✅ CORRIGIDO: Apenas status 4
         supabase
           .from('v_blocos_disponiveis')
           .select(
