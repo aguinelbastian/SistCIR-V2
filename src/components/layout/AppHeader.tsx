@@ -68,8 +68,20 @@ export function AppHeader() {
                 <>
                   <DropdownMenuLabel>Gestão de Materiais</DropdownMenuLabel>
                   <DropdownMenuItem asChild>
-                    <Link to="/admin/opme" className="cursor-pointer flex items-center w-full">
+                    <Link to="/opme" className="cursor-pointer flex items-center w-full">
                       <Package className="w-4 h-4 mr-2 text-orange-500" /> Catálogo OPME
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                </>
+              )}
+
+              {(hasRole('admin') || hasRole('nursing')) && (
+                <>
+                  <DropdownMenuLabel>Catálogos</DropdownMenuLabel>
+                  <DropdownMenuItem asChild>
+                    <Link to="/procedimentos" className="cursor-pointer flex items-center w-full">
+                      <Activity className="w-4 h-4 mr-2 text-indigo-500" /> Procedimentos
                     </Link>
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />

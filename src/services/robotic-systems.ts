@@ -1,57 +1,31 @@
 import { supabase } from '@/lib/supabase/client'
 import { RoboticSystem } from '@/types/sistcir'
 
-export const getRoboticSystems = async () => {
-  const { data, error } = await supabase
-    .from('robotic_systems')
-    .select(`
-      *,
-      facility:profiles!robotic_systems_facility_id_fkey(name)
-    `)
-    .order('created_at', { ascending: false })
+export async function getRoboticSystems() {
+  const { data, error } = await supabase.from('robotic_systems').select('*').order('system_name')
 
   if (error) throw error
-
-  // Transform name to system_name to support the typing difference
-  return (data || []).map((row) => ({
-    ...row,
-    system_name: (row as any).system_name || (row as any).name,
-  })) as RoboticSystem[]
+  return data as RoboticSystem[]
 }
 
-export const getRoboticSystem = async (id: string) => {
+export async function getRoboticSystemById(id: string) {
   const { data, error } = await supabase.from('robotic_systems').select('*').eq('id', id).single()
 
   if (error) throw error
-  return {
-    ...data,
-    system_name: (data as any).system_name || (data as any).name,
-  } as RoboticSystem
+  return data as RoboticSystem
 }
 
-export const createRoboticSystem = async (payload: Partial<RoboticSystem>) => {
-  const dbPayload = { ...payload }
-  // @ts-expect-error - Removing name property in case it was passed
-  delete dbPayload.name
-
-  const { data, error } = await supabase
-    .from('robotic_systems')
-    .insert(dbPayload as any)
-    .select()
-    .single()
+export async function createRoboticSystem(system: Partial<RoboticSystem>) {
+  const { data, error } = await supabase.from('robotic_systems').insert([system]).select().single()
 
   if (error) throw error
   return data
 }
 
-export const updateRoboticSystem = async (id: string, payload: Partial<RoboticSystem>) => {
-  const dbPayload = { ...payload }
-  // @ts-expect-error - Removing name property in case it was passed
-  delete dbPayload.name
-
+export async function updateRoboticSystem(id: string, system: Partial<RoboticSystem>) {
   const { data, error } = await supabase
     .from('robotic_systems')
-    .update(dbPayload as any)
+    .update(system)
     .eq('id', id)
     .select()
     .single()
@@ -60,15 +34,14 @@ export const updateRoboticSystem = async (id: string, payload: Partial<RoboticSy
   return data
 }
 
-export const deleteRoboticSystem = async (id: string) => {
+export async function deleteRoboticSystem(id: string) {
   const { error } = await supabase.from('robotic_systems').delete().eq('id', id)
 
   if (error) throw error
+  return true
 }
 
-export const getFacilities = async () => {
-  const { data, error } = await supabase.from('profiles').select('id, name').order('name')
-
-  if (error) throw error
-  return data
+export async function getFacilities() {
+  // Stub for backwards compatibility if needed, but not used anymore for facility dropdown
+  return []
 }

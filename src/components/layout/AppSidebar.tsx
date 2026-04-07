@@ -31,8 +31,6 @@ export function AppSidebar() {
     { title: 'Minha Conta', url: '/minha-conta', icon: UserCircle },
     { title: 'Pedidos Cirúrgicos', url: '/pedidos', icon: FileText },
     { title: 'Pacientes', url: '/pacientes', icon: Users },
-    { title: 'Procedimentos', url: '/procedimentos', icon: Activity },
-    { title: 'Estoque OPME', url: '/opme', icon: Package },
     { title: 'Preferências de Blocos', url: '/preferencias-blocos', icon: Activity },
   ]
 

@@ -111,14 +111,22 @@ export default function PreferenceCreate() {
         if (pData) setPedidos(pData)
 
         const { data: bData, error: bError } = await supabase
-          .from('surgical_blocks')
+          .from('v_blocos_disponiveis')
           .select(`
-            id, block_date, block_start_time, block_end_time, is_available, hospital_id,
+            bloco_id,
+            block_date,
+            block_start_time,
+            block_end_time,
+            surgical_room_id,
+            hospital_id,
+            status_bloco,
+            num_cirurgioes_interessados,
             surgical_rooms ( room_name )
           `)
-          .eq('is_available', true)
+          .neq('status_bloco', 'ALOCADO')
           .gte('block_date', new Date().toISOString().split('T')[0])
           .order('block_date', { ascending: true })
+          .order('block_start_time', { ascending: true })
 
         if (bError) throw bError
         if (bData) setBlocks(bData)
@@ -140,15 +148,16 @@ export default function PreferenceCreate() {
 
   const availableBlocks = useMemo(() => {
     const selectedPedido = pedidos.find((p) => p.id === selectedPedidoId)
-    const filteredBlocks = hospitalId ? blocks.filter((b) => b.hospital_id === hospitalId) : blocks
+    let filteredBlocks = hospitalId ? blocks.filter((b) => b.hospital_id === hospitalId) : blocks
 
-    if (!selectedPedido) return filteredBlocks
+    if (selectedPedido) {
+      const refDate = selectedPedido.scheduled_date
+        ? new Date(selectedPedido.scheduled_date).toISOString().split('T')[0]
+        : new Date().toISOString().split('T')[0]
+      filteredBlocks = filteredBlocks.filter((b) => b.block_date >= refDate)
+    }
 
-    const refDate = selectedPedido.scheduled_date
-      ? new Date(selectedPedido.scheduled_date).toISOString().split('T')[0]
-      : new Date().toISOString().split('T')[0]
-
-    return filteredBlocks.filter((b) => b.block_date >= refDate)
+    return filteredBlocks
   }, [hospitalId, selectedPedidoId, pedidos, blocks])
 
   async function onSubmit(values: PreferenceFormValues) {
@@ -288,23 +297,70 @@ export default function PreferenceCreate() {
                         render={({ field }) => (
                           <FormItem className="flex-1">
                             <FormLabel>Bloco Disponível</FormLabel>
-                            <Select onValueChange={field.onChange} value={field.value}>
+                            <Select
+                              onValueChange={(val) => {
+                                const selectedBlock = availableBlocks.find(
+                                  (b) => b.bloco_id === val,
+                                )
+                                if (selectedBlock?.status_bloco === 'ALOCADO') {
+                                  toast({
+                                    title: 'Aviso',
+                                    description: 'Este bloco já está alocado. Selecione outro.',
+                                    variant: 'destructive',
+                                  })
+                                  return
+                                } else if (
+                                  selectedBlock?.status_bloco === 'RESERVADO_PREFERENCIA'
+                                ) {
+                                  toast({
+                                    title: 'Aviso',
+                                    description: `${selectedBlock.num_cirurgioes_interessados} cirurgiões interessados neste bloco.`,
+                                  })
+                                }
+                                field.onChange(val)
+                              }}
+                              value={field.value}
+                            >
                               <FormControl>
                                 <SelectTrigger>
                                   <SelectValue placeholder="Escolha um bloco..." />
                                 </SelectTrigger>
                               </FormControl>
                               <SelectContent>
-                                {availableBlocks.map((b) => (
-                                  <SelectItem key={b.id} value={b.id}>
-                                    {new Date(b.block_date).toLocaleDateString('pt-BR', {
-                                      timeZone: 'UTC',
-                                    })}{' '}
-                                    | {b.block_start_time?.substring(0, 5)} às{' '}
-                                    {b.block_end_time?.substring(0, 5)} |{' '}
-                                    {b.surgical_rooms?.room_name}
-                                  </SelectItem>
-                                ))}
+                                {availableBlocks.map((b) => {
+                                  const isAlocado = b.status_bloco === 'ALOCADO'
+                                  const isReservado = b.status_bloco === 'RESERVADO_PREFERENCIA'
+                                  const isDisponivel = b.status_bloco === 'DISPONIVEL'
+
+                                  return (
+                                    <SelectItem
+                                      key={b.bloco_id}
+                                      value={b.bloco_id}
+                                      disabled={isAlocado}
+                                      className={isAlocado ? 'opacity-50 grayscale' : ''}
+                                    >
+                                      <div className="flex items-center gap-2">
+                                        <div
+                                          className={`w-3 h-3 rounded-full ${isAlocado ? 'bg-red-500' : isReservado ? 'bg-yellow-500' : 'bg-green-500'}`}
+                                        />
+                                        <span>
+                                          {new Date(b.block_date).toLocaleDateString('pt-BR', {
+                                            timeZone: 'UTC',
+                                          })}{' '}
+                                          | {b.block_start_time?.substring(0, 5)} às{' '}
+                                          {b.block_end_time?.substring(0, 5)} |{' '}
+                                          {b.surgical_rooms?.room_name}
+                                        </span>
+                                        {isReservado && (
+                                          <span className="text-xs text-yellow-600 font-medium ml-2">
+                                            ({b.num_cirurgioes_interessados} cirurgiões interessados
+                                            neste bloco)
+                                          </span>
+                                        )}
+                                      </div>
+                                    </SelectItem>
+                                  )
+                                })}
                                 {availableBlocks.length === 0 && (
                                   <SelectItem value="none" disabled>
                                     Nenhum bloco disponível

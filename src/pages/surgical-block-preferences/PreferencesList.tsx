@@ -1,6 +1,9 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
-import { Plus, Trash2 } from 'lucide-react'
+import { Plus, Trash2, Calendar, Clock } from 'lucide-react'
+import { supabase } from '@/lib/supabase/client'
+import { useAuth } from '@/hooks/use-auth'
+import { useToast } from '@/hooks/use-toast'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import {
@@ -11,24 +14,28 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import { supabase } from '@/lib/supabase/client'
-import { toast } from 'sonner'
-import { useAuth } from '@/hooks/use-auth'
+import { Badge } from '@/components/ui/badge'
 
 export default function PreferencesList() {
   const [preferences, setPreferences] = useState<any[]>([])
-  const [isLoading, setIsLoading] = useState(true)
-  const { hasRole } = useAuth()
+  const [loading, setLoading] = useState(true)
+  const { toast } = useToast()
+  const { user, hasRole } = useAuth()
 
   const fetchPreferences = async () => {
     try {
-      const { data, error } = await supabase
+      setLoading(true)
+      const isAdmin = hasRole('admin') || hasRole('facility_manager')
+
+      let query = supabase
         .from('surgical_request_block_preferences')
         .select(`
           id,
           preference_order,
-          pedidos_cirurgia (
-            patients ( full_name ),
+          pedidos_cirurgia!inner (
+            id,
+            surgeon_id,
+            patients ( full_name, medical_record ),
             procedures ( name )
           ),
           surgical_blocks (
@@ -40,49 +47,63 @@ export default function PreferencesList() {
         `)
         .order('created_at', { ascending: false })
 
+      if (!isAdmin && user?.id) {
+        query = query.eq('pedidos_cirurgia.surgeon_id', user.id)
+      }
+
+      const { data, error } = await query
+
       if (error) throw error
       setPreferences(data || [])
-    } catch (error) {
-      console.error(error)
-      toast.error('Erro ao carregar preferências.')
+    } catch (error: any) {
+      toast({
+        title: 'Erro ao carregar preferências',
+        description: error.message,
+        variant: 'destructive',
+      })
     } finally {
-      setIsLoading(false)
+      setLoading(false)
     }
   }
 
   useEffect(() => {
-    fetchPreferences()
-  }, [])
+    if (user) fetchPreferences()
+  }, [user, hasRole])
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Deseja excluir esta preferência?')) return
+    if (!confirm('Deseja realmente remover esta preferência?')) return
+
     try {
       const { error } = await supabase
         .from('surgical_request_block_preferences')
         .delete()
         .eq('id', id)
+
       if (error) throw error
-      toast.success('Preferência excluída.')
-      setPreferences(preferences.filter((p) => p.id !== id))
-    } catch (error) {
-      console.error(error)
-      toast.error('Erro ao excluir preferência.')
+
+      toast({ title: 'Preferência removida com sucesso!' })
+      setPreferences((prev) => prev.filter((p) => p.id !== id))
+    } catch (error: any) {
+      toast({
+        title: 'Erro ao remover',
+        description: error.message,
+        variant: 'destructive',
+      })
     }
   }
 
   return (
-    <div className="space-y-6">
+    <div className="p-6 max-w-7xl mx-auto space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Preferências de Blocos</h1>
-          <p className="text-muted-foreground">
-            Gerencie as preferências de blocos para os pedidos cirúrgicos.
+          <p className="text-muted-foreground mt-2">
+            Visualize e gerencie as preferências de alocação de blocos cirúrgicos para seus pedidos.
           </p>
         </div>
         <Button asChild>
           <Link to="/preferencias-blocos/nova">
-            <Plus className="w-4 h-4 mr-2" />
-            Nova Preferência
+            <Plus className="w-4 h-4 mr-2" /> Nova Preferência
           </Link>
         </Button>
       </div>
@@ -92,58 +113,87 @@ export default function PreferencesList() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Pedido (Paciente - Procedimento)</TableHead>
+                <TableHead>Paciente (Pedido)</TableHead>
+                <TableHead>Procedimento</TableHead>
                 <TableHead>Ordem</TableHead>
-                <TableHead>Bloco / Sala</TableHead>
-                <TableHead className="text-right">Ações</TableHead>
+                <TableHead>Bloco Selecionado</TableHead>
+                <TableHead className="w-[100px]"></TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {isLoading ? (
+              {loading ? (
                 <TableRow>
-                  <TableCell colSpan={4} className="h-24 text-center">
-                    Carregando...
+                  <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
+                    Carregando preferências...
                   </TableCell>
                 </TableRow>
               ) : preferences.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={4} className="h-24 text-center text-muted-foreground">
-                    Nenhuma preferência encontrada.
+                  <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
+                    Nenhuma preferência de bloco cadastrada.
                   </TableCell>
                 </TableRow>
               ) : (
                 preferences.map((pref) => (
                   <TableRow key={pref.id}>
                     <TableCell>
-                      {pref.pedidos_cirurgia?.patients?.full_name} -{' '}
-                      {pref.pedidos_cirurgia?.procedures?.name}
+                      <div className="font-medium">
+                        {pref.pedidos_cirurgia?.patients?.full_name}
+                      </div>
+                      <div className="text-xs text-muted-foreground">
+                        Prontuário: {pref.pedidos_cirurgia?.patients?.medical_record}
+                      </div>
                     </TableCell>
-                    <TableCell>{pref.preference_order}ª Opção</TableCell>
+                    <TableCell>{pref.pedidos_cirurgia?.procedures?.name}</TableCell>
+                    <TableCell>
+                      <Badge
+                        variant="outline"
+                        className={
+                          pref.preference_order === 1
+                            ? 'bg-blue-100 text-blue-800'
+                            : pref.preference_order === 2
+                              ? 'bg-amber-100 text-amber-800'
+                              : 'bg-slate-100 text-slate-800'
+                        }
+                      >
+                        {pref.preference_order}ª Opção
+                      </Badge>
+                    </TableCell>
                     <TableCell>
                       {pref.surgical_blocks ? (
-                        <>
-                          {new Date(pref.surgical_blocks.block_date).toLocaleDateString('pt-BR', {
-                            timeZone: 'UTC',
-                          })}{' '}
-                          | {pref.surgical_blocks.block_start_time?.substring(0, 5)} às{' '}
-                          {pref.surgical_blocks.block_end_time?.substring(0, 5)} |{' '}
-                          {pref.surgical_blocks.surgical_rooms?.room_name}
-                        </>
+                        <div className="space-y-1">
+                          <div className="flex items-center text-sm font-medium">
+                            <Calendar className="w-3 h-3 mr-1 text-muted-foreground" />
+                            {new Date(pref.surgical_blocks.block_date).toLocaleDateString('pt-BR', {
+                              timeZone: 'UTC',
+                            })}
+                          </div>
+                          <div className="flex items-center text-xs text-muted-foreground">
+                            <Clock className="w-3 h-3 mr-1" />
+                            {pref.surgical_blocks.block_start_time?.substring(0, 5)} às{' '}
+                            {pref.surgical_blocks.block_end_time?.substring(0, 5)}
+                          </div>
+                          <div className="text-xs text-muted-foreground">
+                            {pref.surgical_blocks.surgical_rooms?.room_name}
+                          </div>
+                        </div>
                       ) : (
-                        '-'
+                        <span className="text-muted-foreground text-sm italic">
+                          Bloco não encontrado
+                        </span>
                       )}
                     </TableCell>
-                    <TableCell className="text-right">
-                      {hasRole('admin') && (
+                    <TableCell>
+                      <div className="flex items-center gap-2 justify-end">
                         <Button
                           variant="ghost"
                           size="icon"
                           onClick={() => handleDelete(pref.id)}
-                          className="text-red-500 hover:text-red-600"
+                          className="text-red-500 hover:text-red-600 hover:bg-red-50"
                         >
                           <Trash2 className="w-4 h-4" />
                         </Button>
-                      )}
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))
