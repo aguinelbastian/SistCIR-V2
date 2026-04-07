@@ -137,6 +137,17 @@ export function AppSidebar() {
                       </Link>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
+                  <SidebarMenuItem>
+                    <SidebarMenuButton
+                      asChild
+                      isActive={location.pathname.startsWith('/sistemas-roboticos')}
+                    >
+                      <Link to="/sistemas-roboticos">
+                        <Activity className="w-4 h-4 mr-3 text-purple-500" />
+                        <span>Sistemas Robóticos</span>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
                 )}
               </SidebarMenu>
             </SidebarGroupContent>

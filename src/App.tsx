@@ -26,6 +26,9 @@ import RelatoriosPage from './pages/relatorios/RelatoriosPage'
 import SurgicalRoomsList from './pages/surgical-rooms/SurgicalRoomsList'
 import SurgicalRoomCreate from './pages/surgical-rooms/SurgicalRoomCreate'
 import SurgicalRoomEdit from './pages/surgical-rooms/SurgicalRoomEdit'
+import RoboticSystemsList from './pages/robotic-systems/RoboticSystemsList'
+import RoboticSystemCreate from './pages/robotic-systems/RoboticSystemCreate'
+import RoboticSystemEdit from './pages/robotic-systems/RoboticSystemEdit'
 
 const App = () => (
   <BrowserRouter future={{ v7_startTransition: false, v7_relativeSplatPath: false }}>
@@ -57,6 +60,9 @@ const App = () => (
               <Route path="/salas-cirurgicas" element={<SurgicalRoomsList />} />
               <Route path="/salas-cirurgicas/nova" element={<SurgicalRoomCreate />} />
               <Route path="/salas-cirurgicas/:id/editar" element={<SurgicalRoomEdit />} />
+              <Route path="/sistemas-roboticos" element={<RoboticSystemsList />} />
+              <Route path="/sistemas-roboticos/novo" element={<RoboticSystemCreate />} />
+              <Route path="/sistemas-roboticos/:id/editar" element={<RoboticSystemEdit />} />
             </Route>
           </Route>
 

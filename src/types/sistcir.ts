@@ -20,6 +20,22 @@ export type UserRole =
   | 'admin'
   | 'facility_manager'
 
+export interface RoboticSystem {
+  id: string
+  system_name: string
+  model: 'da Vinci Xi' | 'da Vinci X' | 'da Vinci SP'
+  facility_id: string
+  serial_number?: string
+  installation_date?: string
+  last_maintenance_date?: string
+  next_maintenance_date?: string
+  is_operational: boolean
+  notes?: string
+  created_at: string
+  updated_at: string
+  facility?: { name: string | null }
+}
+
 export interface SurgicalRoom {
   id: string
   room_number: string
