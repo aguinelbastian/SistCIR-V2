@@ -47,10 +47,10 @@ Deno.serve(async (req: Request) => {
   }
 
   if (req.method !== 'POST') {
-    return new Response(JSON.stringify({ code: 405, message: 'Method not allowed' }), {
-      status: 405,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    })
+    return new Response(
+      JSON.stringify({ code: 405, message: 'Method not allowed' }),
+      { status: 405, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    )
   }
 
   try {
@@ -64,10 +64,10 @@ Deno.serve(async (req: Request) => {
     // Extrair token do header Authorization
     const authHeader = req.headers.get('Authorization') || req.headers.get('authorization')
     if (!authHeader) {
-      return new Response(JSON.stringify({ code: 401, message: 'Missing authorization header' }), {
-        status: 401,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      })
+      return new Response(
+        JSON.stringify({ code: 401, message: 'Missing authorization header' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
     }
 
     const token = authHeader.replace(/^Bearer\s+/i, '')
@@ -86,15 +86,12 @@ Deno.serve(async (req: Request) => {
     })
 
     // Verificar se o usuário está autenticado
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser(token)
+    const { data: { user }, error: authError } = await supabase.auth.getUser(token)
     if (authError || !user) {
       console.error('Auth error:', authError)
       return new Response(
         JSON.stringify({ code: 401, message: 'Unauthorized', details: authError?.message }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
 
@@ -126,14 +123,14 @@ Deno.serve(async (req: Request) => {
               code: 400,
               message: `Campo obrigatório ausente ou inválido: ${campo} (deve ser boolean)`,
             }),
-            { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+            { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
           )
         }
       } else {
         if (valor === undefined || valor === null || valor === '') {
           return new Response(
             JSON.stringify({ code: 400, message: `Campo obrigatório ausente: ${campo}` }),
-            { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+            { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
           )
         }
       }
@@ -145,14 +142,14 @@ Deno.serve(async (req: Request) => {
           code: 400,
           message: 'Campo obrigatório ausente ou inválido: reserva_uti (deve ser boolean)',
         }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
 
     if (!Array.isArray(payload.datas_propostas) || payload.datas_propostas.length !== 3) {
       return new Response(
         JSON.stringify({ code: 400, message: 'Deve haver exatamente 3 datas propostas' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
 
@@ -160,13 +157,13 @@ Deno.serve(async (req: Request) => {
       if (!proposta.data || !proposta.turno) {
         return new Response(
           JSON.stringify({ code: 400, message: 'Data e turno são obrigatórios em cada proposta' }),
-          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         )
       }
       if (!['manhã', 'tarde'].includes(proposta.turno)) {
         return new Response(
           JSON.stringify({ code: 400, message: 'Turno deve ser "manhã" ou "tarde"' }),
-          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         )
       }
     }
@@ -177,7 +174,7 @@ Deno.serve(async (req: Request) => {
           code: 400,
           message: 'Descrição de alergias é obrigatória quando alergias_paciente = true',
         }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
 
@@ -188,7 +185,7 @@ Deno.serve(async (req: Request) => {
           code: 400,
           message: `Tipo de anexo inválido. Aceitos: ${tiposValidos.join(', ')}`,
         }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
 
@@ -222,10 +219,10 @@ Deno.serve(async (req: Request) => {
       .single()
 
     if (erroPedido) {
-      return new Response(JSON.stringify({ code: 400, message: erroPedido.message }), {
-        status: 400,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      })
+      return new Response(
+        JSON.stringify({ code: 400, message: erroPedido.message }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
     }
 
     const pedidoId = pedido.id
@@ -246,10 +243,10 @@ Deno.serve(async (req: Request) => {
       .insert(agendamentosInsert)
 
     if (erroAgendamento) {
-      return new Response(JSON.stringify({ code: 400, message: erroAgendamento.message }), {
-        status: 400,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      })
+      return new Response(
+        JSON.stringify({ code: 400, message: erroAgendamento.message }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
     }
 
     // ============================================================================
@@ -266,13 +263,15 @@ Deno.serve(async (req: Request) => {
         added_by: user.id,
       }))
 
-      const { error: erroOPME } = await supabase.from('pedido_opme_items').insert(opmeInsert)
+      const { error: erroOPME } = await supabase
+        .from('pedido_opme_items')
+        .insert(opmeInsert)
 
       if (erroOPME) {
-        return new Response(JSON.stringify({ code: 400, message: erroOPME.message }), {
-          status: 400,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        })
+         return new Response(
+          JSON.stringify({ code: 400, message: erroOPME.message }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        )
       }
     }
 
@@ -285,13 +284,13 @@ Deno.serve(async (req: Request) => {
         mensagem: 'Pedido cirúrgico criado com sucesso. Aguardando aprovação da enfermagem.',
         agendamentos_propostos: payload.datas_propostas.length,
       }),
-      { status: 201, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+      { status: 201, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
   } catch (error: any) {
     console.error('Error:', error)
     return new Response(
       JSON.stringify({ code: 500, message: error.message || 'Internal server error' }),
-      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
   }
 })
