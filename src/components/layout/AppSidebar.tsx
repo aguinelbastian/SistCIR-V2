@@ -5,14 +5,9 @@ import {
   Users,
   FileText,
   Stethoscope,
-  ShieldAlert,
   Package,
   UserCircle,
   TrendingUp,
-  Clock,
-  Calendar,
-  LayoutTemplate,
-  CalendarOff,
 } from 'lucide-react'
 import {
   Sidebar,
@@ -92,118 +87,6 @@ export function AppSidebar() {
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
-
-        {(hasRole('admin') || hasRole('opme')) && (
-          <SidebarGroup className="mt-auto mb-4">
-            <SidebarGroupLabel className="text-xs uppercase tracking-wider text-muted-foreground font-semibold px-4">
-              Administração
-            </SidebarGroupLabel>
-            <SidebarGroupContent>
-              <SidebarMenu>
-                {hasRole('admin') && (
-                  <>
-                    <SidebarMenuItem>
-                      <SidebarMenuButton asChild isActive={location.pathname === '/admin'}>
-                        <Link to="/admin">
-                          <ShieldAlert className="w-4 h-4 mr-3 text-red-500" />
-                          <span>Acessos</span>
-                        </Link>
-                      </SidebarMenuButton>
-                    </SidebarMenuItem>
-                    <SidebarMenuItem>
-                      <SidebarMenuButton asChild isActive={location.pathname === '/admin/usuarios'}>
-                        <Link to="/admin/usuarios">
-                          <Users className="w-4 h-4 mr-3 text-red-500" />
-                          <span>Usuários</span>
-                        </Link>
-                      </SidebarMenuButton>
-                    </SidebarMenuItem>
-                  </>
-                )}
-                {(hasRole('admin') || hasRole('opme')) && (
-                  <SidebarMenuItem>
-                    <SidebarMenuButton asChild isActive={location.pathname === '/admin/opme'}>
-                      <Link to="/admin/opme">
-                        <Package className="w-4 h-4 mr-3 text-orange-500" />
-                        <span>Catálogo OPME</span>
-                      </Link>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                )}
-                {(hasRole('admin') || hasRole('facility_manager')) && (
-                  <>
-                    <SidebarMenuItem>
-                      <SidebarMenuButton
-                        asChild
-                        isActive={location.pathname.startsWith('/salas-cirurgicas')}
-                      >
-                        <Link to="/salas-cirurgicas">
-                          <Activity className="w-4 h-4 mr-3 text-blue-500" />
-                          <span>Salas Cirúrgicas</span>
-                        </Link>
-                      </SidebarMenuButton>
-                    </SidebarMenuItem>
-                    <SidebarMenuItem>
-                      <SidebarMenuButton
-                        asChild
-                        isActive={location.pathname.startsWith('/sistemas-roboticos')}
-                      >
-                        <Link to="/sistemas-roboticos">
-                          <Activity className="w-4 h-4 mr-3 text-purple-500" />
-                          <span>Sistemas Robóticos</span>
-                        </Link>
-                      </SidebarMenuButton>
-                    </SidebarMenuItem>
-                    <SidebarMenuItem>
-                      <SidebarMenuButton
-                        asChild
-                        isActive={location.pathname.startsWith('/blocos-cirurgicos')}
-                      >
-                        <Link to="/blocos-cirurgicos">
-                          <Clock className="w-4 h-4 mr-3 text-emerald-500" />
-                          <span>Blocos Cirúrgicos</span>
-                        </Link>
-                      </SidebarMenuButton>
-                    </SidebarMenuItem>
-                    <SidebarMenuItem>
-                      <SidebarMenuButton
-                        asChild
-                        isActive={location.pathname.startsWith('/modelos-blocos')}
-                      >
-                        <Link to="/modelos-blocos">
-                          <LayoutTemplate className="w-4 h-4 mr-3 text-pink-500" />
-                          <span>Modelos de Blocos</span>
-                        </Link>
-                      </SidebarMenuButton>
-                    </SidebarMenuItem>
-                    <SidebarMenuItem>
-                      <SidebarMenuButton
-                        asChild
-                        isActive={location.pathname.startsWith('/excecoes-blocos')}
-                      >
-                        <Link to="/excecoes-blocos">
-                          <CalendarOff className="w-4 h-4 mr-3 text-yellow-500" />
-                          <span>Exceções de Blocos</span>
-                        </Link>
-                      </SidebarMenuButton>
-                    </SidebarMenuItem>
-                    <SidebarMenuItem>
-                      <SidebarMenuButton
-                        asChild
-                        isActive={location.pathname.startsWith('/alocacao-recursos')}
-                      >
-                        <Link to="/alocacao-recursos">
-                          <Calendar className="w-4 h-4 mr-3 text-indigo-500" />
-                          <span>Alocação de Recursos</span>
-                        </Link>
-                      </SidebarMenuButton>
-                    </SidebarMenuItem>
-                  </>
-                )}
-              </SidebarMenu>
-            </SidebarGroupContent>
-          </SidebarGroup>
-        )}
       </SidebarContent>
     </Sidebar>
   )

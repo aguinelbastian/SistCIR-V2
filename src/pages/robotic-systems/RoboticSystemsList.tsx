@@ -26,10 +26,14 @@ import {
 } from '@/components/ui/alert-dialog'
 import { getRoboticSystems, deleteRoboticSystem } from '@/services/robotic-systems'
 import { RoboticSystem } from '@/types/sistcir'
+import { useAuth } from '@/hooks/use-auth'
 
 export default function RoboticSystemsList() {
   const [systems, setSystems] = useState<RoboticSystem[]>([])
   const [isLoading, setIsLoading] = useState(true)
+  const { hasRole } = useAuth()
+
+  const canManage = hasRole('admin') || hasRole('facility_manager')
 
   const fetchSystems = async () => {
     try {
@@ -70,12 +74,14 @@ export default function RoboticSystemsList() {
           <h1 className="text-3xl font-bold tracking-tight">Sistemas Robóticos</h1>
           <p className="text-muted-foreground">Gerencie os equipamentos da Vinci da sua unidade.</p>
         </div>
-        <Button asChild>
-          <Link to="/sistemas-roboticos/novo">
-            <Plus className="w-4 h-4 mr-2" />
-            Novo Robô
-          </Link>
-        </Button>
+        {canManage && (
+          <Button asChild>
+            <Link to="/sistemas-roboticos/novo">
+              <Plus className="w-4 h-4 mr-2" />
+              Novo Robô
+            </Link>
+          </Button>
+        )}
       </div>
 
       <Card>
@@ -85,7 +91,6 @@ export default function RoboticSystemsList() {
               <TableRow>
                 <TableHead>Nome do Sistema</TableHead>
                 <TableHead>Modelo</TableHead>
-                <TableHead>Unidade</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Última Manut.</TableHead>
                 <TableHead className="text-right">Ações</TableHead>
@@ -94,13 +99,13 @@ export default function RoboticSystemsList() {
             <TableBody>
               {isLoading ? (
                 <TableRow>
-                  <TableCell colSpan={6} className="h-24 text-center">
+                  <TableCell colSpan={5} className="h-24 text-center">
                     Carregando sistemas...
                   </TableCell>
                 </TableRow>
               ) : systems.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={6} className="h-24 text-center text-muted-foreground">
+                  <TableCell colSpan={5} className="h-24 text-center text-muted-foreground">
                     Nenhum sistema robótico cadastrado.
                   </TableCell>
                 </TableRow>
@@ -111,7 +116,6 @@ export default function RoboticSystemsList() {
                     <TableCell>
                       <Badge variant="outline">{sys.model}</Badge>
                     </TableCell>
-                    <TableCell>{sys.facility?.name || '-'}</TableCell>
                     <TableCell>
                       {sys.is_operational ? (
                         <div className="flex items-center text-green-600">
@@ -127,42 +131,44 @@ export default function RoboticSystemsList() {
                     </TableCell>
                     <TableCell>{formatDate(sys.last_maintenance_date)}</TableCell>
                     <TableCell className="text-right">
-                      <div className="flex justify-end gap-2">
-                        <Button variant="ghost" size="icon" asChild>
-                          <Link to={`/sistemas-roboticos/${sys.id}/editar`}>
-                            <Edit2 className="w-4 h-4" />
-                          </Link>
-                        </Button>
+                      {canManage && (
+                        <div className="flex justify-end gap-2">
+                          <Button variant="ghost" size="icon" asChild>
+                            <Link to={`/sistemas-roboticos/${sys.id}/editar`}>
+                              <Edit2 className="w-4 h-4" />
+                            </Link>
+                          </Button>
 
-                        <AlertDialog>
-                          <AlertDialogTrigger asChild>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="text-red-500 hover:text-red-600"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </Button>
-                          </AlertDialogTrigger>
-                          <AlertDialogContent>
-                            <AlertDialogHeader>
-                              <AlertDialogTitle>Excluir Sistema Robótico</AlertDialogTitle>
-                              <AlertDialogDescription>
-                                Tem certeza? Esta ação não poderá ser desfeita.
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                              <AlertDialogAction
-                                onClick={() => handleDelete(sys.id)}
-                                className="bg-red-500 hover:bg-red-600"
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="text-red-500 hover:text-red-600"
                               >
-                                Excluir
-                              </AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
-                      </div>
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>Excluir Sistema Robótico</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  Tem certeza? Esta ação não poderá ser desfeita.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                <AlertDialogAction
+                                  onClick={() => handleDelete(sys.id)}
+                                  className="bg-red-500 hover:bg-red-600"
+                                >
+                                  Excluir
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        </div>
+                      )}
                     </TableCell>
                   </TableRow>
                 ))

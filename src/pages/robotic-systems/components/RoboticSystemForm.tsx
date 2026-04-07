@@ -21,7 +21,6 @@ import { RoboticSystem } from '@/types/sistcir'
 const formSchema = z.object({
   system_name: z.string().min(1, 'Nome do sistema é obrigatório'),
   model: z.enum(['da Vinci Xi', 'da Vinci X', 'da Vinci SP']),
-  facility_id: z.string().min(1, 'Unidade é obrigatória'),
   serial_number: z.string().optional().nullable(),
   installation_date: z.string().optional().nullable(),
   last_maintenance_date: z.string().optional().nullable(),
@@ -39,15 +38,11 @@ interface Props {
 }
 
 export function RoboticSystemForm({ initialData, onSubmit, isLoading }: Props) {
-  const { user } = useAuth()
-  const [facilities, setFacilities] = useState<{ id: string; name: string | null }[]>([])
-
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       system_name: initialData?.system_name || '',
       model: initialData?.model || 'da Vinci Xi',
-      facility_id: initialData?.facility_id || user?.id || '',
       serial_number: initialData?.serial_number || '',
       installation_date: initialData?.installation_date || '',
       last_maintenance_date: initialData?.last_maintenance_date || '',
@@ -56,10 +51,6 @@ export function RoboticSystemForm({ initialData, onSubmit, isLoading }: Props) {
       notes: initialData?.notes || '',
     },
   })
-
-  useEffect(() => {
-    getFacilities().then(setFacilities).catch(console.error)
-  }, [])
 
   const handleSubmit = async (data: FormData) => {
     await onSubmit({
@@ -104,28 +95,6 @@ export function RoboticSystemForm({ initialData, onSubmit, isLoading }: Props) {
           </Select>
           {form.formState.errors.model && (
             <p className="text-sm text-red-500">{form.formState.errors.model.message}</p>
-          )}
-        </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="facility_id">Unidade (Hospital) *</Label>
-          <Select
-            onValueChange={(val) => form.setValue('facility_id', val)}
-            defaultValue={form.getValues('facility_id')}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="Selecione a unidade" />
-            </SelectTrigger>
-            <SelectContent>
-              {facilities.map((fac) => (
-                <SelectItem key={fac.id} value={fac.id}>
-                  {fac.name || fac.id}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          {form.formState.errors.facility_id && (
-            <p className="text-sm text-red-500">{form.formState.errors.facility_id.message}</p>
           )}
         </div>
 
