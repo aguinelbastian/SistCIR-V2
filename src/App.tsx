@@ -32,6 +32,9 @@ import RoboticSystemEdit from './pages/robotic-systems/RoboticSystemEdit'
 import SurgicalBlocksList from './pages/surgical-blocks/SurgicalBlocksList'
 import SurgicalBlockCreate from './pages/surgical-blocks/SurgicalBlockCreate'
 import SurgicalBlockEdit from './pages/surgical-blocks/SurgicalBlockEdit'
+import ResourceAllocationsList from './pages/resource-allocations/ResourceAllocationsList'
+import ResourceAllocationCreate from './pages/resource-allocations/ResourceAllocationCreate'
+import ResourceAllocationEdit from './pages/resource-allocations/ResourceAllocationEdit'
 
 const App = () => (
   <BrowserRouter future={{ v7_startTransition: false, v7_relativeSplatPath: false }}>
@@ -69,6 +72,9 @@ const App = () => (
               <Route path="/blocos-cirurgicos" element={<SurgicalBlocksList />} />
               <Route path="/blocos-cirurgicos/novo" element={<SurgicalBlockCreate />} />
               <Route path="/blocos-cirurgicos/:id/editar" element={<SurgicalBlockEdit />} />
+              <Route path="/alocacao-recursos" element={<ResourceAllocationsList />} />
+              <Route path="/alocacao-recursos/nova" element={<ResourceAllocationCreate />} />
+              <Route path="/alocacao-recursos/:id/editar" element={<ResourceAllocationEdit />} />
             </Route>
           </Route>
 
