@@ -16,7 +16,7 @@
     "get-relatorio-conversao": 10,
     "get-relatorio-tempo-autorizacao": 10,
     "check-disponibilidade-agendamento": 6,
-    "create-pedido-cirurgia": 14,
+    "create-pedido-cirurgia": 15,
     "update-pedido-cirurgia": 22,
     "create_test_surgeons": 3,
     "generate-google-docs": 8,

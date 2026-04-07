@@ -40,7 +40,7 @@ export interface SurgicalRoom {
   id: string
   room_number: string
   room_name: string
-  facility_id: string
+  hospital_id: string
   robotic_system_id?: string
   capacity_patients: number
   is_active: boolean
@@ -105,7 +105,7 @@ export interface SurgicalBlockPreference {
   pedido_cirurgia_id: string
   surgical_block_id: string
   preference_order: 1 | 2 | 3
-  facility_id: string
+  hospital_id: string
   created_at: string
   updated_at: string
   pedidos_cirurgia?: {

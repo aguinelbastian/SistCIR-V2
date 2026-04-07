@@ -24,6 +24,7 @@ import {
 import { Textarea } from '@/components/ui/textarea'
 import { Switch } from '@/components/ui/switch'
 import { useToast } from '@/hooks/use-toast'
+import { HospitalSelector } from '@/components/hospital/HospitalSelector'
 
 const DAY_OPTIONS = [
   { value: 'MONDAY', label: 'Segunda-feira' },
@@ -37,7 +38,7 @@ const DAY_OPTIONS = [
 
 const formSchema = z
   .object({
-    facility_id: z.string().min(1, 'Selecione a unidade'),
+    hospital_id: z.string().min(1, 'Selecione o hospital'),
     surgical_room_id: z.string().min(1, 'Selecione a sala'),
     day_of_week: z.string().min(1, 'Selecione o dia'),
     block_start_time: z.string().regex(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/, 'Use o formato HH:MM'),
@@ -55,14 +56,13 @@ type FormData = z.infer<typeof formSchema>
 export function SurgicalBlockTemplateForm({ initialData }: { initialData?: any }) {
   const navigate = useNavigate()
   const { toast } = useToast()
-  const [facilities, setFacilities] = useState<any[]>([])
   const [rooms, setRooms] = useState<any[]>([])
   const [loading, setLoading] = useState(false)
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
     defaultValues: initialData || {
-      facility_id: '',
+      hospital_id: '',
       surgical_room_id: '',
       day_of_week: '',
       block_start_time: '',
@@ -74,18 +74,23 @@ export function SurgicalBlockTemplateForm({ initialData }: { initialData?: any }
 
   useEffect(() => {
     const fetchData = async () => {
-      const [facRes, roomRes] = await Promise.all([
-        supabase.from('profiles').select('id, name').order('name'),
-        supabase.from('surgical_rooms').select('id, room_name, facility_id').eq('is_active', true),
-      ])
-      if (facRes.data) setFacilities(facRes.data)
+      const roomRes = await supabase
+        .from('surgical_rooms')
+        .select('id, room_name, hospital_id')
+        .eq('is_active', true)
       if (roomRes.data) setRooms(roomRes.data)
     }
     fetchData()
   }, [])
 
-  const selectedFacility = form.watch('facility_id')
-  const filteredRooms = rooms.filter((r) => r.facility_id === selectedFacility)
+  const selectedHospital = form.watch('hospital_id')
+  const filteredRooms = rooms.filter((r) => r.hospital_id === selectedHospital)
+
+  useEffect(() => {
+    if (!filteredRooms.find((r) => r.id === form.getValues('surgical_room_id'))) {
+      form.setValue('surgical_room_id', '')
+    }
+  }, [selectedHospital, filteredRooms, form])
 
   const onSubmit = async (data: FormData) => {
     setLoading(true)
@@ -116,24 +121,13 @@ export function SurgicalBlockTemplateForm({ initialData }: { initialData?: any }
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <FormField
             control={form.control}
-            name="facility_id"
+            name="hospital_id"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Unidade Hospitalar</FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value}>
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecione..." />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    {facilities.map((f) => (
-                      <SelectItem key={f.id} value={f.id}>
-                        {f.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <FormLabel>Hospital</FormLabel>
+                <FormControl>
+                  <HospitalSelector value={field.value} onValueChange={field.onChange} />
+                </FormControl>
                 <FormMessage />
               </FormItem>
             )}
@@ -147,8 +141,8 @@ export function SurgicalBlockTemplateForm({ initialData }: { initialData?: any }
                 <FormLabel>Sala Cirúrgica</FormLabel>
                 <Select
                   onValueChange={field.onChange}
-                  defaultValue={field.value}
-                  disabled={!selectedFacility}
+                  value={field.value}
+                  disabled={!selectedHospital}
                 >
                   <FormControl>
                     <SelectTrigger>

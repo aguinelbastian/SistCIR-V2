@@ -15,10 +15,12 @@ import {
 import { Badge } from '@/components/ui/badge'
 import { useAuth } from '@/hooks/use-auth'
 import { useToast } from '@/hooks/use-toast'
+import { HospitalSelector } from '@/components/hospital/HospitalSelector'
 
 export default function SurgicalRoomsList() {
   const [rooms, setRooms] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
+  const [filterHospital, setFilterHospital] = useState<string>('all')
   const { hasRole } = useAuth()
   const { toast } = useToast()
 
@@ -26,10 +28,16 @@ export default function SurgicalRoomsList() {
 
   const fetchRooms = async () => {
     setLoading(true)
-    const { data, error } = await supabase
+    let query = supabase
       .from('surgical_rooms')
-      .select('*, profiles(name), robotic_systems(system_name)')
+      .select('*, hospitals(hospital_name), robotic_systems(system_name)')
       .order('created_at', { ascending: false })
+
+    if (filterHospital !== 'all') {
+      query = query.eq('hospital_id', filterHospital)
+    }
+
+    const { data, error } = await query
 
     if (error) {
       toast({ title: 'Erro', description: error.message, variant: 'destructive' })
@@ -41,7 +49,7 @@ export default function SurgicalRoomsList() {
 
   useEffect(() => {
     fetchRooms()
-  }, [])
+  }, [filterHospital])
 
   const handleDelete = async (id: string) => {
     if (!confirm('Deseja realmente excluir esta sala?')) return
@@ -56,20 +64,25 @@ export default function SurgicalRoomsList() {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Salas Cirúrgicas</h1>
           <p className="text-muted-foreground mt-1">
             Gerencie as salas cirúrgicas robóticas da instalação.
           </p>
         </div>
-        {canManage && (
-          <Button asChild>
-            <Link to="/salas-cirurgicas/nova">
-              <Plus className="mr-2 h-4 w-4" /> Nova Sala
-            </Link>
-          </Button>
-        )}
+        <div className="flex flex-col sm:flex-row items-center gap-3">
+          <div className="w-[280px]">
+            <HospitalSelector value={filterHospital} onValueChange={setFilterHospital} allowAll />
+          </div>
+          {canManage && (
+            <Button asChild>
+              <Link to="/salas-cirurgicas/nova">
+                <Plus className="mr-2 h-4 w-4" /> Nova Sala
+              </Link>
+            </Button>
+          )}
+        </div>
       </div>
 
       <Card>
@@ -79,7 +92,7 @@ export default function SurgicalRoomsList() {
               <TableRow className="bg-muted/50">
                 <TableHead>Número</TableHead>
                 <TableHead>Nome</TableHead>
-                <TableHead>Instalação</TableHead>
+                <TableHead>Hospital</TableHead>
                 <TableHead>Sistema Robótico</TableHead>
                 <TableHead>Capacidade</TableHead>
                 <TableHead>Status</TableHead>
@@ -104,7 +117,7 @@ export default function SurgicalRoomsList() {
                   <TableRow key={room.id}>
                     <TableCell className="font-medium">{room.room_number}</TableCell>
                     <TableCell>{room.room_name}</TableCell>
-                    <TableCell>{room.profiles?.name || 'N/A'}</TableCell>
+                    <TableCell>{room.hospitals?.hospital_name || 'N/A'}</TableCell>
                     <TableCell>{room.robotic_systems?.system_name || 'N/A'}</TableCell>
                     <TableCell>{room.capacity_patients}</TableCell>
                     <TableCell>

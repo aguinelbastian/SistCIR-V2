@@ -19,11 +19,12 @@ import {
 } from '@/components/ui/select'
 import { useToast } from '@/hooks/use-toast'
 import { useAuth } from '@/hooks/use-auth'
+import { HospitalSelector } from '@/components/hospital/HospitalSelector'
 
 const schema = z.object({
   room_number: z.string().min(1, 'Obrigatório'),
   room_name: z.string().min(1, 'Obrigatório'),
-  facility_id: z.string().min(1, 'Obrigatório'),
+  hospital_id: z.string().min(1, 'Obrigatório'),
   robotic_system_id: z.string().optional().nullable(),
   capacity_patients: z.coerce.number().min(1),
   is_active: z.boolean().default(true),
@@ -40,8 +41,6 @@ interface Props {
 export function SurgicalRoomForm({ initialData, roomId }: Props) {
   const navigate = useNavigate()
   const { toast } = useToast()
-  const { user } = useAuth()
-  const [facilities, setFacilities] = useState<any[]>([])
   const [robots, setRobots] = useState<any[]>([])
   const [loading, setLoading] = useState(false)
 
@@ -56,17 +55,16 @@ export function SurgicalRoomForm({ initialData, roomId }: Props) {
     defaultValues: initialData || {
       capacity_patients: 1,
       is_active: true,
-      facility_id: user?.id || '',
+      hospital_id: '',
     },
   })
 
   useEffect(() => {
     const loadOptions = async () => {
-      const [{ data: fData }, { data: rData }] = await Promise.all([
-        supabase.from('profiles').select('id, name').order('name'),
-        supabase.from('robotic_systems').select('id, system_name').order('system_name'),
-      ])
-      if (fData) setFacilities(fData)
+      const { data: rData } = await supabase
+        .from('robotic_systems')
+        .select('id, system_name')
+        .order('system_name')
       if (rData) setRobots(rData)
     }
     loadOptions()
@@ -126,24 +124,13 @@ export function SurgicalRoomForm({ initialData, roomId }: Props) {
             </div>
 
             <div className="space-y-2">
-              <Label>Instalação (Facility)</Label>
-              <Select
-                value={watch('facility_id')}
-                onValueChange={(v) => setValue('facility_id', v)}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecione a instalação" />
-                </SelectTrigger>
-                <SelectContent>
-                  {facilities.map((f) => (
-                    <SelectItem key={f.id} value={f.id}>
-                      {f.name || f.id}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              {errors.facility_id && (
-                <p className="text-sm text-red-500">{errors.facility_id.message}</p>
+              <Label>Hospital</Label>
+              <HospitalSelector
+                value={watch('hospital_id')}
+                onValueChange={(v) => setValue('hospital_id', v)}
+              />
+              {errors.hospital_id && (
+                <p className="text-sm text-red-500">{errors.hospital_id.message}</p>
               )}
             </div>
 

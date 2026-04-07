@@ -24,8 +24,10 @@ import {
 } from '@/components/ui/select'
 import { useToast } from '@/hooks/use-toast'
 import { Loader2, Plus, Trash2 } from 'lucide-react'
+import { HospitalSelector } from '@/components/hospital/HospitalSelector'
 
 const preferenceSchema = z.object({
+  hospital_id: z.string().min(1, 'Selecione o hospital'),
   pedido_cirurgia_id: z
     .string({ required_error: 'Selecione um pedido cirúrgico' })
     .min(1, 'Selecione um pedido cirúrgico'),
@@ -70,6 +72,7 @@ export default function PreferenceCreate() {
   const form = useForm<PreferenceFormValues>({
     resolver: zodResolver(preferenceSchema),
     defaultValues: {
+      hospital_id: '',
       pedido_cirurgia_id: '',
       preferences: [{ preference_order: 1, surgical_block_id: '' }],
     },
@@ -108,8 +111,8 @@ export default function PreferenceCreate() {
         const { data: bData, error: bError } = await supabase
           .from('surgical_blocks')
           .select(`
-            id, block_date, block_start_time, block_end_time, is_available,
-            surgical_rooms ( room_name, facility_id )
+            id, block_date, block_start_time, block_end_time, is_available, hospital_id,
+            surgical_rooms ( room_name )
           `)
           .eq('is_available', true)
           .gte('block_date', new Date().toISOString().split('T')[0])
@@ -131,18 +134,21 @@ export default function PreferenceCreate() {
     if (user) loadData()
   }, [user, hasRole, toast])
 
+  const selectedHospitalId = form.watch('hospital_id')
   const selectedPedidoId = form.watch('pedido_cirurgia_id')
 
   const availableBlocks = useMemo(() => {
     const selectedPedido = pedidos.find((p) => p.id === selectedPedidoId)
-    if (!selectedPedido) return blocks
+    const filteredBlocks = blocks.filter((b) => b.hospital_id === selectedHospitalId)
+
+    if (!selectedPedido) return filteredBlocks
 
     const refDate = selectedPedido.scheduled_date
       ? new Date(selectedPedido.scheduled_date).toISOString().split('T')[0]
       : new Date().toISOString().split('T')[0]
 
-    return blocks.filter((b) => b.block_date >= refDate)
-  }, [selectedPedidoId, pedidos, blocks])
+    return filteredBlocks.filter((b) => b.block_date >= refDate)
+  }, [selectedHospitalId, selectedPedidoId, pedidos, blocks])
 
   async function onSubmit(values: PreferenceFormValues) {
     try {
@@ -151,10 +157,10 @@ export default function PreferenceCreate() {
       const inserts = values.preferences.map((p) => {
         const block = blocks.find((b) => b.id === p.surgical_block_id)
         return {
+          hospital_id: values.hospital_id,
           pedido_cirurgia_id: values.pedido_cirurgia_id,
           surgical_block_id: p.surgical_block_id,
           preference_order: p.preference_order,
-          facility_id: block?.surgical_rooms?.facility_id,
         }
       })
 
@@ -191,31 +197,51 @@ export default function PreferenceCreate() {
         <CardContent>
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-              <FormField
-                control={form.control}
-                name="pedido_cirurgia_id"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Pedido de Cirurgia</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="hospital_id"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Hospital</FormLabel>
                       <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Selecione a cirurgia..." />
-                        </SelectTrigger>
+                        <HospitalSelector value={field.value} onValueChange={field.onChange} />
                       </FormControl>
-                      <SelectContent>
-                        {pedidos.map((p) => (
-                          <SelectItem key={p.id} value={p.id}>
-                            {p.patients?.full_name} ({p.patients?.medical_record}) -{' '}
-                            {p.procedures?.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="pedido_cirurgia_id"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Pedido de Cirurgia</FormLabel>
+                      <Select
+                        onValueChange={field.onChange}
+                        value={field.value}
+                        disabled={!form.watch('hospital_id')}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Selecione a cirurgia..." />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {pedidos.map((p) => (
+                            <SelectItem key={p.id} value={p.id}>
+                              {p.patients?.full_name} ({p.patients?.medical_record}) -{' '}
+                              {p.procedures?.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
 
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
