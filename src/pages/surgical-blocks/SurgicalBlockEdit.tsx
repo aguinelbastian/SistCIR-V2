@@ -27,11 +27,9 @@ import {
 import { Textarea } from '@/components/ui/textarea'
 import { toast } from 'sonner'
 import { ArrowLeft } from 'lucide-react'
-import { HospitalSelector } from '@/components/hospital/HospitalSelector'
 
 const formSchema = z
   .object({
-    hospital_id: z.string().min(1, 'Hospital é obrigatório'),
     surgical_room_id: z.string().min(1, 'Sala é obrigatória'),
     block_date: z.string().min(1, 'Data é obrigatória'),
     block_start_time: z.string().min(1, 'Hora de início é obrigatória'),
@@ -56,7 +54,6 @@ export default function SurgicalBlockEdit() {
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      hospital_id: '',
       surgical_room_id: '',
       block_date: '',
       block_start_time: '',
@@ -71,9 +68,7 @@ export default function SurgicalBlockEdit() {
   useEffect(() => {
     const loadDependencies = async () => {
       try {
-        const { data: roomsData } = await supabase
-          .from('surgical_rooms')
-          .select('id, room_name, hospital_id')
+        const { data: roomsData } = await supabase.from('surgical_rooms').select('id, room_name')
         setRooms(roomsData || [])
 
         const { data: roles } = await supabase
@@ -99,7 +94,6 @@ export default function SurgicalBlockEdit() {
           if (error) throw error
           if (block) {
             form.reset({
-              hospital_id: block.hospital_id,
               surgical_room_id: block.surgical_room_id,
               block_date: block.block_date,
               block_start_time: block.block_start_time.substring(0, 5),
@@ -123,7 +117,6 @@ export default function SurgicalBlockEdit() {
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     try {
       const payload = {
-        hospital_id: values.hospital_id,
         surgical_room_id: values.surgical_room_id,
         block_date: values.block_date,
         block_start_time: values.block_start_time,
@@ -135,7 +128,7 @@ export default function SurgicalBlockEdit() {
         is_available: values.is_available,
         notes: values.notes || null,
         updated_at: new Date().toISOString(),
-      }
+      } as any
 
       const { error } = await supabase.from('surgical_blocks').update(payload).eq('id', id)
       if (error) throw error
@@ -168,46 +161,22 @@ export default function SurgicalBlockEdit() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <FormField
                   control={form.control}
-                  name="hospital_id"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Hospital *</FormLabel>
-                      <FormControl>
-                        <HospitalSelector
-                          value={field.value}
-                          onChange={field.onChange}
-                          onValueChange={field.onChange}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
                   name="surgical_room_id"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Sala Cirúrgica *</FormLabel>
-                      <Select
-                        onValueChange={field.onChange}
-                        value={field.value}
-                        disabled={!form.watch('hospital_id')}
-                      >
+                      <Select onValueChange={field.onChange} value={field.value}>
                         <FormControl>
                           <SelectTrigger>
                             <SelectValue placeholder="Selecione a sala" />
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          {rooms
-                            .filter((r) => r.hospital_id === form.watch('hospital_id'))
-                            .map((room) => (
-                              <SelectItem key={room.id} value={room.id}>
-                                {room.room_name}
-                              </SelectItem>
-                            ))}
+                          {rooms.map((room) => (
+                            <SelectItem key={room.id} value={room.id}>
+                              {room.room_name}
+                            </SelectItem>
+                          ))}
                         </SelectContent>
                       </Select>
                       <FormMessage />

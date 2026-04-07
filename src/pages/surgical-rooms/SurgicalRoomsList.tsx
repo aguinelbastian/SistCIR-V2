@@ -15,12 +15,10 @@ import {
 import { Badge } from '@/components/ui/badge'
 import { useAuth } from '@/hooks/use-auth'
 import { useToast } from '@/hooks/use-toast'
-import { HospitalSelector } from '@/components/hospital/HospitalSelector'
 
 export default function SurgicalRoomsList() {
   const [rooms, setRooms] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
-  const [filterHospital, setFilterHospital] = useState<string>('all')
   const { hasRole } = useAuth()
   const { toast } = useToast()
 
@@ -30,12 +28,8 @@ export default function SurgicalRoomsList() {
     setLoading(true)
     let query = supabase
       .from('surgical_rooms')
-      .select('*, hospitals(hospital_name), robotic_systems(system_name)')
+      .select('*, robotic_systems(system_name)')
       .order('created_at', { ascending: false })
-
-    if (filterHospital !== 'all') {
-      query = query.eq('hospital_id', filterHospital)
-    }
 
     const { data, error } = await query
 
@@ -49,7 +43,7 @@ export default function SurgicalRoomsList() {
 
   useEffect(() => {
     fetchRooms()
-  }, [filterHospital])
+  }, [])
 
   const handleDelete = async (id: string) => {
     if (!confirm('Deseja realmente excluir esta sala?')) return
@@ -72,9 +66,6 @@ export default function SurgicalRoomsList() {
           </p>
         </div>
         <div className="flex flex-col sm:flex-row items-center gap-3">
-          <div className="w-[280px]">
-            <HospitalSelector value={filterHospital} onValueChange={setFilterHospital} allowAll />
-          </div>
           {canManage && (
             <Button asChild>
               <Link to="/salas-cirurgicas/nova">
@@ -92,7 +83,6 @@ export default function SurgicalRoomsList() {
               <TableRow className="bg-muted/50">
                 <TableHead>Número</TableHead>
                 <TableHead>Nome</TableHead>
-                <TableHead>Hospital</TableHead>
                 <TableHead>Sistema Robótico</TableHead>
                 <TableHead>Capacidade</TableHead>
                 <TableHead>Status</TableHead>
@@ -102,13 +92,13 @@ export default function SurgicalRoomsList() {
             <TableBody>
               {loading ? (
                 <TableRow>
-                  <TableCell colSpan={7} className="text-center py-8">
+                  <TableCell colSpan={6} className="text-center py-8">
                     Carregando...
                   </TableCell>
                 </TableRow>
               ) : rooms.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+                  <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
                     Nenhuma sala encontrada.
                   </TableCell>
                 </TableRow>
@@ -117,7 +107,6 @@ export default function SurgicalRoomsList() {
                   <TableRow key={room.id}>
                     <TableCell className="font-medium">{room.room_number}</TableCell>
                     <TableCell>{room.room_name}</TableCell>
-                    <TableCell>{room.hospitals?.hospital_name || 'N/A'}</TableCell>
                     <TableCell>{room.robotic_systems?.system_name || 'N/A'}</TableCell>
                     <TableCell>{room.capacity_patients}</TableCell>
                     <TableCell>

@@ -23,7 +23,6 @@ import {
 } from '@/components/ui/dialog'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { toast } from 'sonner'
-import { HospitalSelector } from '@/components/HospitalSelector'
 
 const DAY_LABELS: Record<string, string> = {
   MONDAY: 'Segunda-feira',
@@ -44,11 +43,10 @@ export default function SurgicalBlockTemplatesList() {
   const [selectedTemplate, setSelectedTemplate] = useState<any>(null)
   const [exceptionsCount, setExceptionsCount] = useState(0)
   const [isGenerating, setIsGenerating] = useState(false)
-  const [filterHospital, setFilterHospital] = useState<string>('all')
 
   useEffect(() => {
     fetchTemplates()
-  }, [filterHospital])
+  }, [])
 
   const fetchTemplates = async () => {
     try {
@@ -57,14 +55,9 @@ export default function SurgicalBlockTemplatesList() {
         .from('surgical_block_templates' as any)
         .select(`
           id, day_of_week, block_start_time, block_end_time, is_active,
-          surgical_rooms ( room_name ),
-          hospitals ( hospital_name )
+          surgical_rooms ( room_name )
         `)
         .order('created_at', { ascending: false })
-
-      if (filterHospital !== 'all') {
-        query = query.eq('hospital_id', filterHospital)
-      }
 
       const { data, error } = await query
 
@@ -148,9 +141,6 @@ export default function SurgicalBlockTemplatesList() {
           </p>
         </div>
         <div className="flex flex-col sm:flex-row items-center gap-3">
-          <div className="w-[280px]">
-            <HospitalSelector value={filterHospital} onValueChange={setFilterHospital} allowAll />
-          </div>
           <Button asChild>
             <Link to="/modelos-blocos/novo">
               <Plus className="w-4 h-4 mr-2" />
@@ -175,7 +165,6 @@ export default function SurgicalBlockTemplatesList() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Hospital</TableHead>
                   <TableHead>Sala</TableHead>
                   <TableHead>Dia da Semana</TableHead>
                   <TableHead>Horário</TableHead>
@@ -186,22 +175,19 @@ export default function SurgicalBlockTemplatesList() {
               <TableBody>
                 {loading ? (
                   <TableRow>
-                    <TableCell colSpan={6} className="text-center py-8">
+                    <TableCell colSpan={5} className="text-center py-8">
                       Carregando...
                     </TableCell>
                   </TableRow>
                 ) : templates.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={6} className="text-center py-8">
+                    <TableCell colSpan={5} className="text-center py-8">
                       Nenhum modelo encontrado.
                     </TableCell>
                   </TableRow>
                 ) : (
                   templates.map((tpl) => (
                     <TableRow key={tpl.id}>
-                      <TableCell className="font-medium">
-                        {tpl.hospitals?.hospital_name || 'N/A'}
-                      </TableCell>
                       <TableCell>{tpl.surgical_rooms?.room_name || 'N/A'}</TableCell>
                       <TableCell>{DAY_LABELS[tpl.day_of_week] || tpl.day_of_week}</TableCell>
                       <TableCell>
@@ -251,10 +237,6 @@ export default function SurgicalBlockTemplatesList() {
           {selectedTemplate && (
             <div className="space-y-4 py-4">
               <div className="grid grid-cols-2 gap-2 text-sm bg-muted/50 p-4 rounded-md">
-                <div className="font-semibold text-muted-foreground">Hospital:</div>
-                <div className="font-medium">
-                  {selectedTemplate.hospitals?.hospital_name || 'N/A'}
-                </div>
                 <div className="font-semibold text-muted-foreground">Sala:</div>
                 <div className="font-medium">
                   {selectedTemplate.surgical_rooms?.room_name || 'N/A'}

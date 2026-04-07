@@ -23,7 +23,6 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
-import { HospitalSelector } from '@/components/hospital/HospitalSelector'
 
 const DAY_LABELS: Record<string, string> = {
   MONDAY: 'Segunda',
@@ -41,14 +40,13 @@ export default function SurgicalBlocksList() {
   const [filterTemplate, setFilterTemplate] = useState<string>(
     () => localStorage.getItem('surgical_blocks_filter_template') || 'all',
   )
-  const [filterHospital, setFilterHospital] = useState<string>('all')
   const [templates, setTemplates] = useState<any[]>([])
 
   useEffect(() => {
     const fetchTemplates = async () => {
       const { data } = await supabase
         .from('surgical_block_templates')
-        .select(`id, hospital_id, day_of_week, surgical_rooms(room_name)`)
+        .select(`id, day_of_week, surgical_rooms(room_name)`)
         .eq('is_active', true)
       setTemplates(data || [])
     }
@@ -58,7 +56,7 @@ export default function SurgicalBlocksList() {
   useEffect(() => {
     localStorage.setItem('surgical_blocks_filter_template', filterTemplate)
     fetchBlocks()
-  }, [filterTemplate, filterHospital])
+  }, [filterTemplate])
 
   const fetchBlocks = async () => {
     setLoading(true)
@@ -67,7 +65,6 @@ export default function SurgicalBlocksList() {
         .from('surgical_blocks' as any)
         .select(`
           *,
-          hospitals(hospital_name),
           surgical_rooms(room_name, room_number),
           assigned_surgeon:profiles!surgical_blocks_assigned_surgeon_id_fkey(name),
           surgical_block_templates(day_of_week, surgical_rooms(room_name))
@@ -77,9 +74,6 @@ export default function SurgicalBlocksList() {
 
       if (filterTemplate !== 'all') {
         query = query.eq('template_id', filterTemplate)
-      }
-      if (filterHospital !== 'all') {
-        query = query.eq('hospital_id', filterHospital)
       }
 
       const { data, error } = await query
@@ -116,22 +110,17 @@ export default function SurgicalBlocksList() {
           </p>
         </div>
         <div className="flex flex-col sm:flex-row items-center gap-3">
-          <div className="w-[240px]">
-            <HospitalSelector value={filterHospital} onValueChange={setFilterHospital} allowAll />
-          </div>
           <Select value={filterTemplate} onValueChange={setFilterTemplate}>
             <SelectTrigger className="w-[240px]">
               <SelectValue placeholder="Filtrar por template" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Todos os Blocos</SelectItem>
-              {templates
-                .filter((t) => filterHospital === 'all' || t.hospital_id === filterHospital)
-                .map((t) => (
-                  <SelectItem key={t.id} value={t.id}>
-                    {t.surgical_rooms?.room_name} - {DAY_LABELS[t.day_of_week] || t.day_of_week}
-                  </SelectItem>
-                ))}
+              {templates.map((t) => (
+                <SelectItem key={t.id} value={t.id}>
+                  {t.surgical_rooms?.room_name} - {DAY_LABELS[t.day_of_week] || t.day_of_week}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
           <Button asChild>
@@ -152,7 +141,6 @@ export default function SurgicalBlocksList() {
                   <TableHead>Data</TableHead>
                   <TableHead>Horário</TableHead>
                   <TableHead>Duração</TableHead>
-                  <TableHead>Hospital</TableHead>
                   <TableHead>Sala</TableHead>
                   <TableHead>Cirurgião</TableHead>
                   <TableHead>Origem</TableHead>
@@ -187,7 +175,6 @@ export default function SurgicalBlocksList() {
                         </div>
                       </TableCell>
                       <TableCell>{block.duration_minutes} min</TableCell>
-                      <TableCell>{block.hospitals?.hospital_name || 'N/A'}</TableCell>
                       <TableCell>{block.surgical_rooms?.room_name || 'N/A'}</TableCell>
                       <TableCell>
                         {block.assigned_surgeon ? (

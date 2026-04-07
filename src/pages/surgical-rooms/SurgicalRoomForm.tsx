@@ -18,13 +18,10 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { useToast } from '@/hooks/use-toast'
-import { useAuth } from '@/hooks/use-auth'
-import { HospitalSelector } from '@/components/hospital/HospitalSelector'
 
 const schema = z.object({
   room_number: z.string().min(1, 'Obrigatório'),
   room_name: z.string().min(1, 'Obrigatório'),
-  hospital_id: z.string().min(1, 'Obrigatório'),
   robotic_system_id: z.string().optional().nullable(),
   capacity_patients: z.coerce.number().min(1),
   is_active: z.boolean().default(true),
@@ -55,7 +52,6 @@ export function SurgicalRoomForm({ initialData, roomId }: Props) {
     defaultValues: initialData || {
       capacity_patients: 1,
       is_active: true,
-      hospital_id: '',
     },
   })
 
@@ -75,7 +71,7 @@ export function SurgicalRoomForm({ initialData, roomId }: Props) {
     const payload = {
       ...data,
       robotic_system_id: data.robotic_system_id === 'none' ? null : data.robotic_system_id,
-    }
+    } as any
 
     let error
     if (roomId) {
@@ -120,18 +116,6 @@ export function SurgicalRoomForm({ initialData, roomId }: Props) {
               <Input {...register('room_name')} placeholder="Ex: Sala Robótica 1" />
               {errors.room_name && (
                 <p className="text-sm text-red-500">{errors.room_name.message}</p>
-              )}
-            </div>
-
-            <div className="space-y-2">
-              <Label>Hospital</Label>
-              <HospitalSelector
-                value={watch('hospital_id')}
-                onChange={(v) => setValue('hospital_id', v, { shouldValidate: true })}
-                onValueChange={(v) => setValue('hospital_id', v, { shouldValidate: true })}
-              />
-              {errors.hospital_id && (
-                <p className="text-sm text-red-500">{errors.hospital_id.message}</p>
               )}
             </div>
 

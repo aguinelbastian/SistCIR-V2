@@ -24,7 +24,6 @@ import {
 import { Textarea } from '@/components/ui/textarea'
 import { Switch } from '@/components/ui/switch'
 import { useToast } from '@/hooks/use-toast'
-import { HospitalSelector } from '@/components/hospital/HospitalSelector'
 
 const DAY_OPTIONS = [
   { value: 'MONDAY', label: 'Segunda-feira' },
@@ -38,7 +37,6 @@ const DAY_OPTIONS = [
 
 const formSchema = z
   .object({
-    hospital_id: z.string().min(1, 'Selecione o hospital'),
     surgical_room_id: z.string().min(1, 'Selecione a sala'),
     day_of_week: z.string().min(1, 'Selecione o dia'),
     block_start_time: z.string().regex(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/, 'Use o formato HH:MM'),
@@ -62,7 +60,6 @@ export function SurgicalBlockTemplateForm({ initialData }: { initialData?: any }
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
     defaultValues: initialData || {
-      hospital_id: '',
       surgical_room_id: '',
       day_of_week: '',
       block_start_time: '',
@@ -76,21 +73,12 @@ export function SurgicalBlockTemplateForm({ initialData }: { initialData?: any }
     const fetchData = async () => {
       const roomRes = await supabase
         .from('surgical_rooms')
-        .select('id, room_name, hospital_id')
+        .select('id, room_name')
         .eq('is_active', true)
       if (roomRes.data) setRooms(roomRes.data)
     }
     fetchData()
   }, [])
-
-  const selectedHospital = form.watch('hospital_id')
-  const filteredRooms = rooms.filter((r) => r.hospital_id === selectedHospital)
-
-  useEffect(() => {
-    if (!filteredRooms.find((r) => r.id === form.getValues('surgical_room_id'))) {
-      form.setValue('surgical_room_id', '')
-    }
-  }, [selectedHospital, filteredRooms, form])
 
   const onSubmit = async (data: FormData) => {
     setLoading(true)
@@ -98,12 +86,14 @@ export function SurgicalBlockTemplateForm({ initialData }: { initialData?: any }
       if (initialData?.id) {
         const { error } = await supabase
           .from('surgical_block_templates' as any)
-          .update(data)
+          .update(data as any)
           .eq('id', initialData.id)
         if (error) throw error
         toast({ title: 'Sucesso', description: 'Modelo atualizado.' })
       } else {
-        const { error } = await supabase.from('surgical_block_templates' as any).insert([data])
+        const { error } = await supabase
+          .from('surgical_block_templates' as any)
+          .insert([data as any])
         if (error) throw error
         toast({ title: 'Sucesso', description: 'Modelo criado.' })
       }
@@ -121,40 +111,18 @@ export function SurgicalBlockTemplateForm({ initialData }: { initialData?: any }
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <FormField
             control={form.control}
-            name="hospital_id"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Hospital</FormLabel>
-                <FormControl>
-                  <HospitalSelector
-                    value={field.value}
-                    onChange={field.onChange}
-                    onValueChange={field.onChange}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            control={form.control}
             name="surgical_room_id"
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Sala Cirúrgica</FormLabel>
-                <Select
-                  onValueChange={field.onChange}
-                  value={field.value}
-                  disabled={!selectedHospital}
-                >
+                <Select onValueChange={field.onChange} value={field.value}>
                   <FormControl>
                     <SelectTrigger>
                       <SelectValue placeholder="Selecione..." />
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    {filteredRooms.map((r) => (
+                    {rooms.map((r) => (
                       <SelectItem key={r.id} value={r.id}>
                         {r.room_name}
                       </SelectItem>
