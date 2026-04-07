@@ -1,11 +1,17 @@
 // AVOID UPDATING THIS FILE DIRECTLY. It is automatically generated.
-export type Json = string | number | boolean | null | { [key: string]: Json | undefined } | Json[]
+export type Json =
+  | string
+  | number
+  | boolean
+  | null
+  | { [key: string]: Json | undefined }
+  | Json[]
 
 export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: '14.4'
+    PostgrestVersion: "14.4"
   }
   public: {
     Tables: {
@@ -36,25 +42,25 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: 'agendamento_propostas_pedido_id_fkey'
-            columns: ['pedido_id']
+            foreignKeyName: "agendamento_propostas_pedido_id_fkey"
+            columns: ["pedido_id"]
             isOneToOne: false
-            referencedRelation: 'mv_kpi_cirurgias'
-            referencedColumns: ['id']
+            referencedRelation: "mv_kpi_cirurgias"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: 'agendamento_propostas_pedido_id_fkey'
-            columns: ['pedido_id']
+            foreignKeyName: "agendamento_propostas_pedido_id_fkey"
+            columns: ["pedido_id"]
             isOneToOne: false
-            referencedRelation: 'pedidos_cirurgia'
-            referencedColumns: ['id']
+            referencedRelation: "pedidos_cirurgia"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: 'agendamento_propostas_pedido_id_fkey'
-            columns: ['pedido_id']
+            foreignKeyName: "agendamento_propostas_pedido_id_fkey"
+            columns: ["pedido_id"]
             isOneToOne: false
-            referencedRelation: 'v_pedidos_pendentes_sla'
-            referencedColumns: ['id']
+            referencedRelation: "v_pedidos_pendentes_sla"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -91,32 +97,32 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: 'audit_log_changed_by_fkey'
-            columns: ['changed_by']
+            foreignKeyName: "audit_log_changed_by_fkey"
+            columns: ["changed_by"]
             isOneToOne: false
-            referencedRelation: 'profiles'
-            referencedColumns: ['id']
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: 'audit_log_pedido_id_fkey'
-            columns: ['pedido_id']
+            foreignKeyName: "audit_log_pedido_id_fkey"
+            columns: ["pedido_id"]
             isOneToOne: false
-            referencedRelation: 'mv_kpi_cirurgias'
-            referencedColumns: ['id']
+            referencedRelation: "mv_kpi_cirurgias"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: 'audit_log_pedido_id_fkey'
-            columns: ['pedido_id']
+            foreignKeyName: "audit_log_pedido_id_fkey"
+            columns: ["pedido_id"]
             isOneToOne: false
-            referencedRelation: 'pedidos_cirurgia'
-            referencedColumns: ['id']
+            referencedRelation: "pedidos_cirurgia"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: 'audit_log_pedido_id_fkey'
-            columns: ['pedido_id']
+            foreignKeyName: "audit_log_pedido_id_fkey"
+            columns: ["pedido_id"]
             isOneToOne: false
-            referencedRelation: 'v_pedidos_pendentes_sla'
-            referencedColumns: ['id']
+            referencedRelation: "v_pedidos_pendentes_sla"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -225,11 +231,11 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: 'google_oauth_tokens_user_id_fkey'
-            columns: ['user_id']
+            foreignKeyName: "google_oauth_tokens_user_id_fkey"
+            columns: ["user_id"]
             isOneToOne: true
-            referencedRelation: 'profiles'
-            referencedColumns: ['id']
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -263,18 +269,18 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: 'hospital_users_hospital_id_fkey'
-            columns: ['hospital_id']
+            foreignKeyName: "hospital_users_hospital_id_fkey"
+            columns: ["hospital_id"]
             isOneToOne: false
-            referencedRelation: 'hospitals'
-            referencedColumns: ['id']
+            referencedRelation: "hospitals"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: 'hospital_users_user_id_fkey'
-            columns: ['user_id']
+            foreignKeyName: "hospital_users_user_id_fkey"
+            columns: ["user_id"]
             isOneToOne: false
-            referencedRelation: 'profiles'
-            referencedColumns: ['id']
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -425,11 +431,11 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: 'pacotes_opme_itens_pacote_id_fkey'
-            columns: ['pacote_id']
+            foreignKeyName: "pacotes_opme_itens_pacote_id_fkey"
+            columns: ["pacote_id"]
             isOneToOne: false
-            referencedRelation: 'pacotes_opme'
-            referencedColumns: ['id']
+            referencedRelation: "pacotes_opme"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -520,39 +526,39 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: 'pedido_opme_items_added_by_fkey'
-            columns: ['added_by']
+            foreignKeyName: "pedido_opme_items_added_by_fkey"
+            columns: ["added_by"]
             isOneToOne: false
-            referencedRelation: 'profiles'
-            referencedColumns: ['id']
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: 'pedido_opme_items_opme_item_id_fkey'
-            columns: ['opme_item_id']
+            foreignKeyName: "pedido_opme_items_opme_item_id_fkey"
+            columns: ["opme_item_id"]
             isOneToOne: false
-            referencedRelation: 'opme_items'
-            referencedColumns: ['id']
+            referencedRelation: "opme_items"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: 'pedido_opme_items_pedido_id_fkey'
-            columns: ['pedido_id']
+            foreignKeyName: "pedido_opme_items_pedido_id_fkey"
+            columns: ["pedido_id"]
             isOneToOne: false
-            referencedRelation: 'mv_kpi_cirurgias'
-            referencedColumns: ['id']
+            referencedRelation: "mv_kpi_cirurgias"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: 'pedido_opme_items_pedido_id_fkey'
-            columns: ['pedido_id']
+            foreignKeyName: "pedido_opme_items_pedido_id_fkey"
+            columns: ["pedido_id"]
             isOneToOne: false
-            referencedRelation: 'pedidos_cirurgia'
-            referencedColumns: ['id']
+            referencedRelation: "pedidos_cirurgia"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: 'pedido_opme_items_pedido_id_fkey'
-            columns: ['pedido_id']
+            foreignKeyName: "pedido_opme_items_pedido_id_fkey"
+            columns: ["pedido_id"]
             isOneToOne: false
-            referencedRelation: 'v_pedidos_pendentes_sla'
-            referencedColumns: ['id']
+            referencedRelation: "v_pedidos_pendentes_sla"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -607,25 +613,25 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: 'pedidos_calendar_events_pedido_id_fkey'
-            columns: ['pedido_id']
+            foreignKeyName: "pedidos_calendar_events_pedido_id_fkey"
+            columns: ["pedido_id"]
             isOneToOne: false
-            referencedRelation: 'mv_kpi_cirurgias'
-            referencedColumns: ['id']
+            referencedRelation: "mv_kpi_cirurgias"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: 'pedidos_calendar_events_pedido_id_fkey'
-            columns: ['pedido_id']
+            foreignKeyName: "pedidos_calendar_events_pedido_id_fkey"
+            columns: ["pedido_id"]
             isOneToOne: false
-            referencedRelation: 'pedidos_cirurgia'
-            referencedColumns: ['id']
+            referencedRelation: "pedidos_cirurgia"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: 'pedidos_calendar_events_pedido_id_fkey'
-            columns: ['pedido_id']
+            foreignKeyName: "pedidos_calendar_events_pedido_id_fkey"
+            columns: ["pedido_id"]
             isOneToOne: false
-            referencedRelation: 'v_pedidos_pendentes_sla'
-            referencedColumns: ['id']
+            referencedRelation: "v_pedidos_pendentes_sla"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -672,7 +678,7 @@ export type Database = {
           robot_platform: string | null
           scheduled_date: string | null
           secretary_id: string | null
-          status: Database['public']['Enums']['surgery_status'] | null
+          status: Database["public"]["Enums"]["surgery_status"] | null
           surgeon_id: string
           surgical_technique: string | null
           tempo_internacao_dias: number | null
@@ -721,7 +727,7 @@ export type Database = {
           robot_platform?: string | null
           scheduled_date?: string | null
           secretary_id?: string | null
-          status?: Database['public']['Enums']['surgery_status'] | null
+          status?: Database["public"]["Enums"]["surgery_status"] | null
           surgeon_id: string
           surgical_technique?: string | null
           tempo_internacao_dias?: number | null
@@ -770,7 +776,7 @@ export type Database = {
           robot_platform?: string | null
           scheduled_date?: string | null
           secretary_id?: string | null
-          status?: Database['public']['Enums']['surgery_status'] | null
+          status?: Database["public"]["Enums"]["surgery_status"] | null
           surgeon_id?: string
           surgical_technique?: string | null
           tempo_internacao_dias?: number | null
@@ -779,39 +785,39 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: 'pedidos_cirurgia_diagnostico_cid10_id_fkey'
-            columns: ['diagnostico_cid10_id']
+            foreignKeyName: "pedidos_cirurgia_diagnostico_cid10_id_fkey"
+            columns: ["diagnostico_cid10_id"]
             isOneToOne: false
-            referencedRelation: 'diagnosticos_cid10'
-            referencedColumns: ['id']
+            referencedRelation: "diagnosticos_cid10"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: 'pedidos_cirurgia_pacote_opme_id_fkey'
-            columns: ['pacote_opme_id']
+            foreignKeyName: "pedidos_cirurgia_pacote_opme_id_fkey"
+            columns: ["pacote_opme_id"]
             isOneToOne: false
-            referencedRelation: 'pacotes_opme'
-            referencedColumns: ['id']
+            referencedRelation: "pacotes_opme"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: 'pedidos_cirurgia_patient_id_fkey'
-            columns: ['patient_id']
+            foreignKeyName: "pedidos_cirurgia_patient_id_fkey"
+            columns: ["patient_id"]
             isOneToOne: false
-            referencedRelation: 'patients'
-            referencedColumns: ['id']
+            referencedRelation: "patients"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: 'pedidos_cirurgia_procedure_id_fkey'
-            columns: ['procedure_id']
+            foreignKeyName: "pedidos_cirurgia_procedure_id_fkey"
+            columns: ["procedure_id"]
             isOneToOne: false
-            referencedRelation: 'procedures'
-            referencedColumns: ['id']
+            referencedRelation: "procedures"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: 'pedidos_cirurgia_surgeon_id_fkey'
-            columns: ['surgeon_id']
+            foreignKeyName: "pedidos_cirurgia_surgeon_id_fkey"
+            columns: ["surgeon_id"]
             isOneToOne: false
-            referencedRelation: 'profiles'
-            referencedColumns: ['id']
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -845,25 +851,25 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: 'pedidos_cirurgia_auditoria_pedido_id_fkey'
-            columns: ['pedido_id']
+            foreignKeyName: "pedidos_cirurgia_auditoria_pedido_id_fkey"
+            columns: ["pedido_id"]
             isOneToOne: false
-            referencedRelation: 'mv_kpi_cirurgias'
-            referencedColumns: ['id']
+            referencedRelation: "mv_kpi_cirurgias"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: 'pedidos_cirurgia_auditoria_pedido_id_fkey'
-            columns: ['pedido_id']
+            foreignKeyName: "pedidos_cirurgia_auditoria_pedido_id_fkey"
+            columns: ["pedido_id"]
             isOneToOne: false
-            referencedRelation: 'pedidos_cirurgia'
-            referencedColumns: ['id']
+            referencedRelation: "pedidos_cirurgia"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: 'pedidos_cirurgia_auditoria_pedido_id_fkey'
-            columns: ['pedido_id']
+            foreignKeyName: "pedidos_cirurgia_auditoria_pedido_id_fkey"
+            columns: ["pedido_id"]
             isOneToOne: false
-            referencedRelation: 'v_pedidos_pendentes_sla'
-            referencedColumns: ['id']
+            referencedRelation: "v_pedidos_pendentes_sla"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -900,60 +906,60 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: 'pedidos_docs_exports_generated_by_fkey'
-            columns: ['generated_by']
+            foreignKeyName: "pedidos_docs_exports_generated_by_fkey"
+            columns: ["generated_by"]
             isOneToOne: false
-            referencedRelation: 'profiles'
-            referencedColumns: ['id']
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: 'pedidos_docs_exports_generated_by_fkey1'
-            columns: ['generated_by']
+            foreignKeyName: "pedidos_docs_exports_generated_by_fkey1"
+            columns: ["generated_by"]
             isOneToOne: false
-            referencedRelation: 'profiles'
-            referencedColumns: ['id']
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: 'pedidos_docs_exports_pedido_id_fkey'
-            columns: ['pedido_id']
+            foreignKeyName: "pedidos_docs_exports_pedido_id_fkey"
+            columns: ["pedido_id"]
             isOneToOne: false
-            referencedRelation: 'mv_kpi_cirurgias'
-            referencedColumns: ['id']
+            referencedRelation: "mv_kpi_cirurgias"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: 'pedidos_docs_exports_pedido_id_fkey'
-            columns: ['pedido_id']
+            foreignKeyName: "pedidos_docs_exports_pedido_id_fkey"
+            columns: ["pedido_id"]
             isOneToOne: false
-            referencedRelation: 'pedidos_cirurgia'
-            referencedColumns: ['id']
+            referencedRelation: "pedidos_cirurgia"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: 'pedidos_docs_exports_pedido_id_fkey'
-            columns: ['pedido_id']
+            foreignKeyName: "pedidos_docs_exports_pedido_id_fkey"
+            columns: ["pedido_id"]
             isOneToOne: false
-            referencedRelation: 'v_pedidos_pendentes_sla'
-            referencedColumns: ['id']
+            referencedRelation: "v_pedidos_pendentes_sla"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: 'pedidos_docs_exports_pedido_id_fkey1'
-            columns: ['pedido_id']
+            foreignKeyName: "pedidos_docs_exports_pedido_id_fkey1"
+            columns: ["pedido_id"]
             isOneToOne: false
-            referencedRelation: 'mv_kpi_cirurgias'
-            referencedColumns: ['id']
+            referencedRelation: "mv_kpi_cirurgias"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: 'pedidos_docs_exports_pedido_id_fkey1'
-            columns: ['pedido_id']
+            foreignKeyName: "pedidos_docs_exports_pedido_id_fkey1"
+            columns: ["pedido_id"]
             isOneToOne: false
-            referencedRelation: 'pedidos_cirurgia'
-            referencedColumns: ['id']
+            referencedRelation: "pedidos_cirurgia"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: 'pedidos_docs_exports_pedido_id_fkey1'
-            columns: ['pedido_id']
+            foreignKeyName: "pedidos_docs_exports_pedido_id_fkey1"
+            columns: ["pedido_id"]
             isOneToOne: false
-            referencedRelation: 'v_pedidos_pendentes_sla'
-            referencedColumns: ['id']
+            referencedRelation: "v_pedidos_pendentes_sla"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -1044,7 +1050,7 @@ export type Database = {
           allocated_by: string
           allocated_proctor_id: string | null
           allocated_surgeon_id: string
-          allocation_status: Database['public']['Enums']['allocation_status']
+          allocation_status: Database["public"]["Enums"]["allocation_status"]
           estimated_duration_minutes: number
           fallback_reason: string | null
           id: string
@@ -1062,7 +1068,7 @@ export type Database = {
           allocated_by: string
           allocated_proctor_id?: string | null
           allocated_surgeon_id: string
-          allocation_status?: Database['public']['Enums']['allocation_status']
+          allocation_status?: Database["public"]["Enums"]["allocation_status"]
           estimated_duration_minutes: number
           fallback_reason?: string | null
           id?: string
@@ -1080,7 +1086,7 @@ export type Database = {
           allocated_by?: string
           allocated_proctor_id?: string | null
           allocated_surgeon_id?: string
-          allocation_status?: Database['public']['Enums']['allocation_status']
+          allocation_status?: Database["public"]["Enums"]["allocation_status"]
           estimated_duration_minutes?: number
           fallback_reason?: string | null
           id?: string
@@ -1095,74 +1101,81 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: 'resource_allocation_allocated_by_fkey'
-            columns: ['allocated_by']
+            foreignKeyName: "resource_allocation_allocated_by_fkey"
+            columns: ["allocated_by"]
             isOneToOne: false
-            referencedRelation: 'profiles'
-            referencedColumns: ['id']
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: 'resource_allocation_allocated_proctor_id_fkey'
-            columns: ['allocated_proctor_id']
+            foreignKeyName: "resource_allocation_allocated_proctor_id_fkey"
+            columns: ["allocated_proctor_id"]
             isOneToOne: false
-            referencedRelation: 'profiles'
-            referencedColumns: ['id']
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: 'resource_allocation_allocated_surgeon_id_fkey'
-            columns: ['allocated_surgeon_id']
+            foreignKeyName: "resource_allocation_allocated_surgeon_id_fkey"
+            columns: ["allocated_surgeon_id"]
             isOneToOne: false
-            referencedRelation: 'profiles'
-            referencedColumns: ['id']
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: 'resource_allocation_original_preference_id_fkey'
-            columns: ['original_preference_id']
+            foreignKeyName: "resource_allocation_original_preference_id_fkey"
+            columns: ["original_preference_id"]
             isOneToOne: false
-            referencedRelation: 'surgical_request_block_preferences'
-            referencedColumns: ['id']
+            referencedRelation: "surgical_request_block_preferences"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: 'resource_allocation_pedido_id_fkey'
-            columns: ['pedido_id']
+            foreignKeyName: "resource_allocation_pedido_id_fkey"
+            columns: ["pedido_id"]
             isOneToOne: false
-            referencedRelation: 'mv_kpi_cirurgias'
-            referencedColumns: ['id']
+            referencedRelation: "mv_kpi_cirurgias"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: 'resource_allocation_pedido_id_fkey'
-            columns: ['pedido_id']
+            foreignKeyName: "resource_allocation_pedido_id_fkey"
+            columns: ["pedido_id"]
             isOneToOne: false
-            referencedRelation: 'pedidos_cirurgia'
-            referencedColumns: ['id']
+            referencedRelation: "pedidos_cirurgia"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: 'resource_allocation_pedido_id_fkey'
-            columns: ['pedido_id']
+            foreignKeyName: "resource_allocation_pedido_id_fkey"
+            columns: ["pedido_id"]
             isOneToOne: false
-            referencedRelation: 'v_pedidos_pendentes_sla'
-            referencedColumns: ['id']
+            referencedRelation: "v_pedidos_pendentes_sla"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: 'resource_allocation_robotic_system_id_fkey'
-            columns: ['robotic_system_id']
+            foreignKeyName: "resource_allocation_robotic_system_id_fkey"
+            columns: ["robotic_system_id"]
             isOneToOne: false
-            referencedRelation: 'robotic_systems'
-            referencedColumns: ['id']
+            referencedRelation: "robotic_systems"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: 'resource_allocation_surgical_block_id_fkey'
-            columns: ['surgical_block_id']
+            foreignKeyName: "resource_allocation_surgical_block_id_fkey"
+            columns: ["surgical_block_id"]
             isOneToOne: false
-            referencedRelation: 'surgical_blocks'
-            referencedColumns: ['id']
+            referencedRelation: "surgical_blocks"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: 'resource_allocation_surgical_room_id_fkey'
-            columns: ['surgical_room_id']
+            foreignKeyName: "resource_allocation_surgical_block_id_fkey"
+            columns: ["surgical_block_id"]
             isOneToOne: false
-            referencedRelation: 'surgical_rooms'
-            referencedColumns: ['id']
+            referencedRelation: "v_blocos_disponiveis"
+            referencedColumns: ["bloco_id"]
+          },
+          {
+            foreignKeyName: "resource_allocation_surgical_room_id_fkey"
+            columns: ["surgical_room_id"]
+            isOneToOne: false
+            referencedRelation: "surgical_rooms"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -1174,7 +1187,7 @@ export type Database = {
           installation_date: string | null
           is_operational: boolean | null
           last_maintenance_date: string | null
-          model: Database['public']['Enums']['robotic_system_model']
+          model: Database["public"]["Enums"]["robotic_system_model"]
           next_maintenance_date: string | null
           notes: string | null
           serial_number: string | null
@@ -1188,7 +1201,7 @@ export type Database = {
           installation_date?: string | null
           is_operational?: boolean | null
           last_maintenance_date?: string | null
-          model: Database['public']['Enums']['robotic_system_model']
+          model: Database["public"]["Enums"]["robotic_system_model"]
           next_maintenance_date?: string | null
           notes?: string | null
           serial_number?: string | null
@@ -1202,7 +1215,7 @@ export type Database = {
           installation_date?: string | null
           is_operational?: boolean | null
           last_maintenance_date?: string | null
-          model?: Database['public']['Enums']['robotic_system_model']
+          model?: Database["public"]["Enums"]["robotic_system_model"]
           next_maintenance_date?: string | null
           notes?: string | null
           serial_number?: string | null
@@ -1211,11 +1224,11 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: 'robotic_systems_facility_id_fkey'
-            columns: ['facility_id']
+            foreignKeyName: "robotic_systems_facility_id_fkey"
+            columns: ["facility_id"]
             isOneToOne: false
-            referencedRelation: 'profiles'
-            referencedColumns: ['id']
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -1224,24 +1237,30 @@ export type Database = {
           created_at: string | null
           id: string
           name: string
-          notify_on_status: Database['public']['Enums']['surgery_status'][] | null
-          role_target: Database['public']['Enums']['user_role_type'] | null
+          notify_on_status:
+            | Database["public"]["Enums"]["surgery_status"][]
+            | null
+          role_target: Database["public"]["Enums"]["user_role_type"] | null
           telegram_chat_id: string | null
         }
         Insert: {
           created_at?: string | null
           id?: string
           name: string
-          notify_on_status?: Database['public']['Enums']['surgery_status'][] | null
-          role_target?: Database['public']['Enums']['user_role_type'] | null
+          notify_on_status?:
+            | Database["public"]["Enums"]["surgery_status"][]
+            | null
+          role_target?: Database["public"]["Enums"]["user_role_type"] | null
           telegram_chat_id?: string | null
         }
         Update: {
           created_at?: string | null
           id?: string
           name?: string
-          notify_on_status?: Database['public']['Enums']['surgery_status'][] | null
-          role_target?: Database['public']['Enums']['user_role_type'] | null
+          notify_on_status?:
+            | Database["public"]["Enums"]["surgery_status"][]
+            | null
+          role_target?: Database["public"]["Enums"]["user_role_type"] | null
           telegram_chat_id?: string | null
         }
         Relationships: []
@@ -1276,18 +1295,18 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: 'surgical_block_exceptions_hospital_id_fkey'
-            columns: ['hospital_id']
+            foreignKeyName: "surgical_block_exceptions_hospital_id_fkey"
+            columns: ["hospital_id"]
             isOneToOne: false
-            referencedRelation: 'hospitals'
-            referencedColumns: ['id']
+            referencedRelation: "hospitals"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: 'surgical_block_exceptions_surgical_block_template_id_fkey'
-            columns: ['surgical_block_template_id']
+            foreignKeyName: "surgical_block_exceptions_surgical_block_template_id_fkey"
+            columns: ["surgical_block_template_id"]
             isOneToOne: false
-            referencedRelation: 'surgical_block_templates'
-            referencedColumns: ['id']
+            referencedRelation: "surgical_block_templates"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -1296,7 +1315,7 @@ export type Database = {
           block_end_time: string
           block_start_time: string
           created_at: string
-          day_of_week: Database['public']['Enums']['day_of_week']
+          day_of_week: Database["public"]["Enums"]["day_of_week"]
           hospital_id: string
           id: string
           is_active: boolean
@@ -1308,7 +1327,7 @@ export type Database = {
           block_end_time: string
           block_start_time: string
           created_at?: string
-          day_of_week: Database['public']['Enums']['day_of_week']
+          day_of_week: Database["public"]["Enums"]["day_of_week"]
           hospital_id: string
           id?: string
           is_active?: boolean
@@ -1320,7 +1339,7 @@ export type Database = {
           block_end_time?: string
           block_start_time?: string
           created_at?: string
-          day_of_week?: Database['public']['Enums']['day_of_week']
+          day_of_week?: Database["public"]["Enums"]["day_of_week"]
           hospital_id?: string
           id?: string
           is_active?: boolean
@@ -1330,18 +1349,18 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: 'surgical_block_templates_hospital_id_fkey'
-            columns: ['hospital_id']
+            foreignKeyName: "surgical_block_templates_hospital_id_fkey"
+            columns: ["hospital_id"]
             isOneToOne: false
-            referencedRelation: 'hospitals'
-            referencedColumns: ['id']
+            referencedRelation: "hospitals"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: 'surgical_block_templates_surgical_room_id_fkey'
-            columns: ['surgical_room_id']
+            foreignKeyName: "surgical_block_templates_surgical_room_id_fkey"
+            columns: ["surgical_room_id"]
             isOneToOne: false
-            referencedRelation: 'surgical_rooms'
-            referencedColumns: ['id']
+            referencedRelation: "surgical_rooms"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -1396,39 +1415,39 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: 'surgical_blocks_assigned_proctor_id_fkey'
-            columns: ['assigned_proctor_id']
+            foreignKeyName: "surgical_blocks_assigned_proctor_id_fkey"
+            columns: ["assigned_proctor_id"]
             isOneToOne: false
-            referencedRelation: 'profiles'
-            referencedColumns: ['id']
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: 'surgical_blocks_assigned_surgeon_id_fkey'
-            columns: ['assigned_surgeon_id']
+            foreignKeyName: "surgical_blocks_assigned_surgeon_id_fkey"
+            columns: ["assigned_surgeon_id"]
             isOneToOne: false
-            referencedRelation: 'profiles'
-            referencedColumns: ['id']
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: 'surgical_blocks_hospital_id_fkey'
-            columns: ['hospital_id']
+            foreignKeyName: "surgical_blocks_hospital_id_fkey"
+            columns: ["hospital_id"]
             isOneToOne: false
-            referencedRelation: 'hospitals'
-            referencedColumns: ['id']
+            referencedRelation: "hospitals"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: 'surgical_blocks_surgical_room_id_fkey'
-            columns: ['surgical_room_id']
+            foreignKeyName: "surgical_blocks_surgical_room_id_fkey"
+            columns: ["surgical_room_id"]
             isOneToOne: false
-            referencedRelation: 'surgical_rooms'
-            referencedColumns: ['id']
+            referencedRelation: "surgical_rooms"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: 'surgical_blocks_template_id_fkey'
-            columns: ['template_id']
+            foreignKeyName: "surgical_blocks_template_id_fkey"
+            columns: ["template_id"]
             isOneToOne: false
-            referencedRelation: 'surgical_block_templates'
-            referencedColumns: ['id']
+            referencedRelation: "surgical_block_templates"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -1462,39 +1481,46 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: 'surgical_request_block_preferences_hospital_id_fkey'
-            columns: ['hospital_id']
+            foreignKeyName: "surgical_request_block_preferences_hospital_id_fkey"
+            columns: ["hospital_id"]
             isOneToOne: false
-            referencedRelation: 'hospitals'
-            referencedColumns: ['id']
+            referencedRelation: "hospitals"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: 'surgical_request_block_preferences_pedido_cirurgia_id_fkey'
-            columns: ['pedido_cirurgia_id']
+            foreignKeyName: "surgical_request_block_preferences_pedido_cirurgia_id_fkey"
+            columns: ["pedido_cirurgia_id"]
             isOneToOne: false
-            referencedRelation: 'mv_kpi_cirurgias'
-            referencedColumns: ['id']
+            referencedRelation: "mv_kpi_cirurgias"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: 'surgical_request_block_preferences_pedido_cirurgia_id_fkey'
-            columns: ['pedido_cirurgia_id']
+            foreignKeyName: "surgical_request_block_preferences_pedido_cirurgia_id_fkey"
+            columns: ["pedido_cirurgia_id"]
             isOneToOne: false
-            referencedRelation: 'pedidos_cirurgia'
-            referencedColumns: ['id']
+            referencedRelation: "pedidos_cirurgia"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: 'surgical_request_block_preferences_pedido_cirurgia_id_fkey'
-            columns: ['pedido_cirurgia_id']
+            foreignKeyName: "surgical_request_block_preferences_pedido_cirurgia_id_fkey"
+            columns: ["pedido_cirurgia_id"]
             isOneToOne: false
-            referencedRelation: 'v_pedidos_pendentes_sla'
-            referencedColumns: ['id']
+            referencedRelation: "v_pedidos_pendentes_sla"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: 'surgical_request_block_preferences_surgical_block_id_fkey'
-            columns: ['surgical_block_id']
+            foreignKeyName: "surgical_request_block_preferences_surgical_block_id_fkey"
+            columns: ["surgical_block_id"]
             isOneToOne: false
-            referencedRelation: 'surgical_blocks'
-            referencedColumns: ['id']
+            referencedRelation: "surgical_blocks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "surgical_request_block_preferences_surgical_block_id_fkey"
+            columns: ["surgical_block_id"]
+            isOneToOne: false
+            referencedRelation: "v_blocos_disponiveis"
+            referencedColumns: ["bloco_id"]
           },
         ]
       }
@@ -1537,18 +1563,18 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: 'surgical_rooms_hospital_id_fkey'
-            columns: ['hospital_id']
+            foreignKeyName: "surgical_rooms_hospital_id_fkey"
+            columns: ["hospital_id"]
             isOneToOne: false
-            referencedRelation: 'hospitals'
-            referencedColumns: ['id']
+            referencedRelation: "hospitals"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: 'surgical_rooms_robotic_system_id_fkey'
-            columns: ['robotic_system_id']
+            foreignKeyName: "surgical_rooms_robotic_system_id_fkey"
+            columns: ["robotic_system_id"]
             isOneToOne: false
-            referencedRelation: 'robotic_systems'
-            referencedColumns: ['id']
+            referencedRelation: "robotic_systems"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -1558,7 +1584,7 @@ export type Database = {
           granted_by: string | null
           id: string
           is_active: boolean | null
-          role: Database['public']['Enums']['user_role_type']
+          role: Database["public"]["Enums"]["user_role_type"]
           user_id: string
         }
         Insert: {
@@ -1566,7 +1592,7 @@ export type Database = {
           granted_by?: string | null
           id?: string
           is_active?: boolean | null
-          role: Database['public']['Enums']['user_role_type']
+          role: Database["public"]["Enums"]["user_role_type"]
           user_id: string
         }
         Update: {
@@ -1574,7 +1600,7 @@ export type Database = {
           granted_by?: string | null
           id?: string
           is_active?: boolean | null
-          role?: Database['public']['Enums']['user_role_type']
+          role?: Database["public"]["Enums"]["user_role_type"]
           user_id?: string
         }
         Relationships: []
@@ -1592,10 +1618,46 @@ export type Database = {
           patient_hash: string | null
           procedure_name: string | null
           scheduled_date: string | null
-          status: Database['public']['Enums']['surgery_status'] | null
+          status: Database["public"]["Enums"]["surgery_status"] | null
           tuss_code: string | null
         }
         Relationships: []
+      }
+      v_blocos_disponiveis: {
+        Row: {
+          block_date: string | null
+          block_end_time: string | null
+          block_start_time: string | null
+          bloco_id: string | null
+          hospital_id: string | null
+          num_cirurgioes_interessados: number | null
+          status_bloco: string | null
+          surgical_room_id: string | null
+          template_id: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "surgical_blocks_hospital_id_fkey"
+            columns: ["hospital_id"]
+            isOneToOne: false
+            referencedRelation: "hospitals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "surgical_blocks_surgical_room_id_fkey"
+            columns: ["surgical_room_id"]
+            isOneToOne: false
+            referencedRelation: "surgical_rooms"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "surgical_blocks_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "surgical_block_templates"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       v_cirurgias_por_cirurgiao: {
         Row: {
@@ -1621,7 +1683,7 @@ export type Database = {
       v_cirurgias_por_status: {
         Row: {
           percentual: number | null
-          status: Database['public']['Enums']['surgery_status'] | null
+          status: Database["public"]["Enums"]["surgery_status"] | null
           total: number | null
         }
         Relationships: []
@@ -1719,36 +1781,36 @@ export type Database = {
       is_admin: { Args: never; Returns: boolean }
     }
     Enums: {
-      allocation_status: 'ALOCADO' | 'CONFIRMADO' | 'CANCELADO'
+      allocation_status: "ALOCADO" | "CONFIRMADO" | "CANCELADO"
       day_of_week:
-        | 'MONDAY'
-        | 'TUESDAY'
-        | 'WEDNESDAY'
-        | 'THURSDAY'
-        | 'FRIDAY'
-        | 'SATURDAY'
-        | 'SUNDAY'
-      robotic_system_model: 'da Vinci Xi' | 'da Vinci X' | 'da Vinci SP'
+        | "MONDAY"
+        | "TUESDAY"
+        | "WEDNESDAY"
+        | "THURSDAY"
+        | "FRIDAY"
+        | "SATURDAY"
+        | "SUNDAY"
+      robotic_system_model: "da Vinci Xi" | "da Vinci X" | "da Vinci SP"
       surgery_status:
-        | '1_RASCUNHO'
-        | '2_AGUARDANDO_OPME'
-        | '3_EM_AUDITORIA'
-        | '4_PENDENCIA_TECNICA'
-        | '5_AUTORIZADO'
-        | '6_AGUARDANDO_MAPA'
-        | '7_AGENDADO_CC'
-        | '8_EM_EXECUCAO'
-        | '9_REALIZADO'
-        | '10_CANCELADO'
+        | "1_RASCUNHO"
+        | "2_AGUARDANDO_OPME"
+        | "3_EM_AUDITORIA"
+        | "4_PENDENCIA_TECNICA"
+        | "5_AUTORIZADO"
+        | "6_AGUARDANDO_MAPA"
+        | "7_AGENDADO_CC"
+        | "8_EM_EXECUCAO"
+        | "9_REALIZADO"
+        | "10_CANCELADO"
       user_role_type:
-        | 'surgeon'
-        | 'secretary'
-        | 'opme'
-        | 'billing'
-        | 'nursing'
-        | 'coordinator'
-        | 'admin'
-        | 'facility_manager'
+        | "surgeon"
+        | "secretary"
+        | "opme"
+        | "billing"
+        | "nursing"
+        | "coordinator"
+        | "admin"
+        | "facility_manager"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1756,31 +1818,33 @@ export type Database = {
   }
 }
 
-type DatabaseWithoutInternals = Omit<Database, '__InternalSupabase'>
+type DatabaseWithoutInternals = Omit<Database, "__InternalSupabase">
 
-type DefaultSchema = DatabaseWithoutInternals[Extract<keyof Database, 'public'>]
+type DefaultSchema = DatabaseWithoutInternals[Extract<keyof Database, "public">]
 
 export type Tables<
   DefaultSchemaTableNameOrOptions extends
-    | keyof (DefaultSchema['Tables'] & DefaultSchema['Views'])
+    | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
     | { schema: keyof DatabaseWithoutInternals },
   TableName extends DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
-    ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions['schema']]['Tables'] &
-        DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions['schema']]['Views'])
+    ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+        DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
     : never = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
-  ? (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions['schema']]['Tables'] &
-      DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions['schema']]['Views'])[TableName] extends {
+  ? (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+      DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])[TableName] extends {
       Row: infer R
     }
     ? R
     : never
-  : DefaultSchemaTableNameOrOptions extends keyof (DefaultSchema['Tables'] & DefaultSchema['Views'])
-    ? (DefaultSchema['Tables'] & DefaultSchema['Views'])[DefaultSchemaTableNameOrOptions] extends {
+  : DefaultSchemaTableNameOrOptions extends keyof (DefaultSchema["Tables"] &
+        DefaultSchema["Views"])
+    ? (DefaultSchema["Tables"] &
+        DefaultSchema["Views"])[DefaultSchemaTableNameOrOptions] extends {
         Row: infer R
       }
       ? R
@@ -1789,23 +1853,23 @@ export type Tables<
 
 export type TablesInsert<
   DefaultSchemaTableNameOrOptions extends
-    | keyof DefaultSchema['Tables']
+    | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
   TableName extends DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
-    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions['schema']]['Tables']
+    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
     : never = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
-  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions['schema']]['Tables'][TableName] extends {
+  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
       Insert: infer I
     }
     ? I
     : never
-  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema['Tables']
-    ? DefaultSchema['Tables'][DefaultSchemaTableNameOrOptions] extends {
+  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
+    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
         Insert: infer I
       }
       ? I
@@ -1814,23 +1878,23 @@ export type TablesInsert<
 
 export type TablesUpdate<
   DefaultSchemaTableNameOrOptions extends
-    | keyof DefaultSchema['Tables']
+    | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
   TableName extends DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
-    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions['schema']]['Tables']
+    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
     : never = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
-  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions['schema']]['Tables'][TableName] extends {
+  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
       Update: infer U
     }
     ? U
     : never
-  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema['Tables']
-    ? DefaultSchema['Tables'][DefaultSchemaTableNameOrOptions] extends {
+  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
+    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
         Update: infer U
       }
       ? U
@@ -1839,69 +1903,78 @@ export type TablesUpdate<
 
 export type Enums<
   DefaultSchemaEnumNameOrOptions extends
-    | keyof DefaultSchema['Enums']
+    | keyof DefaultSchema["Enums"]
     | { schema: keyof DatabaseWithoutInternals },
   EnumName extends DefaultSchemaEnumNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
-    ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions['schema']]['Enums']
+    ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
     : never = never,
 > = DefaultSchemaEnumNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
-  ? DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions['schema']]['Enums'][EnumName]
-  : DefaultSchemaEnumNameOrOptions extends keyof DefaultSchema['Enums']
-    ? DefaultSchema['Enums'][DefaultSchemaEnumNameOrOptions]
+  ? DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"][EnumName]
+  : DefaultSchemaEnumNameOrOptions extends keyof DefaultSchema["Enums"]
+    ? DefaultSchema["Enums"][DefaultSchemaEnumNameOrOptions]
     : never
 
 export type CompositeTypes<
   PublicCompositeTypeNameOrOptions extends
-    | keyof DefaultSchema['CompositeTypes']
+    | keyof DefaultSchema["CompositeTypes"]
     | { schema: keyof DatabaseWithoutInternals },
   CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
-    ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions['schema']]['CompositeTypes']
+    ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
     : never = never,
 > = PublicCompositeTypeNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
-  ? DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions['schema']]['CompositeTypes'][CompositeTypeName]
-  : PublicCompositeTypeNameOrOptions extends keyof DefaultSchema['CompositeTypes']
-    ? DefaultSchema['CompositeTypes'][PublicCompositeTypeNameOrOptions]
+  ? DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
+  : PublicCompositeTypeNameOrOptions extends keyof DefaultSchema["CompositeTypes"]
+    ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
     : never
 
 export const Constants = {
   public: {
     Enums: {
-      allocation_status: ['ALOCADO', 'CONFIRMADO', 'CANCELADO'],
-      day_of_week: ['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY', 'SUNDAY'],
-      robotic_system_model: ['da Vinci Xi', 'da Vinci X', 'da Vinci SP'],
+      allocation_status: ["ALOCADO", "CONFIRMADO", "CANCELADO"],
+      day_of_week: [
+        "MONDAY",
+        "TUESDAY",
+        "WEDNESDAY",
+        "THURSDAY",
+        "FRIDAY",
+        "SATURDAY",
+        "SUNDAY",
+      ],
+      robotic_system_model: ["da Vinci Xi", "da Vinci X", "da Vinci SP"],
       surgery_status: [
-        '1_RASCUNHO',
-        '2_AGUARDANDO_OPME',
-        '3_EM_AUDITORIA',
-        '4_PENDENCIA_TECNICA',
-        '5_AUTORIZADO',
-        '6_AGUARDANDO_MAPA',
-        '7_AGENDADO_CC',
-        '8_EM_EXECUCAO',
-        '9_REALIZADO',
-        '10_CANCELADO',
+        "1_RASCUNHO",
+        "2_AGUARDANDO_OPME",
+        "3_EM_AUDITORIA",
+        "4_PENDENCIA_TECNICA",
+        "5_AUTORIZADO",
+        "6_AGUARDANDO_MAPA",
+        "7_AGENDADO_CC",
+        "8_EM_EXECUCAO",
+        "9_REALIZADO",
+        "10_CANCELADO",
       ],
       user_role_type: [
-        'surgeon',
-        'secretary',
-        'opme',
-        'billing',
-        'nursing',
-        'coordinator',
-        'admin',
-        'facility_manager',
+        "surgeon",
+        "secretary",
+        "opme",
+        "billing",
+        "nursing",
+        "coordinator",
+        "admin",
+        "facility_manager",
       ],
     },
   },
 } as const
+
 
 // ====== DATABASE EXTENDED CONTEXT (auto-generated) ======
 // This section contains actual PostgreSQL column types, constraints, RLS policies,
@@ -2232,6 +2305,16 @@ export const Constants = {
 //   is_active: boolean (nullable, default: false)
 //   granted_by: uuid (nullable)
 //   created_at: timestamp with time zone (nullable, default: now())
+// Table: v_blocos_disponiveis
+//   bloco_id: uuid (nullable)
+//   block_date: date (nullable)
+//   block_start_time: time without time zone (nullable)
+//   block_end_time: time without time zone (nullable)
+//   surgical_room_id: uuid (nullable)
+//   hospital_id: uuid (nullable)
+//   template_id: uuid (nullable)
+//   status_bloco: text (nullable)
+//   num_cirurgioes_interessados: bigint (nullable)
 // Table: v_cirurgias_por_cirurgiao
 //   cirurgiao: text (nullable)
 //   crm: text (nullable)
@@ -2562,7 +2645,7 @@ export const Constants = {
 //     USING: (has_role('admin'::text) OR has_role('facility_manager'::text))
 //     WITH CHECK: (has_role('admin'::text) OR has_role('facility_manager'::text))
 //   Policy "robotic_systems_select" (SELECT, PERMISSIVE) roles={authenticated}
-//     USING: ((facility_id = auth.uid()) OR has_role('admin'::text) OR has_role('facility_manager'::text))
+//     USING: true
 // Table: sectors
 //   Policy "sectors_all_admin" (ALL, PERMISSIVE) roles={public}
 //     USING: has_role('admin'::text)
@@ -2576,8 +2659,8 @@ export const Constants = {
 //     WITH CHECK: (has_role('admin'::text) OR has_role('facility_manager'::text))
 //   Policy "insert_exceptions_by_hospital" (INSERT, PERMISSIVE) roles={public}
 //     WITH CHECK: (hospital_id IN ( SELECT hospital_users.hospital_id    FROM hospital_users   WHERE ((hospital_users.user_id = auth.uid()) AND (hospital_users.role = ANY (ARRAY['facility_manager'::text, 'admin'::text])) AND (hospital_users.is_active = true))))
-//   Policy "select_exceptions_by_hospital" (SELECT, PERMISSIVE) roles={public}
-//     USING: ((hospital_id IN ( SELECT hospital_users.hospital_id    FROM hospital_users   WHERE ((hospital_users.user_id = auth.uid()) AND (hospital_users.is_active = true)))) OR has_role('admin'::text))
+//   Policy "select_exceptions_by_hospital" (SELECT, PERMISSIVE) roles={authenticated}
+//     USING: true
 //   Policy "update_exceptions_by_hospital" (UPDATE, PERMISSIVE) roles={public}
 //     USING: (hospital_id IN ( SELECT hospital_users.hospital_id    FROM hospital_users   WHERE ((hospital_users.user_id = auth.uid()) AND (hospital_users.role = ANY (ARRAY['facility_manager'::text, 'admin'::text])) AND (hospital_users.is_active = true))))
 // Table: surgical_block_templates
@@ -2585,8 +2668,8 @@ export const Constants = {
 //     USING: (hospital_id IN ( SELECT hospital_users.hospital_id    FROM hospital_users   WHERE ((hospital_users.user_id = auth.uid()) AND (hospital_users.role = ANY (ARRAY['facility_manager'::text, 'admin'::text])) AND (hospital_users.is_active = true))))
 //   Policy "insert_templates_by_hospital" (INSERT, PERMISSIVE) roles={public}
 //     WITH CHECK: (hospital_id IN ( SELECT hospital_users.hospital_id    FROM hospital_users   WHERE ((hospital_users.user_id = auth.uid()) AND (hospital_users.role = ANY (ARRAY['facility_manager'::text, 'admin'::text])) AND (hospital_users.is_active = true))))
-//   Policy "select_templates_by_hospital" (SELECT, PERMISSIVE) roles={public}
-//     USING: ((hospital_id IN ( SELECT hospital_users.hospital_id    FROM hospital_users   WHERE ((hospital_users.user_id = auth.uid()) AND (hospital_users.is_active = true)))) OR has_role('admin'::text))
+//   Policy "select_templates_by_hospital" (SELECT, PERMISSIVE) roles={authenticated}
+//     USING: true
 //   Policy "templates_all_admin" (ALL, PERMISSIVE) roles={authenticated}
 //     USING: (has_role('admin'::text) OR has_role('facility_manager'::text))
 //     WITH CHECK: (has_role('admin'::text) OR has_role('facility_manager'::text))
@@ -2600,19 +2683,21 @@ export const Constants = {
 //     USING: (hospital_id IN ( SELECT hospital_users.hospital_id    FROM hospital_users   WHERE ((hospital_users.user_id = auth.uid()) AND (hospital_users.role = ANY (ARRAY['facility_manager'::text, 'admin'::text])) AND (hospital_users.is_active = true))))
 //   Policy "insert_blocks_by_hospital" (INSERT, PERMISSIVE) roles={public}
 //     WITH CHECK: (hospital_id IN ( SELECT hospital_users.hospital_id    FROM hospital_users   WHERE ((hospital_users.user_id = auth.uid()) AND (hospital_users.role = ANY (ARRAY['facility_manager'::text, 'admin'::text])) AND (hospital_users.is_active = true))))
-//   Policy "select_blocks_by_hospital" (SELECT, PERMISSIVE) roles={public}
-//     USING: ((hospital_id IN ( SELECT hospital_users.hospital_id    FROM hospital_users   WHERE ((hospital_users.user_id = auth.uid()) AND (hospital_users.is_active = true)))) OR has_role('admin'::text))
+//   Policy "select_blocks_by_hospital" (SELECT, PERMISSIVE) roles={authenticated}
+//     USING: true
 //   Policy "update_blocks_by_hospital" (UPDATE, PERMISSIVE) roles={public}
 //     USING: (hospital_id IN ( SELECT hospital_users.hospital_id    FROM hospital_users   WHERE ((hospital_users.user_id = auth.uid()) AND (hospital_users.role = ANY (ARRAY['facility_manager'::text, 'admin'::text])) AND (hospital_users.is_active = true))))
 // Table: surgical_request_block_preferences
 //   Policy "delete_preferences_admin_only" (DELETE, PERMISSIVE) roles={public}
 //     USING: has_role('admin'::text)
-//   Policy "insert_preferences_by_hospital" (INSERT, PERMISSIVE) roles={public}
-//     WITH CHECK: (hospital_id IN ( SELECT hospital_users.hospital_id    FROM hospital_users   WHERE ((hospital_users.user_id = auth.uid()) AND (hospital_users.is_active = true))))
+//   Policy "insert_preferences" (INSERT, PERMISSIVE) roles={public}
+//     WITH CHECK: (auth.role() = 'authenticated'::text)
 //   Policy "no_update_preferences" (UPDATE, PERMISSIVE) roles={public}
 //     USING: false
-//   Policy "select_preferences_by_hospital" (SELECT, PERMISSIVE) roles={public}
-//     USING: ((hospital_id IN ( SELECT hospital_users.hospital_id    FROM hospital_users   WHERE ((hospital_users.user_id = auth.uid()) AND (hospital_users.is_active = true)))) OR has_role('admin'::text))
+//   Policy "prevent_preference_on_allocated_blocks" (INSERT, PERMISSIVE) roles={public}
+//     WITH CHECK: (NOT (EXISTS ( SELECT 1    FROM surgical_blocks sb   WHERE ((sb.id = surgical_request_block_preferences.surgical_block_id) AND (sb.is_available = false)))))
+//   Policy "select_preferences_by_hospital" (SELECT, PERMISSIVE) roles={authenticated}
+//     USING: true
 // Table: surgical_rooms
 //   Policy "Rooms manageable by admin or facility_manager" (ALL, PERMISSIVE) roles={authenticated}
 //     USING: (has_role('admin'::text) OR has_role('facility_manager'::text))
@@ -2621,8 +2706,8 @@ export const Constants = {
 //     USING: (hospital_id IN ( SELECT hospital_users.hospital_id    FROM hospital_users   WHERE ((hospital_users.user_id = auth.uid()) AND (hospital_users.role = ANY (ARRAY['facility_manager'::text, 'admin'::text])) AND (hospital_users.is_active = true))))
 //   Policy "insert_rooms_by_hospital" (INSERT, PERMISSIVE) roles={public}
 //     WITH CHECK: (hospital_id IN ( SELECT hospital_users.hospital_id    FROM hospital_users   WHERE ((hospital_users.user_id = auth.uid()) AND (hospital_users.role = ANY (ARRAY['facility_manager'::text, 'admin'::text])) AND (hospital_users.is_active = true))))
-//   Policy "select_rooms_by_hospital" (SELECT, PERMISSIVE) roles={public}
-//     USING: ((hospital_id IN ( SELECT hospital_users.hospital_id    FROM hospital_users   WHERE ((hospital_users.user_id = auth.uid()) AND (hospital_users.is_active = true)))) OR has_role('admin'::text))
+//   Policy "select_rooms_by_hospital" (SELECT, PERMISSIVE) roles={authenticated}
+//     USING: true
 //   Policy "update_rooms_by_hospital" (UPDATE, PERMISSIVE) roles={public}
 //     USING: (hospital_id IN ( SELECT hospital_users.hospital_id    FROM hospital_users   WHERE ((hospital_users.user_id = auth.uid()) AND (hospital_users.role = ANY (ARRAY['facility_manager'::text, 'admin'::text])) AND (hospital_users.is_active = true))))
 // Table: user_roles
@@ -2663,15 +2748,15 @@ export const Constants = {
 //       false, 'authenticated', 'authenticated',
 //       '', '', '', '', '', NULL, '', '', ''
 //     );
-//
+//   
 //     INSERT INTO public.user_roles (user_id, role)
 //     VALUES (v_user_id, user_role::public.user_role_type)
 //     ON CONFLICT (user_id, role) DO NOTHING;
-//
+//   
 //     RETURN v_user_id;
 //   END;
 //   $function$
-//
+//   
 // FUNCTION fn_audit_block_preferences_delete()
 //   CREATE OR REPLACE FUNCTION public.fn_audit_block_preferences_delete()
 //    RETURNS trigger
@@ -2695,11 +2780,11 @@ export const Constants = {
 //       OLD.pedido_cirurgia_id,
 //       'N/A'
 //     );
-//
+//     
 //     RETURN OLD;
 //   END;
 //   $function$
-//
+//   
 // FUNCTION fn_audit_pedidos()
 //   CREATE OR REPLACE FUNCTION public.fn_audit_pedidos()
 //    RETURNS trigger
@@ -2714,7 +2799,7 @@ export const Constants = {
 //     FROM public.user_roles
 //     WHERE user_id = auth.uid() AND is_active = TRUE
 //     LIMIT 1;
-//
+//   
 //     INSERT INTO public.audit_logs (
 //       actor_id, actor_role, event_type,
 //       table_name, record_id, old_value, new_value
@@ -2732,11 +2817,11 @@ export const Constants = {
 //       CASE WHEN TG_OP != 'INSERT' THEN to_jsonb(OLD) ELSE NULL END,
 //       CASE WHEN TG_OP != 'DELETE' THEN to_jsonb(NEW) ELSE NULL END
 //     );
-//
+//   
 //     RETURN COALESCE(NEW, OLD);
 //   END;
 //   $function$
-//
+//   
 // FUNCTION fn_audit_roles()
 //   CREATE OR REPLACE FUNCTION public.fn_audit_roles()
 //    RETURNS trigger
@@ -2756,7 +2841,7 @@ export const Constants = {
 //     RETURN COALESCE(NEW, OLD);
 //   END;
 //   $function$
-//
+//   
 // FUNCTION fn_block_preferences_update()
 //   CREATE OR REPLACE FUNCTION public.fn_block_preferences_update()
 //    RETURNS trigger
@@ -2766,7 +2851,7 @@ export const Constants = {
 //     RAISE EXCEPTION 'Erro: Preferências de blocos são imutáveis após criação. Não é permitido modificar registros existentes.';
 //   END;
 //   $function$
-//
+//   
 // FUNCTION fn_generate_recurring_blocks(uuid, date, date)
 //   CREATE OR REPLACE FUNCTION public.fn_generate_recurring_blocks(p_template_id uuid, p_start_date date, p_end_date date)
 //    RETURNS TABLE(blocks_created integer, message text)
@@ -2783,7 +2868,7 @@ export const Constants = {
 //     v_new_block_id UUID;
 //   BEGIN
 //     -- Obter informações do template
-//     SELECT
+//     SELECT 
 //       sbt.id,
 //       sbt.surgical_room_id,
 //       sbt.day_of_week,
@@ -2793,13 +2878,13 @@ export const Constants = {
 //     INTO v_template
 //     FROM public.surgical_block_templates sbt
 //     WHERE sbt.id = p_template_id;
-//
+//     
 //     -- Validar se template existe
 //     IF v_template IS NULL THEN
 //       RETURN QUERY SELECT 0::INT, 'Erro: Template não encontrado'::TEXT;
 //       RETURN;
 //     END IF;
-//
+//     
 //     -- Converter day_of_week do Enum para número (1=Monday, 7=Sunday)
 //     v_template_day_of_week := CASE v_template.day_of_week
 //       WHEN 'MONDAY' THEN 1
@@ -2810,17 +2895,17 @@ export const Constants = {
 //       WHEN 'SATURDAY' THEN 6
 //       WHEN 'SUNDAY' THEN 7
 //     END;
-//
+//     
 //     -- Iterar sobre cada data no período
 //     v_current_date := p_start_date;
 //     WHILE v_current_date <= p_end_date LOOP
 //       -- Obter dia da semana (1=Monday, 7=Sunday)
 //       v_day_of_week := EXTRACT(ISODOW FROM v_current_date)::INT;
-//
+//       
 //       -- Se o dia da semana corresponde ao template E não é exceção
-//       IF v_day_of_week = v_template_day_of_week
+//       IF v_day_of_week = v_template_day_of_week 
 //          AND NOT public.fn_is_exception_date(p_template_id, v_current_date) THEN
-//
+//         
 //         -- Inserir novo bloco
 //         INSERT INTO public.surgical_blocks (
 //           id,
@@ -2846,17 +2931,17 @@ export const Constants = {
 //           NOW(),
 //           NOW()
 //         );
-//
+//         
 //         v_blocks_count := v_blocks_count + 1;
-//       ELSIF v_day_of_week = v_template_day_of_week
+//       ELSIF v_day_of_week = v_template_day_of_week 
 //             AND public.fn_is_exception_date(p_template_id, v_current_date) THEN
 //         v_skipped_count := v_skipped_count + 1;
 //       END IF;
-//
+//       
 //       -- Avançar para o próximo dia
 //       v_current_date := v_current_date + INTERVAL '1 day';
 //     END LOOP;
-//
+//     
 //     -- Registrar auditoria na tabela correta (audit_logs genérico)
 //     INSERT INTO public.audit_logs (
 //       actor_id,
@@ -2872,15 +2957,15 @@ export const Constants = {
 //       p_template_id,
 //       jsonb_build_object('blocks_created', v_blocks_count, 'exceptions_skipped', v_skipped_count)
 //     );
-//
+//     
 //     -- Retornar resultado
-//     RETURN QUERY SELECT
+//     RETURN QUERY SELECT 
 //       v_blocks_count,
 //       FORMAT('Sucesso: %s blocos criados, %s datas excluídas por exceção',
 //         v_blocks_count, v_skipped_count)::TEXT;
 //   END;
 //   $function$
-//
+//   
 // FUNCTION fn_generate_recurring_blocks_12months(uuid)
 //   CREATE OR REPLACE FUNCTION public.fn_generate_recurring_blocks_12months(p_template_id uuid)
 //    RETURNS TABLE(blocks_created integer, message text)
@@ -2896,7 +2981,7 @@ export const Constants = {
 //     );
 //   END;
 //   $function$
-//
+//   
 // FUNCTION fn_get_available_blocks_for_request(uuid)
 //   CREATE OR REPLACE FUNCTION public.fn_get_available_blocks_for_request(p_pedido_cirurgia_id uuid)
 //    RETURNS TABLE(id uuid, surgical_room_id uuid, room_name text, block_date date, block_start_time time without time zone, block_end_time time without time zone, is_available boolean, template_id uuid)
@@ -2909,14 +2994,14 @@ export const Constants = {
 //     SELECT (pc.scheduled_date AT TIME ZONE 'UTC')::DATE INTO v_requested_date
 //     FROM pedidos_cirurgia pc
 //     WHERE pc.id = p_pedido_cirurgia_id;
-//
+//     
 //     IF v_requested_date IS NULL THEN
 //       v_requested_date := CURRENT_DATE;
 //     END IF;
-//
+//     
 //     -- Retornar blocos elegíveis
 //     RETURN QUERY
-//     SELECT
+//     SELECT 
 //       sb.id,
 //       sb.surgical_room_id,
 //       sr_room.room_name,
@@ -2932,7 +3017,7 @@ export const Constants = {
 //     ORDER BY sb.block_date ASC, sb.block_start_time ASC;
 //   END;
 //   $function$
-//
+//   
 // FUNCTION fn_is_exception_date(uuid, date)
 //   CREATE OR REPLACE FUNCTION public.fn_is_exception_date(p_template_id uuid, p_date date)
 //    RETURNS boolean
@@ -2945,11 +3030,11 @@ export const Constants = {
 //     FROM surgical_block_exceptions
 //     WHERE surgical_block_template_id = p_template_id
 //       AND exception_date = p_date;
-//
+//     
 //     RETURN v_exception_count > 0;
 //   END;
 //   $function$
-//
+//   
 // FUNCTION fn_update_pedido_on_allocation()
 //   CREATE OR REPLACE FUNCTION public.fn_update_pedido_on_allocation()
 //    RETURNS trigger
@@ -2962,7 +3047,7 @@ export const Constants = {
 //     SELECT status INTO v_current_status
 //     FROM pedidos_cirurgia
 //     WHERE id = NEW.pedido_id;
-//
+//     
 //     IF NEW.is_fallback_allocation THEN
 //       v_notes := 'Alocado fora das preferências. Motivo: ' || COALESCE(NEW.fallback_reason, 'Não informado');
 //     ELSIF NEW.selected_preference_order IS NOT NULL THEN
@@ -2970,14 +3055,14 @@ export const Constants = {
 //     ELSE
 //       v_notes := 'Alocado (sem preferências registradas).';
 //     END IF;
-//
+//   
 //     IF NEW.allocation_status = 'ALOCADO' THEN
 //       IF v_current_status IN ('6_AGUARDANDO_MAPA', '5_AUTORIZADO') THEN
 //         UPDATE pedidos_cirurgia
 //         SET status = '7_AGENDADO_CC',
 //             updated_at = NOW()
 //         WHERE id = NEW.pedido_id;
-//
+//         
 //         INSERT INTO audit_log (
 //           pedido_id, action, changed_by, status_from, status_to, changed_at, notes
 //         ) VALUES (
@@ -2985,14 +3070,14 @@ export const Constants = {
 //         );
 //       END IF;
 //     END IF;
-//
+//     
 //     IF NEW.allocation_status = 'CANCELADO' THEN
 //       IF v_current_status = '7_AGENDADO_CC' THEN
 //         UPDATE pedidos_cirurgia
 //         SET status = '6_AGUARDANDO_MAPA',
 //             updated_at = NOW()
 //         WHERE id = NEW.pedido_id;
-//
+//         
 //         INSERT INTO audit_log (
 //           pedido_id, action, changed_by, status_from, status_to, changed_at, notes
 //         ) VALUES (
@@ -3000,11 +3085,11 @@ export const Constants = {
 //         );
 //       END IF;
 //     END IF;
-//
+//     
 //     RETURN NEW;
 //   END;
 //   $function$
-//
+//   
 // FUNCTION fn_validate_block_for_preference(uuid, uuid)
 //   CREATE OR REPLACE FUNCTION public.fn_validate_block_for_preference(p_surgical_block_id uuid, p_pedido_cirurgia_id uuid)
 //    RETURNS TABLE(is_valid boolean, validation_message text)
@@ -3016,7 +3101,7 @@ export const Constants = {
 //     v_preference_count INT;
 //   BEGIN
 //     -- Obter informações do bloco
-//     SELECT
+//     SELECT 
 //       sb.id,
 //       sb.is_available,
 //       sb.block_date,
@@ -3024,56 +3109,56 @@ export const Constants = {
 //     INTO v_block
 //     FROM surgical_blocks sb
 //     WHERE sb.id = p_surgical_block_id;
-//
+//     
 //     -- Obter informações da cirurgia
-//     SELECT
+//     SELECT 
 //       pc.id,
 //       pc.scheduled_date as requested_date
 //     INTO v_request
 //     FROM pedidos_cirurgia pc
 //     WHERE pc.id = p_pedido_cirurgia_id;
-//
+//     
 //     -- Validação 1: Bloco existe?
 //     IF v_block IS NULL THEN
 //       RETURN QUERY SELECT FALSE, 'Erro: Bloco cirúrgico não encontrado'::TEXT;
 //       RETURN;
 //     END IF;
-//
+//     
 //     -- Validação 2: Cirurgia existe?
 //     IF v_request IS NULL THEN
 //       RETURN QUERY SELECT FALSE, 'Erro: Solicitação de cirurgia não encontrada'::TEXT;
 //       RETURN;
 //     END IF;
-//
+//     
 //     -- Validação 3: Bloco está disponível?
 //     IF v_block.is_available = FALSE THEN
 //       RETURN QUERY SELECT FALSE, 'Erro: Bloco não está disponível (is_available = false)'::TEXT;
 //       RETURN;
 //     END IF;
-//
+//     
 //     -- Validação 4: Data do bloco >= data da cirurgia?
 //     IF v_request.requested_date IS NOT NULL AND v_block.block_date < (v_request.requested_date AT TIME ZONE 'UTC')::DATE THEN
 //       RETURN QUERY SELECT FALSE, FORMAT('Erro: Data do bloco (%s) é anterior à data solicitada (%s)',
 //         v_block.block_date::TEXT, (v_request.requested_date AT TIME ZONE 'UTC')::DATE::TEXT)::TEXT;
 //       RETURN;
 //     END IF;
-//
+//     
 //     -- Validação 5: Bloco já foi selecionado como preferência para esta cirurgia?
 //     SELECT COUNT(*) INTO v_preference_count
 //     FROM surgical_request_block_preferences
 //     WHERE pedido_cirurgia_id = p_pedido_cirurgia_id
 //       AND surgical_block_id = p_surgical_block_id;
-//
+//     
 //     IF v_preference_count > 0 THEN
 //       RETURN QUERY SELECT FALSE, 'Erro: Este bloco já foi selecionado como preferência para esta cirurgia'::TEXT;
 //       RETURN;
 //     END IF;
-//
+//     
 //     -- Todas as validações passaram
 //     RETURN QUERY SELECT TRUE, 'Bloco é elegível para seleção'::TEXT;
 //   END;
 //   $function$
-//
+//   
 // FUNCTION fn_validate_block_preferences_on_insert()
 //   CREATE OR REPLACE FUNCTION public.fn_validate_block_preferences_on_insert()
 //    RETURNS trigger
@@ -3086,29 +3171,29 @@ export const Constants = {
 //     -- Validar o bloco
 //     SELECT * INTO v_validation
 //     FROM fn_validate_block_for_preference(NEW.surgical_block_id, NEW.pedido_cirurgia_id);
-//
+//     
 //     IF v_validation.is_valid = FALSE THEN
 //       RAISE EXCEPTION 'Validação de preferência falhou: %', v_validation.validation_message;
 //     END IF;
-//
+//     
 //     -- Validar que não há mais de 3 preferências para esta cirurgia
 //     SELECT COUNT(*) INTO v_preference_count
 //     FROM surgical_request_block_preferences
 //     WHERE pedido_cirurgia_id = NEW.pedido_cirurgia_id;
-//
+//     
 //     IF v_preference_count >= 3 THEN
 //       RAISE EXCEPTION 'Erro: Máximo de 3 preferências por cirurgia já atingido';
 //     END IF;
-//
+//     
 //     -- Validar que preference_order é 1, 2 ou 3
 //     IF NEW.preference_order NOT IN (1, 2, 3) THEN
 //       RAISE EXCEPTION 'Erro: preference_order deve ser 1, 2 ou 3';
 //     END IF;
-//
+//     
 //     RETURN NEW;
 //   END;
 //   $function$
-//
+//   
 // FUNCTION fn_validate_resource_allocation()
 //   CREATE OR REPLACE FUNCTION public.fn_validate_resource_allocation()
 //    RETURNS trigger
@@ -3123,25 +3208,25 @@ export const Constants = {
 //     v_block_end_time TIME;
 //   BEGIN
 //     -- Obter informações do bloco cirúrgico
-//     SELECT
+//     SELECT 
 //       sb.block_date,
 //       sb.block_start_time,
 //       sb.block_end_time,
 //       sb.duration_minutes
-//     INTO
+//     INTO 
 //       v_block_date,
 //       v_block_start_time,
 //       v_block_end_time,
 //       v_block_duration
 //     FROM surgical_blocks sb
 //     WHERE sb.id = NEW.surgical_block_id;
-//
+//     
 //     -- Validação 1: Duração estimada não pode exceder duração do bloco
 //     IF v_block_duration < NEW.estimated_duration_minutes THEN
 //       RAISE EXCEPTION 'Erro: Duração estimada (% min) excede duração do bloco (% min)',
 //         NEW.estimated_duration_minutes, v_block_duration;
 //     END IF;
-//
+//     
 //     -- Validação 2: Conflito de sala/robô no mesmo horário
 //     SELECT COUNT(*) INTO v_conflict_count
 //     FROM resource_allocation ra
@@ -3151,12 +3236,12 @@ export const Constants = {
 //       AND sb.block_date = v_block_date
 //       AND ra.allocation_status != 'CANCELADO'
 //       AND ra.id != COALESCE(NEW.id, '00000000-0000-0000-0000-000000000000');
-//
+//     
 //     IF v_conflict_count > 0 THEN
 //       RAISE EXCEPTION 'Erro: Sala/Robô já alocados neste horário (%). Escolha outro bloco.',
 //         v_block_date;
 //     END IF;
-//
+//     
 //     -- Validação 3: Conflito de cirurgião no mesmo horário
 //     SELECT COUNT(*) INTO v_surgeon_conflict
 //     FROM resource_allocation ra
@@ -3165,16 +3250,16 @@ export const Constants = {
 //       AND sb.block_date = v_block_date
 //       AND ra.allocation_status != 'CANCELADO'
 //       AND ra.id != COALESCE(NEW.id, '00000000-0000-0000-0000-000000000000');
-//
+//     
 //     IF v_surgeon_conflict > 0 THEN
 //       RAISE EXCEPTION 'Erro: Cirurgião já alocado neste horário (%). Escolha outro bloco ou cirurgião.',
 //         v_block_date;
 //     END IF;
-//
+//     
 //     RETURN NEW;
 //   END;
 //   $function$
-//
+//   
 // FUNCTION get_default_hospital_id()
 //   CREATE OR REPLACE FUNCTION public.get_default_hospital_id()
 //    RETURNS uuid
@@ -3185,7 +3270,7 @@ export const Constants = {
 //     RETURN (SELECT id FROM hospitals WHERE hospital_name = 'Hospital Padrão' LIMIT 1);
 //   END;
 //   $function$
-//
+//   
 // FUNCTION get_user_managed_hospitals()
 //   CREATE OR REPLACE FUNCTION public.get_user_managed_hospitals()
 //    RETURNS SETOF uuid
@@ -3193,11 +3278,11 @@ export const Constants = {
 //    SECURITY DEFINER
 //    SET search_path TO 'public'
 //   AS $function$
-//     SELECT hospital_id
-//     FROM public.hospital_users
+//     SELECT hospital_id 
+//     FROM public.hospital_users 
 //     WHERE user_id = auth.uid() AND role = 'facility_manager' AND is_active = true;
 //   $function$
-//
+//   
 // FUNCTION get_user_role()
 //   CREATE OR REPLACE FUNCTION public.get_user_role()
 //    RETURNS text
@@ -3207,7 +3292,7 @@ export const Constants = {
 //   AS $function$
 //     SELECT role FROM public.user_roles WHERE user_id = auth.uid() LIMIT 1;
 //   $function$
-//
+//   
 // FUNCTION get_user_roles()
 //   CREATE OR REPLACE FUNCTION public.get_user_roles()
 //    RETURNS text[]
@@ -3220,7 +3305,7 @@ export const Constants = {
 //     WHERE user_id = auth.uid()
 //       AND is_active = TRUE;
 //   $function$
-//
+//   
 // FUNCTION handle_new_user()
 //   CREATE OR REPLACE FUNCTION public.handle_new_user()
 //    RETURNS trigger
@@ -3239,18 +3324,18 @@ export const Constants = {
 //       NEW.raw_user_meta_data->>'photo_url'
 //     )
 //     ON CONFLICT (id) DO NOTHING;
-//
+//   
 //     -- Ensure roles are processed if provided via signUp metadata
 //     IF NEW.raw_user_meta_data->>'user_role' IS NOT NULL THEN
 //       INSERT INTO public.user_roles (user_id, role)
 //       VALUES (NEW.id, (NEW.raw_user_meta_data->>'user_role')::public.user_role_type)
 //       ON CONFLICT (user_id, role) DO NOTHING;
 //     END IF;
-//
+//   
 //     RETURN NEW;
 //   END;
 //   $function$
-//
+//   
 // FUNCTION handle_user_email_update()
 //   CREATE OR REPLACE FUNCTION public.handle_user_email_update()
 //    RETURNS trigger
@@ -3262,7 +3347,7 @@ export const Constants = {
 //     RETURN NEW;
 //   END;
 //   $function$
-//
+//   
 // FUNCTION has_any_role(text[])
 //   CREATE OR REPLACE FUNCTION public.has_any_role(required_roles text[])
 //    RETURNS boolean
@@ -3277,7 +3362,7 @@ export const Constants = {
 //         AND is_active = TRUE
 //     );
 //   $function$
-//
+//   
 // FUNCTION has_role(text)
 //   CREATE OR REPLACE FUNCTION public.has_role(required_role text)
 //    RETURNS boolean
@@ -3292,7 +3377,7 @@ export const Constants = {
 //         AND is_active = TRUE
 //     );
 //   $function$
-//
+//   
 // FUNCTION is_admin()
 //   CREATE OR REPLACE FUNCTION public.is_admin()
 //    RETURNS boolean
@@ -3304,7 +3389,7 @@ export const Constants = {
 //       WHERE user_id = auth.uid() AND role IN ('admin', 'superusuario')
 //     );
 //   $function$
-//
+//   
 // FUNCTION notify_sector_on_status_change()
 //   CREATE OR REPLACE FUNCTION public.notify_sector_on_status_change()
 //    RETURNS trigger
@@ -3314,7 +3399,7 @@ export const Constants = {
 //     RETURN NEW;
 //   END;
 //   $function$
-//
+//   
 // FUNCTION preencher_opme_automatico()
 //   CREATE OR REPLACE FUNCTION public.preencher_opme_automatico()
 //    RETURNS trigger
@@ -3325,10 +3410,10 @@ export const Constants = {
 //     IF NEW.status::text = '2_AGUARDANDO_OPME' AND NEW.pacote_opme_id IS NOT NULL THEN
 //       -- Limpar itens anteriores (se houver)
 //       DELETE FROM pedido_opme_items WHERE pedido_id = NEW.id;
-//
+//       
 //       -- Inserir itens do pacote com mapeamento correto
 //       INSERT INTO pedido_opme_items (pedido_id, opme_item_id, quantity, created_at)
-//       SELECT
+//       SELECT 
 //         NEW.id,
 //         poi.id,
 //         poi.quantidade,
@@ -3339,7 +3424,7 @@ export const Constants = {
 //     RETURN NEW;
 //   END;
 //   $function$
-//
+//   
 // FUNCTION set_created_by()
 //   CREATE OR REPLACE FUNCTION public.set_created_by()
 //    RETURNS trigger
@@ -3352,7 +3437,7 @@ export const Constants = {
 //     RETURN NEW;
 //   END;
 //   $function$
-//
+//   
 // FUNCTION update_surgical_requests_timestamp()
 //   CREATE OR REPLACE FUNCTION public.update_surgical_requests_timestamp()
 //    RETURNS trigger
@@ -3363,7 +3448,7 @@ export const Constants = {
 //     RETURN NEW;
 //   END;
 //   $function$
-//
+//   
 
 // --- TRIGGERS ---
 // Table: audit_log
@@ -3500,3 +3585,4 @@ export const Constants = {
 //       pc.created_at
 //      FROM (pedidos_cirurgia pc
 //        JOIN procedures pr ON ((pr.id = pc.procedure_id)));
+
