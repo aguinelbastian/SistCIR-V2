@@ -53,7 +53,7 @@ Deno.serve(async (req: Request) => {
     if (!record || !record.pedido_id) {
       return new Response(
         JSON.stringify({ error: 'Missing record or pedido_id in webhook payload' }),
-        { status: 400, headers: { 'Content-Type': 'application/json', ...corsHeaders } },
+        { status: 400, headers: { 'Content-Type': 'application/json', ...corsHeaders } }
       )
     }
 
@@ -78,10 +78,7 @@ Deno.serve(async (req: Request) => {
     }
 
     const pedido: any = pedidoData
-    const {
-      data: { user: surgeon },
-      error: surgeonError,
-    } = await supabaseAdmin.auth.admin.getUserById(pedido.surgeon_id)
+    const { data: { user: surgeon }, error: surgeonError } = await supabaseAdmin.auth.admin.getUserById(pedido.surgeon_id)
 
     if (surgeonError || !surgeon || !surgeon.email) {
       return new Response(JSON.stringify({ error: 'Surgeon user or email not found' }), {
@@ -151,10 +148,10 @@ Deno.serve(async (req: Request) => {
       }
     }
 
-    return new Response(JSON.stringify({ success: true, message: 'Email sent successfully' }), {
-      status: 200,
-      headers: { 'Content-Type': 'application/json', ...corsHeaders },
-    })
+    return new Response(
+      JSON.stringify({ success: true, message: 'Email sent successfully' }),
+      { status: 200, headers: { 'Content-Type': 'application/json', ...corsHeaders } }
+    )
   } catch (error: any) {
     console.error('Internal Function Error:', error)
     return new Response(JSON.stringify({ error: error.message }), {
