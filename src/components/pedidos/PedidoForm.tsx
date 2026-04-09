@@ -38,6 +38,7 @@ import {
   AlertCircle,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { PatientCombobox } from '@/components/pacientes/PatientCombobox'
 
 const formSchema = z.object({
   patient_id: z.string().min(1, 'Selecione um paciente'),
@@ -65,11 +66,9 @@ const formatDate = (dateString: string) => {
 export function PedidoForm({ onSuccess }: { onSuccess?: () => void }) {
   const navigate = useNavigate()
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [patients, setPatients] = useState<any[]>([])
   const [procedures, setProcedures] = useState<any[]>([])
   const [blocks, setBlocks] = useState<any[]>([])
 
-  const [patientOpen, setPatientOpen] = useState(false)
   const [procedureOpen, setProcedureOpen] = useState(false)
 
   const [successData, setSuccessData] = useState<{ pedidoId: string; preferences: any[] } | null>(
@@ -94,8 +93,7 @@ export function PedidoForm({ onSuccess }: { onSuccess?: () => void }) {
   useEffect(() => {
     async function loadData() {
       try {
-        const [pRes, prRes] = await Promise.all([api.pacientes.list(), api.procedimentos.list()])
-        if (pRes.data) setPatients(pRes.data)
+        const [prRes] = await Promise.all([api.procedimentos.list()])
         if (prRes.data) setProcedures(prRes.data)
 
         // Fetch blocks available from today onwards using the v_blocos_disponiveis view
@@ -344,56 +342,12 @@ export function PedidoForm({ onSuccess }: { onSuccess?: () => void }) {
             render={({ field }) => (
               <FormItem className="flex flex-col">
                 <FormLabel>Paciente</FormLabel>
-                <Popover open={patientOpen} onOpenChange={setPatientOpen}>
-                  <PopoverTrigger asChild>
-                    <FormControl>
-                      <Button
-                        variant="outline"
-                        role="combobox"
-                        aria-expanded={patientOpen}
-                        className={cn(
-                          'w-full justify-between font-normal',
-                          !field.value && 'text-muted-foreground',
-                        )}
-                      >
-                        <span className="truncate">
-                          {field.value
-                            ? patients.find((p) => p.id === field.value)?.full_name
-                            : 'Selecione o paciente'}
-                        </span>
-                        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                      </Button>
-                    </FormControl>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
-                    <Command>
-                      <CommandInput placeholder="Buscar paciente..." />
-                      <CommandList>
-                        <CommandEmpty>Nenhum paciente encontrado.</CommandEmpty>
-                        <CommandGroup>
-                          {patients.map((p) => (
-                            <CommandItem
-                              key={p.id}
-                              value={`${p.full_name} ${p.medical_record}`}
-                              onSelect={() => {
-                                form.setValue('patient_id', p.id, { shouldValidate: true })
-                                setPatientOpen(false)
-                              }}
-                            >
-                              <Check
-                                className={cn(
-                                  'mr-2 h-4 w-4',
-                                  p.id === field.value ? 'opacity-100' : 'opacity-0',
-                                )}
-                              />
-                              {p.full_name} ({p.medical_record})
-                            </CommandItem>
-                          ))}
-                        </CommandGroup>
-                      </CommandList>
-                    </Command>
-                  </PopoverContent>
-                </Popover>
+                <FormControl>
+                  <PatientCombobox
+                    value={field.value}
+                    onChange={(val) => form.setValue('patient_id', val, { shouldValidate: true })}
+                  />
+                </FormControl>
                 <FormMessage />
               </FormItem>
             )}
