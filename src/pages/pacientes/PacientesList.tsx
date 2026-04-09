@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
-import { api } from '@/services/api'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { supabase } from '@/lib/supabase/client'
+import { Card, CardContent } from '@/components/ui/card'
 import {
   Table,
   TableBody,
@@ -17,33 +17,24 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { toast } from 'sonner'
 import { Plus } from 'lucide-react'
+import { CreatePatientForm } from '@/components/CreatePatientForm'
 
 export default function PacientesList() {
   const [pacientes, setPacientes] = useState<any[]>([])
   const [open, setOpen] = useState(false)
-  const [formData, setFormData] = useState({ full_name: '', cpf_hash: '', medical_record: '' })
 
   const load = async () => {
-    const { data } = await api.pacientes.list()
+    const { data } = await supabase
+      .from('patients')
+      .select('*')
+      .order('created_at', { ascending: false })
     if (data) setPacientes(data)
   }
 
   useEffect(() => {
     load()
   }, [])
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    const { error } = await api.pacientes.create(formData)
-    if (error) return toast.error('Erro ao salvar paciente')
-    toast.success('Paciente salvo')
-    setOpen(false)
-    load()
-  }
 
   return (
     <div className="space-y-6">
@@ -55,39 +46,17 @@ export default function PacientesList() {
               <Plus className="w-4 h-4 mr-2" /> Novo Paciente
             </Button>
           </DialogTrigger>
-          <DialogContent>
+          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>Adicionar Paciente</DialogTitle>
             </DialogHeader>
-            <form onSubmit={handleSubmit} className="space-y-4 mt-4">
-              <div className="space-y-2">
-                <Label>Nome Completo</Label>
-                <Input
-                  required
-                  value={formData.full_name}
-                  onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>CPF (Somente números)</Label>
-                <Input
-                  required
-                  value={formData.cpf_hash}
-                  onChange={(e) => setFormData({ ...formData, cpf_hash: e.target.value })}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>Prontuário</Label>
-                <Input
-                  required
-                  value={formData.medical_record}
-                  onChange={(e) => setFormData({ ...formData, medical_record: e.target.value })}
-                />
-              </div>
-              <Button type="submit" className="w-full">
-                Salvar
-              </Button>
-            </form>
+            <CreatePatientForm
+              onSuccess={() => {
+                setOpen(false)
+                load()
+              }}
+              onCancel={() => setOpen(false)}
+            />
           </DialogContent>
         </Dialog>
       </div>
@@ -98,18 +67,36 @@ export default function PacientesList() {
             <TableHeader>
               <TableRow>
                 <TableHead>Nome</TableHead>
-                <TableHead>CPF</TableHead>
                 <TableHead>Prontuário</TableHead>
+                <TableHead>Telefone</TableHead>
+                <TableHead>Convênio</TableHead>
+                <TableHead>CPF (Hash)</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {pacientes.map((p) => (
                 <TableRow key={p.id}>
                   <TableCell className="font-medium">{p.full_name}</TableCell>
-                  <TableCell>{p.cpf_hash}</TableCell>
                   <TableCell>{p.medical_record}</TableCell>
+                  <TableCell>{p.telefone || '-'}</TableCell>
+                  <TableCell>{p.insurance_provider || '-'}</TableCell>
+                  <TableCell>
+                    <span
+                      className="text-xs text-muted-foreground truncate max-w-[100px] inline-block"
+                      title={p.cpf_hash}
+                    >
+                      {p.cpf_hash?.substring(0, 8)}...
+                    </span>
+                  </TableCell>
                 </TableRow>
               ))}
+              {pacientes.length === 0 && (
+                <TableRow>
+                  <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
+                    Nenhum paciente cadastrado.
+                  </TableCell>
+                </TableRow>
+              )}
             </TableBody>
           </Table>
         </CardContent>
