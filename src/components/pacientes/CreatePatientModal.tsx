@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import {
   Dialog,
   DialogContent,
@@ -46,6 +46,7 @@ export function CreatePatientModal({
 }) {
   const { user } = useAuth()
   const [loading, setLoading] = useState(false)
+  const [userRole, setUserRole] = useState<string | null>(null)
   const [formData, setFormData] = useState({
     full_name: '',
     cpf: '',
@@ -62,6 +63,27 @@ export function CreatePatientModal({
     telefone_contato: '',
   })
 
+  useEffect(() => {
+    async function fetchRole() {
+      if (!user) return
+      const { data } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', user.id)
+        .eq('is_active', true)
+        .limit(1)
+        .maybeSingle()
+      if (data) {
+        setUserRole(data.role)
+      }
+    }
+    if (open) {
+      fetchRole()
+    }
+  }, [user, open])
+
+  const isMedicalRecordRequired = userRole === 'admin' || userRole === 'secretary'
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target
     setFormData((prev) => ({ ...prev, [name]: value }))
@@ -76,8 +98,21 @@ export function CreatePatientModal({
     if (!formData.cpf || !isValidCPF(formData.cpf)) {
       return toast.error('CPF inválido. Digite os 11 números.')
     }
-    if (!formData.medical_record || formData.medical_record.trim().length < 3) {
-      return toast.error('Prontuário é obrigatório e deve ter no mínimo 3 caracteres.')
+
+    if (isMedicalRecordRequired) {
+      if (!formData.medical_record || formData.medical_record.trim().length < 3) {
+        return toast.error(
+          'Prontuário é obrigatório para sua função e deve ter no mínimo 3 caracteres.',
+        )
+      }
+    } else {
+      if (
+        formData.medical_record &&
+        formData.medical_record.trim().length > 0 &&
+        formData.medical_record.trim().length < 3
+      ) {
+        return toast.error('Prontuário deve ter no mínimo 3 caracteres.')
+      }
     }
     if (formData.telefone && !isValidPhone(formData.telefone)) {
       return toast.error('Telefone inválido. Digite o DDD + número (10 ou 11 dígitos).')
@@ -109,7 +144,7 @@ export function CreatePatientModal({
       const newPatientData = {
         full_name: formData.full_name.trim(),
         cpf_hash,
-        medical_record: formData.medical_record.trim(),
+        medical_record: formData.medical_record.trim() || null,
         date_of_birth: formData.date_of_birth || null,
         insurance_provider: formData.insurance_provider || null,
         insurance_plan: formData.insurance_plan || null,
@@ -227,14 +262,15 @@ export function CreatePatientModal({
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="medical_record">
-                      Prontuário <span className="text-red-500">*</span>
+                      Prontuário{' '}
+                      {isMedicalRecordRequired && <span className="text-red-500">*</span>}
                     </Label>
                     <Input
                       id="medical_record"
                       name="medical_record"
                       value={formData.medical_record}
                       onChange={handleChange}
-                      required
+                      required={isMedicalRecordRequired}
                       disabled={loading}
                     />
                   </div>

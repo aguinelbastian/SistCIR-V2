@@ -1,4 +1,4 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
+import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
 const supabaseUrl = Deno.env.get('SUPABASE_URL')
@@ -21,9 +21,12 @@ serve(async (req) => {
     // Validação de Segurança (Quem está pedindo?)
     const authHeader = req.headers.get('Authorization')
     if (!authHeader) throw new Error('Token de autorização ausente.')
-    
+
     const token = authHeader.replace('Bearer ', '')
-    const { data: { user: requestingUser }, error: authError } = await supabaseAdmin.auth.getUser(token)
+    const {
+      data: { user: requestingUser },
+      error: authError,
+    } = await supabaseAdmin.auth.getUser(token)
 
     if (authError || !requestingUser) {
       throw new Error('Não autorizado. Token inválido.')
@@ -50,17 +53,15 @@ serve(async (req) => {
       const { data: existingUser } = await supabaseAdmin.auth.admin.getUserById(targetUserId)
       updateAuthData.user_metadata = {
         ...(existingUser?.user?.user_metadata || {}),
-        user_role: role
+        user_role: role,
       }
     }
 
     // Executa a atualização de credenciais (se houver)
     let updatedUserEmail = ''
     if (Object.keys(updateAuthData).length > 0) {
-      const { data: updatedAuth, error: updateError } = await supabaseAdmin.auth.admin.updateUserById(
-        targetUserId,
-        updateAuthData
-      )
+      const { data: updatedAuth, error: updateError } =
+        await supabaseAdmin.auth.admin.updateUserById(targetUserId, updateAuthData)
       if (updateError) throw updateError
       updatedUserEmail = updatedAuth.user.email
     } else {
@@ -89,12 +90,12 @@ serve(async (req) => {
     // 2. Disparo de E-mail de Ativação (Onboarding)
     if (isActive === true && updatedUserEmail) {
       console.log(`Iniciando envio de e-mail de ativação para: ${updatedUserEmail}`)
-      
+
       const emailResponse = await fetch('https://api.resend.com/emails', {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${resendApiKey}`,
-          'Content-Type': 'application/json'
+          Authorization: `Bearer ${resendApiKey}`,
+          'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           from: 'SistCIR Notificações <onboarding@resend.dev>',
@@ -112,8 +113,8 @@ serve(async (req) => {
               <p>Atenciosamente,</p>
               <p><b>Coordenação do Serviço de Cirurgia Robótica</b><br/>Hospital SOS Cárdio</p>
             </div>
-          `
-        })
+          `,
+        }),
       })
 
       if (!emailResponse.ok) {
@@ -126,9 +127,8 @@ serve(async (req) => {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       status: 200,
     })
-
   } catch (error: any) {
-    console.error("Erro na Edge Function:", error.message)
+    console.error('Erro na Edge Function:', error.message)
     return new Response(JSON.stringify({ error: error.message }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       status: 400,
