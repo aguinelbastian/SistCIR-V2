@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
@@ -19,7 +19,10 @@ import { Loader2 } from 'lucide-react'
 const formSchema = z.object({
   full_name: z.string().min(3, 'Mínimo 3 caracteres'),
   cpf: z.string().regex(/^\d{11}$/, 'CPF deve conter 11 números'),
-  medical_record: z.string().min(3, 'Mínimo 3 caracteres'),
+  medical_record: z
+    .string()
+    .optional()
+    .refine((v) => !v || v.trim().length >= 3, 'Mínimo 3 caracteres'),
   date_of_birth: z.string().optional(),
   insurance_provider: z.string().optional(),
   insurance_plan: z.string().optional(),
@@ -55,6 +58,27 @@ export function CreatePatientForm({
   onCancel?: () => void
 }) {
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [userRole, setUserRole] = useState<string | null>(null)
+
+  useEffect(() => {
+    async function fetchRole() {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser()
+      if (user) {
+        const { data: roles } = await supabase
+          .from('user_roles')
+          .select('role')
+          .eq('user_id', user.id)
+          .eq('is_active', true)
+          .limit(1)
+        if (roles && roles.length > 0) {
+          setUserRole(roles[0].role)
+        }
+      }
+    }
+    fetchRole()
+  }, [])
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
@@ -76,6 +100,17 @@ export function CreatePatientForm({
   })
 
   const onSubmit = async (values: FormData) => {
+    if (
+      ['secretary', 'admin'].includes(userRole || '') &&
+      (!values.medical_record || values.medical_record.trim().length === 0)
+    ) {
+      form.setError('medical_record', {
+        type: 'manual',
+        message: 'Prontuário é obrigatório para sua função',
+      })
+      return
+    }
+
     setIsSubmitting(true)
     try {
       const hashedCpf = await hashCpf(values.cpf)
@@ -95,7 +130,7 @@ export function CreatePatientForm({
         .insert({
           full_name: values.full_name,
           cpf_hash: hashedCpf,
-          medical_record: values.medical_record,
+          medical_record: values.medical_record || '',
           date_of_birth: values.date_of_birth || null,
           insurance_provider: values.insurance_provider || null,
           insurance_plan: values.insurance_plan || null,
@@ -161,7 +196,10 @@ export function CreatePatientForm({
           <Section title="Dados Pessoais" />
           <InputField name="full_name" label="Nome Completo *" />
           <InputField name="cpf" label="CPF (Somente números) *" />
-          <InputField name="medical_record" label="Prontuário *" />
+          <InputField
+            name="medical_record"
+            label={userRole === 'surgeon' ? 'Prontuário' : 'Prontuário *'}
+          />
           <InputField name="date_of_birth" label="Data de Nascimento" type="date" />
 
           <Section title="Contato" />
