@@ -64,25 +64,25 @@ export function CreatePatientModal({
   })
 
   useEffect(() => {
-    async function fetchRole() {
-      if (!user) return
-      const { data } = await supabase
+    const fetchUserRole = async () => {
+      if (!user?.id) return
+      const { data, error } = await supabase
         .from('user_roles')
         .select('role')
         .eq('user_id', user.id)
         .eq('is_active', true)
         .limit(1)
         .maybeSingle()
-      if (data) {
+      if (!error && data) {
         setUserRole(data.role)
       }
     }
     if (open) {
-      fetchRole()
+      fetchUserRole()
     }
-  }, [user, open])
+  }, [user?.id, open])
 
-  const isMedicalRecordRequired = userRole === 'admin' || userRole === 'secretary'
+  const isMedicalRecordRequired = Boolean(userRole && userRole !== 'surgeon')
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target
@@ -101,9 +101,7 @@ export function CreatePatientModal({
 
     if (isMedicalRecordRequired) {
       if (!formData.medical_record || formData.medical_record.trim().length < 3) {
-        return toast.error(
-          'Prontuário é obrigatório para sua função e deve ter no mínimo 3 caracteres.',
-        )
+        return toast.error('Prontuário é obrigatório para sua função.')
       }
     } else {
       if (
