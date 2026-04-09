@@ -32,7 +32,7 @@ interface DocumentUploadWidgetProps {
 }
 
 export function DocumentUploadWidget({ pedidoId, onUploadSuccess }: DocumentUploadWidgetProps) {
-  const { session } = useAuth()
+  const { session, user } = useAuth()
   const [file, setFile] = useState<File | null>(null)
   const [tipo, setTipo] = useState<string>('')
   const [descricao, setDescricao] = useState('')
@@ -72,45 +72,94 @@ export function DocumentUploadWidget({ pedidoId, onUploadSuccess }: DocumentUplo
     if (!file) return toast.error('Selecione um arquivo.')
     if (!tipo) return toast.error('Selecione o tipo do documento.')
 
+    if (!user) return toast.error('Usuário não autenticado.')
+
     setIsUploading(true)
     setProgress(10)
 
     try {
-      const formData = new FormData()
-      formData.append('file', file)
-      formData.append('pedido_id', pedidoId)
-      formData.append('documento_tipo', tipo)
-      if (descricao) formData.append('descricao', descricao)
+      const fileBuffer = await file.arrayBuffer()
+      setProgress(20)
 
-      const {
-        data: { session },
-      } = await supabase.auth.getSession()
-      const token = session?.access_token
+      // Calcula SHA-256 usando Web Crypto API nativa do navegador
+      const hashBuffer = await crypto.subtle.digest('SHA-256', fileBuffer)
+      const hashArray = Array.from(new Uint8Array(hashBuffer))
+      const fileHash = hashArray.map((b) => b.toString(16).padStart(2, '0')).join('')
 
-      if (!token) throw new Error('Não autenticado')
+      setProgress(30)
+
+      // Verifica duplicidade no banco
+      const { data: existingDoc } = await supabase
+        .from('pedidos_documentos')
+        .select('id')
+        .eq('pedido_id', pedidoId)
+        .eq('arquivo_hash', fileHash)
+        .is('deleted_at', null)
+        .maybeSingle()
+
+      if (existingDoc) {
+        throw new Error('Este arquivo já foi enviado para este pedido.')
+      }
 
       setProgress(40)
 
-      const functionUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/upload-pedido-documento`
+      const timestamp = Date.now()
+      const storagePath = `${pedidoId}/${timestamp}-${file.name}`
 
-      const interval = setInterval(() => {
-        setProgress((p) => Math.min(p + 10, 90))
-      }, 500)
+      // Upload via Storage direto no cliente (protegido por RLS)
+      const { error: uploadError } = await supabase.storage
+        .from('pedidos-documentos')
+        .upload(storagePath, fileBuffer, {
+          contentType: file.type,
+          upsert: false,
+        })
 
-      const res = await fetch(functionUrl, {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-        body: formData,
+      if (uploadError) {
+        throw new Error('Erro ao fazer upload do arquivo.')
+      }
+
+      setProgress(70)
+
+      // Registra documento no banco de dados (protegido por RLS)
+      const { error: dbError } = await supabase.from('pedidos_documentos').insert({
+        pedido_id: pedidoId,
+        documento_tipo: tipo,
+        arquivo_nome: file.name,
+        arquivo_tamanho: file.size,
+        arquivo_tipo: file.type,
+        arquivo_hash: fileHash,
+        storage_path: storagePath,
+        uploaded_by: user.id,
+        descricao: descricao || null,
+        notas: `Upload realizado por ${user.id} em ${new Date().toISOString()}`,
       })
 
-      clearInterval(interval)
-
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}))
-        throw new Error(err.error || 'Erro ao enviar arquivo')
+      if (dbError) {
+        await supabase.storage.from('pedidos-documentos').remove([storagePath])
+        throw new Error('Erro ao registrar documento no banco de dados.')
       }
+
+      setProgress(85)
+
+      // Registra na auditoria (protegido por RLS)
+      const { data: pedidoData } = await supabase
+        .from('pedidos_cirurgia')
+        .select('status')
+        .eq('id', pedidoId)
+        .single()
+
+      const currentStatus = pedidoData?.status || '1_RASCUNHO'
+
+      await supabase.from('audit_log').insert({
+        pedido_id: pedidoId,
+        changed_by: user.id,
+        status_from: currentStatus,
+        status_to: currentStatus,
+        action: `DOCUMENTO_ANEXADO: ${tipo}`,
+        action_type: 'CREATED',
+        action_context: `Arquivo: ${file.name} (${(file.size / 1024).toFixed(2)}KB)`,
+        notes: `Hash: ${fileHash}`,
+      })
 
       setProgress(100)
       toast.success('Documento anexado com sucesso!')
@@ -123,7 +172,7 @@ export function DocumentUploadWidget({ pedidoId, onUploadSuccess }: DocumentUplo
       if (onUploadSuccess) onUploadSuccess()
     } catch (error: any) {
       console.error(error)
-      toast.error(error.message || 'Erro ao anexar documento')
+      toast.error(error.message || 'Erro ao anexar documento.')
     } finally {
       setTimeout(() => {
         setIsUploading(false)
