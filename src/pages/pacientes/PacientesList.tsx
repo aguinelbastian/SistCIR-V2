@@ -10,19 +10,17 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { Button } from '@/components/ui/button'
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '@/components/ui/dialog'
-import { Plus } from 'lucide-react'
-import { CreatePatientForm } from '@/components/CreatePatientForm'
+import { Plus, Edit2 } from 'lucide-react'
+import { useAuth } from '@/hooks/use-auth'
+import { CreatePatientModal } from '@/components/pacientes/CreatePatientModal'
+import { EditPatientModal } from '@/components/pacientes/EditPatientModal'
 
 export default function PacientesList() {
+  const { user } = useAuth()
   const [pacientes, setPacientes] = useState<any[]>([])
-  const [open, setOpen] = useState(false)
+  const [openCreate, setOpenCreate] = useState(false)
+  const [editingPatient, setEditingPatient] = useState<any | null>(null)
+  const [userRole, setUserRole] = useState<string | null>(null)
 
   const load = async () => {
     const { data } = await supabase
@@ -36,30 +34,42 @@ export default function PacientesList() {
     load()
   }, [])
 
+  useEffect(() => {
+    const fetchUserRole = async () => {
+      if (!user?.id) return
+      const { data, error } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', user.id)
+        .eq('is_active', true)
+        .limit(1)
+        .maybeSingle()
+      if (!error && data) {
+        setUserRole(data.role)
+      }
+    }
+    fetchUserRole()
+  }, [user?.id])
+
+  const canEdit = userRole === 'admin' || userRole === 'secretary'
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-bold tracking-tight">Pacientes</h1>
-        <Dialog open={open} onOpenChange={setOpen}>
-          <DialogTrigger asChild>
-            <Button>
-              <Plus className="w-4 h-4 mr-2" /> Novo Paciente
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle>Adicionar Paciente</DialogTitle>
-            </DialogHeader>
-            <CreatePatientForm
-              onSuccess={() => {
-                setOpen(false)
-                load()
-              }}
-              onCancel={() => setOpen(false)}
-            />
-          </DialogContent>
-        </Dialog>
+        <Button onClick={() => setOpenCreate(true)}>
+          <Plus className="w-4 h-4 mr-2" /> Novo Paciente
+        </Button>
       </div>
+
+      <CreatePatientModal
+        open={openCreate}
+        onOpenChange={setOpenCreate}
+        onPatientCreated={() => {
+          setOpenCreate(false)
+          load()
+        }}
+      />
 
       <Card>
         <CardContent className="p-0">
@@ -71,6 +81,7 @@ export default function PacientesList() {
                 <TableHead>Telefone</TableHead>
                 <TableHead>Convênio</TableHead>
                 <TableHead>CPF (Hash)</TableHead>
+                {canEdit && <TableHead className="w-[80px] text-right">Ações</TableHead>}
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -88,11 +99,26 @@ export default function PacientesList() {
                       {p.cpf_hash?.substring(0, 8)}...
                     </span>
                   </TableCell>
+                  {canEdit && (
+                    <TableCell className="text-right">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => setEditingPatient(p)}
+                        title="Editar Paciente"
+                      >
+                        <Edit2 className="w-4 h-4" />
+                      </Button>
+                    </TableCell>
+                  )}
                 </TableRow>
               ))}
               {pacientes.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
+                  <TableCell
+                    colSpan={canEdit ? 6 : 5}
+                    className="text-center py-8 text-muted-foreground"
+                  >
                     Nenhum paciente cadastrado.
                   </TableCell>
                 </TableRow>
@@ -101,6 +127,16 @@ export default function PacientesList() {
           </Table>
         </CardContent>
       </Card>
+
+      <EditPatientModal
+        open={!!editingPatient}
+        onOpenChange={(open: boolean) => !open && setEditingPatient(null)}
+        patient={editingPatient}
+        onPatientUpdated={() => {
+          setEditingPatient(null)
+          load()
+        }}
+      />
     </div>
   )
 }
