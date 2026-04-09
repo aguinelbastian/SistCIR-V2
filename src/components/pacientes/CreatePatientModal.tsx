@@ -14,6 +14,8 @@ import { toast } from 'sonner'
 import { supabase } from '@/lib/supabase/client'
 import { useAuth } from '@/hooks/use-auth'
 import { Loader2 } from 'lucide-react'
+import { ScrollArea } from '@/components/ui/scroll-area'
+import { Separator } from '@/components/ui/separator'
 
 async function hashCPF(cpf: string) {
   const cleanCpf = cpf.replace(/\D/g, '')
@@ -26,6 +28,11 @@ async function hashCPF(cpf: string) {
 function isValidCPF(cpf: string) {
   const cleanCpf = cpf.replace(/\D/g, '')
   return cleanCpf.length === 11
+}
+
+function isValidPhone(phone: string) {
+  const cleanPhone = phone.replace(/\D/g, '')
+  return cleanPhone.length === 0 || (cleanPhone.length >= 10 && cleanPhone.length <= 11)
 }
 
 export function CreatePatientModal({
@@ -47,6 +54,12 @@ export function CreatePatientModal({
     insurance_provider: '',
     insurance_plan: '',
     insurance_card_number: '',
+    cns: '',
+    profissao: '',
+    endereco: '',
+    telefone: '',
+    pessoa_contato: '',
+    telefone_contato: '',
   })
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -65,6 +78,12 @@ export function CreatePatientModal({
     }
     if (!formData.medical_record || formData.medical_record.trim().length < 3) {
       return toast.error('Prontuário é obrigatório e deve ter no mínimo 3 caracteres.')
+    }
+    if (formData.telefone && !isValidPhone(formData.telefone)) {
+      return toast.error('Telefone inválido. Digite o DDD + número (10 ou 11 dígitos).')
+    }
+    if (formData.telefone_contato && !isValidPhone(formData.telefone_contato)) {
+      return toast.error('Telefone de contato inválido. Digite o DDD + número (10 ou 11 dígitos).')
     }
 
     setLoading(true)
@@ -95,6 +114,12 @@ export function CreatePatientModal({
         insurance_provider: formData.insurance_provider || null,
         insurance_plan: formData.insurance_plan || null,
         insurance_card_number: formData.insurance_card_number || null,
+        cns: formData.cns || null,
+        profissao: formData.profissao || null,
+        endereco: formData.endereco || null,
+        telefone: formData.telefone || null,
+        pessoa_contato: formData.pessoa_contato || null,
+        telefone_contato: formData.telefone_contato || null,
         created_by: user?.id,
       }
 
@@ -126,6 +151,12 @@ export function CreatePatientModal({
         insurance_provider: '',
         insurance_plan: '',
         insurance_card_number: '',
+        cns: '',
+        profissao: '',
+        endereco: '',
+        telefone: '',
+        pessoa_contato: '',
+        telefone_contato: '',
       })
     } catch (err: any) {
       console.error(err)
@@ -137,109 +168,228 @@ export function CreatePatientModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[550px]">
-        <form onSubmit={handleSubmit}>
-          <DialogHeader>
-            <DialogTitle>Criar Novo Paciente</DialogTitle>
-            <DialogDescription>
-              Preencha os dados abaixo para cadastrar um novo paciente rapidamente.
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className="grid gap-4 py-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2 col-span-2">
-                <Label htmlFor="full_name">Nome Completo *</Label>
-                <Input
-                  id="full_name"
-                  name="full_name"
-                  value={formData.full_name}
-                  onChange={handleChange}
-                  required
-                  disabled={loading}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="cpf">CPF *</Label>
-                <Input
-                  id="cpf"
-                  name="cpf"
-                  placeholder="Apenas números"
-                  value={formData.cpf}
-                  onChange={handleChange}
-                  required
-                  disabled={loading}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="medical_record">Prontuário *</Label>
-                <Input
-                  id="medical_record"
-                  name="medical_record"
-                  value={formData.medical_record}
-                  onChange={handleChange}
-                  required
-                  disabled={loading}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="date_of_birth">Data de Nascimento</Label>
-                <Input
-                  id="date_of_birth"
-                  name="date_of_birth"
-                  type="date"
-                  value={formData.date_of_birth}
-                  onChange={handleChange}
-                  disabled={loading}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="insurance_provider">Convênio / Plano</Label>
-                <Input
-                  id="insurance_provider"
-                  name="insurance_provider"
-                  value={formData.insurance_provider}
-                  onChange={handleChange}
-                  disabled={loading}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="insurance_plan">Tipo de Plano</Label>
-                <Input
-                  id="insurance_plan"
-                  name="insurance_plan"
-                  value={formData.insurance_plan}
-                  onChange={handleChange}
-                  disabled={loading}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="insurance_card_number">Carteirinha</Label>
-                <Input
-                  id="insurance_card_number"
-                  name="insurance_card_number"
-                  value={formData.insurance_card_number}
-                  onChange={handleChange}
-                  disabled={loading}
-                />
-              </div>
-            </div>
+      <DialogContent className="sm:max-w-[700px] p-0 gap-0">
+        <form onSubmit={handleSubmit} className="flex flex-col max-h-[90vh]">
+          <div className="p-6 pb-4">
+            <DialogHeader>
+              <DialogTitle className="text-xl">Criar Novo Paciente</DialogTitle>
+              <DialogDescription>
+                Preencha os dados completos para cadastrar um novo paciente no sistema.
+              </DialogDescription>
+            </DialogHeader>
           </div>
 
-          <DialogFooter>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => onOpenChange(false)}
-              disabled={loading}
-            >
-              Cancelar
-            </Button>
-            <Button type="submit" disabled={loading}>
-              {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Salvar Paciente
-            </Button>
-          </DialogFooter>
+          <ScrollArea className="px-6 flex-1">
+            <div className="space-y-8 pb-6 pt-2">
+              {/* Seção 1: Dados Pessoais */}
+              <div className="space-y-4">
+                <h3 className="text-base font-semibold tracking-tight text-foreground/90">
+                  Dados Pessoais
+                </h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-2 sm:col-span-2">
+                    <Label htmlFor="full_name">
+                      Nome Completo <span className="text-red-500">*</span>
+                    </Label>
+                    <Input
+                      id="full_name"
+                      name="full_name"
+                      value={formData.full_name}
+                      onChange={handleChange}
+                      required
+                      disabled={loading}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="cpf">
+                      CPF <span className="text-red-500">*</span>
+                    </Label>
+                    <Input
+                      id="cpf"
+                      name="cpf"
+                      placeholder="Apenas números"
+                      value={formData.cpf}
+                      onChange={handleChange}
+                      required
+                      disabled={loading}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="date_of_birth">Data de Nascimento</Label>
+                    <Input
+                      id="date_of_birth"
+                      name="date_of_birth"
+                      type="date"
+                      value={formData.date_of_birth}
+                      onChange={handleChange}
+                      disabled={loading}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="medical_record">
+                      Prontuário <span className="text-red-500">*</span>
+                    </Label>
+                    <Input
+                      id="medical_record"
+                      name="medical_record"
+                      value={formData.medical_record}
+                      onChange={handleChange}
+                      required
+                      disabled={loading}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="cns">CNS</Label>
+                    <Input
+                      id="cns"
+                      name="cns"
+                      value={formData.cns}
+                      onChange={handleChange}
+                      disabled={loading}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <Separator />
+
+              {/* Seção 2: Contato */}
+              <div className="space-y-4">
+                <h3 className="text-base font-semibold tracking-tight text-foreground/90">
+                  Contato
+                </h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="telefone">Telefone (Paciente)</Label>
+                    <Input
+                      id="telefone"
+                      name="telefone"
+                      placeholder="(DD) 90000-0000"
+                      value={formData.telefone}
+                      onChange={handleChange}
+                      disabled={loading}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="pessoa_contato">Pessoa de Contato</Label>
+                    <Input
+                      id="pessoa_contato"
+                      name="pessoa_contato"
+                      value={formData.pessoa_contato}
+                      onChange={handleChange}
+                      disabled={loading}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="telefone_contato">Telefone (Contato)</Label>
+                    <Input
+                      id="telefone_contato"
+                      name="telefone_contato"
+                      placeholder="(DD) 90000-0000"
+                      value={formData.telefone_contato}
+                      onChange={handleChange}
+                      disabled={loading}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <Separator />
+
+              {/* Seção 3: Profissão e Endereço */}
+              <div className="space-y-4">
+                <h3 className="text-base font-semibold tracking-tight text-foreground/90">
+                  Profissão e Endereço
+                </h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-2 sm:col-span-2">
+                    <Label htmlFor="profissao">Profissão</Label>
+                    <Input
+                      id="profissao"
+                      name="profissao"
+                      value={formData.profissao}
+                      onChange={handleChange}
+                      disabled={loading}
+                    />
+                  </div>
+                  <div className="space-y-2 sm:col-span-2">
+                    <Label htmlFor="endereco">Endereço Completo</Label>
+                    <Input
+                      id="endereco"
+                      name="endereco"
+                      value={formData.endereco}
+                      onChange={handleChange}
+                      disabled={loading}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <Separator />
+
+              {/* Seção 4: Convênio */}
+              <div className="space-y-4">
+                <h3 className="text-base font-semibold tracking-tight text-foreground/90">
+                  Convênio
+                </h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-2 sm:col-span-2">
+                    <Label htmlFor="insurance_provider">Convênio / Operadora</Label>
+                    <Input
+                      id="insurance_provider"
+                      name="insurance_provider"
+                      value={formData.insurance_provider}
+                      onChange={handleChange}
+                      disabled={loading}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="insurance_plan">Tipo de Plano</Label>
+                    <Input
+                      id="insurance_plan"
+                      name="insurance_plan"
+                      value={formData.insurance_plan}
+                      onChange={handleChange}
+                      disabled={loading}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="insurance_card_number">Número da Carteirinha</Label>
+                    <Input
+                      id="insurance_card_number"
+                      name="insurance_card_number"
+                      value={formData.insurance_card_number}
+                      onChange={handleChange}
+                      disabled={loading}
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </ScrollArea>
+
+          <div className="p-6 pt-4 border-t bg-muted/20 mt-auto">
+            <DialogFooter className="gap-2 sm:gap-0">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => onOpenChange(false)}
+                disabled={loading}
+              >
+                Cancelar
+              </Button>
+              <Button type="submit" disabled={loading} className="min-w-[140px]">
+                {loading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Salvando...
+                  </>
+                ) : (
+                  'Criar Paciente'
+                )}
+              </Button>
+            </DialogFooter>
+          </div>
         </form>
       </DialogContent>
     </Dialog>
