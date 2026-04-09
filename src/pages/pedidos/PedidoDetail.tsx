@@ -20,6 +20,8 @@ import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
 import { cn } from '@/lib/utils'
 import { PedidoOpmeSection } from './components/PedidoOpmeSection'
+import { DocumentUploadWidget } from '@/components/DocumentUploadWidget'
+import { DocumentoLista } from '@/components/DocumentoLista'
 
 export default function PedidoDetail() {
   const { id } = useParams()
@@ -31,6 +33,7 @@ export default function PedidoDetail() {
   const [cancelModalOpen, setCancelModalOpen] = useState(false)
   const [cancelReason, setCancelReason] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [refreshDocs, setRefreshDocs] = useState(0)
 
   const loadData = async () => {
     if (!id) return
@@ -346,6 +349,21 @@ export default function PedidoDetail() {
           )}
         </div>
       </div>
+
+      {id && (
+        <div className="mt-8 space-y-4">
+          <h2 className="text-xl font-bold tracking-tight">Documentos do Pedido</h2>
+          <DocumentUploadWidget
+            pedidoId={id}
+            onUploadSuccess={() => setRefreshDocs((prev) => prev + 1)}
+          />
+          <DocumentoLista
+            pedidoId={id}
+            refreshTrigger={refreshDocs}
+            onDeleted={() => setRefreshDocs((prev) => prev + 1)}
+          />
+        </div>
+      )}
 
       {id && <PedidoOpmeSection pedidoId={id} />}
 
