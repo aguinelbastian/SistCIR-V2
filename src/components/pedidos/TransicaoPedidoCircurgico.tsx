@@ -16,6 +16,8 @@ import { Checkbox } from '@/components/ui/checkbox'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { Loader2, ArrowRightCircle } from 'lucide-react'
+import { PincasValidationCard } from './PincasValidationCard'
+import { RegisterPincaConsumption } from './RegisterPincaConsumption'
 
 const STATUS_LABELS: Record<string, string> = {
   '1_RASCUNHO': 'Rascunho',
@@ -386,6 +388,24 @@ export function TransicaoPedidoCircurgico({ pedidoId }: { pedidoId: string }) {
 
     setSubmitting(true)
 
+    if (novoEstado === '7_AGENDADO_CC') {
+      try {
+        const { data: validacao, error } = await supabase.rpc('validate_pinças_before_scheduling', {
+          p_pedido_id: pedidoId,
+        })
+        if (error) throw error
+        if (validacao && validacao.length > 0 && !validacao[0].valid) {
+          toast.error(validacao[0].message)
+          setSubmitting(false)
+          return
+        }
+      } catch (err: any) {
+        toast.error('Erro ao validar pinças: ' + err.message)
+        setSubmitting(false)
+        return
+      }
+    }
+
     const payload = {
       id: pedidoId,
       status: novoEstado,
@@ -496,103 +516,113 @@ export function TransicaoPedidoCircurgico({ pedidoId }: { pedidoId: string }) {
   const updatedAt = new Date(pedido.updated_at || pedido.created_at).toLocaleString('pt-BR')
 
   return (
-    <Card className="animate-fade-in shadow-sm border-primary/20">
-      <CardHeader className="bg-muted/30 border-b">
-        <CardTitle className="text-lg flex items-center gap-2">
-          <ArrowRightCircle className="w-5 h-5 text-primary" />
-          Transição de Estado do Pedido
-        </CardTitle>
-      </CardHeader>
+    <div className="space-y-6">
+      <Card className="animate-fade-in shadow-sm border-primary/20">
+        <CardHeader className="bg-muted/30 border-b">
+          <CardTitle className="text-lg flex items-center gap-2">
+            <ArrowRightCircle className="w-5 h-5 text-primary" />
+            Transição de Estado do Pedido
+          </CardTitle>
+        </CardHeader>
 
-      <CardContent className="space-y-6 pt-6">
-        <div className="bg-primary/5 p-4 rounded-lg border border-primary/10 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
-          <div>
-            <p className="text-sm font-medium text-muted-foreground mb-1">Estado Atual</p>
-            <div className="flex items-center gap-2">
-              <span className="flex h-2.5 w-2.5 rounded-full bg-primary" />
-              <p className="text-lg font-bold text-foreground">
-                {STATUS_LABELS[estadoAtual] || estadoAtual}
-              </p>
-            </div>
-          </div>
-          <div className="sm:text-right">
-            <p className="text-sm font-medium text-muted-foreground mb-1">Última Atualização</p>
-            <p className="text-sm font-mono text-foreground/80">{updatedAt}</p>
-          </div>
-        </div>
-
-        <div className="space-y-5">
-          <div className="space-y-2">
-            <Label className="text-base font-semibold">Selecione o Próximo Estado</Label>
-            <Select
-              value={novoEstado}
-              onValueChange={setNovoEstado}
-              disabled={transicoesPossiveis.length === 0 || submitting}
-            >
-              <SelectTrigger className="w-full h-12 text-base">
-                <SelectValue
-                  placeholder={
-                    transicoesPossiveis.length > 0
-                      ? 'Escolha a próxima etapa do processo...'
-                      : 'Nenhuma transição permitida neste estágio'
-                  }
-                />
-              </SelectTrigger>
-              <SelectContent>
-                {transicoesPossiveis.map((t) => (
-                  <SelectItem key={t} value={t} className="font-medium">
-                    {STATUS_LABELS[t] || t}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          {novoEstado && (
-            <div className="space-y-5 animate-in slide-in-from-top-4 duration-300 border rounded-lg p-5 bg-card">
-              <div className="border-b pb-3 mb-4">
-                <h3 className="font-semibold text-foreground">
-                  Campos Necessários para:{' '}
-                  <span className="text-primary">{STATUS_LABELS[novoEstado] || novoEstado}</span>
-                </h3>
-                <p className="text-sm text-muted-foreground mt-1">
-                  Preencha as informações exigidas para concluir a transição.
+        <CardContent className="space-y-6 pt-6">
+          <div className="bg-primary/5 p-4 rounded-lg border border-primary/10 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
+            <div>
+              <p className="text-sm font-medium text-muted-foreground mb-1">Estado Atual</p>
+              <div className="flex items-center gap-2">
+                <span className="flex h-2.5 w-2.5 rounded-full bg-primary" />
+                <p className="text-lg font-bold text-foreground">
+                  {STATUS_LABELS[estadoAtual] || estadoAtual}
                 </p>
               </div>
+            </div>
+            <div className="sm:text-right">
+              <p className="text-sm font-medium text-muted-foreground mb-1">Última Atualização</p>
+              <p className="text-sm font-mono text-foreground/80">{updatedAt}</p>
+            </div>
+          </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-5">
-                {(CAMPOS_POR_ESTADO[novoEstado] || []).map((field) => renderField(field))}
-              </div>
+          <div className="space-y-5">
+            <div className="space-y-2">
+              <Label className="text-base font-semibold">Selecione o Próximo Estado</Label>
+              <Select
+                value={novoEstado}
+                onValueChange={setNovoEstado}
+                disabled={transicoesPossiveis.length === 0 || submitting}
+              >
+                <SelectTrigger className="w-full h-12 text-base">
+                  <SelectValue
+                    placeholder={
+                      transicoesPossiveis.length > 0
+                        ? 'Escolha a próxima etapa do processo...'
+                        : 'Nenhuma transição permitida neste estágio'
+                    }
+                  />
+                </SelectTrigger>
+                <SelectContent>
+                  {transicoesPossiveis.map((t) => (
+                    <SelectItem key={t} value={t} className="font-medium">
+                      {STATUS_LABELS[t] || t}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
 
-              {(!CAMPOS_POR_ESTADO[novoEstado] || CAMPOS_POR_ESTADO[novoEstado].length === 0) && (
-                <div className="bg-muted/50 p-4 rounded-md border text-center">
-                  <p className="text-sm text-muted-foreground italic">
-                    Nenhum campo adicional é obrigatório para realizar esta transição.
+            {novoEstado && (
+              <div className="space-y-5 animate-in slide-in-from-top-4 duration-300 border rounded-lg p-5 bg-card">
+                <div className="border-b pb-3 mb-4">
+                  <h3 className="font-semibold text-foreground">
+                    Campos Necessários para:{' '}
+                    <span className="text-primary">{STATUS_LABELS[novoEstado] || novoEstado}</span>
+                  </h3>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Preencha as informações exigidas para concluir a transição.
                   </p>
                 </div>
-              )}
 
-              <div className="pt-4 mt-2">
-                <Button
-                  onClick={handleSubmit}
-                  disabled={submitting}
-                  size="lg"
-                  className="w-full sm:w-auto"
-                >
-                  {submitting ? (
-                    <>
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      Processando Transição...
-                    </>
-                  ) : (
-                    'Confirmar Transição de Estado'
-                  )}
-                </Button>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-5">
+                  {(CAMPOS_POR_ESTADO[novoEstado] || []).map((field) => renderField(field))}
+                </div>
+
+                {(!CAMPOS_POR_ESTADO[novoEstado] || CAMPOS_POR_ESTADO[novoEstado].length === 0) && (
+                  <div className="bg-muted/50 p-4 rounded-md border text-center">
+                    <p className="text-sm text-muted-foreground italic">
+                      Nenhum campo adicional é obrigatório para realizar esta transição.
+                    </p>
+                  </div>
+                )}
+
+                {novoEstado === '7_AGENDADO_CC' && (
+                  <div className="mt-4">
+                    <PincasValidationCard pedidoId={pedidoId} />
+                  </div>
+                )}
+
+                <div className="pt-4 mt-2">
+                  <Button
+                    onClick={handleSubmit}
+                    disabled={submitting}
+                    size="lg"
+                    className="w-full sm:w-auto"
+                  >
+                    {submitting ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        Processando Transição...
+                      </>
+                    ) : (
+                      'Confirmar Transição de Estado'
+                    )}
+                  </Button>
+                </div>
               </div>
-            </div>
-          )}
-        </div>
-      </CardContent>
-    </Card>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+
+      {estadoAtual === '8_EM_EXECUCAO' && <RegisterPincaConsumption pedidoId={pedidoId} />}
+    </div>
   )
 }
