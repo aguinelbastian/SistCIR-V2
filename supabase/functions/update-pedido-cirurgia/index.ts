@@ -1,5 +1,5 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
-import { syncGoogleCalendar } from './syncGoogleCalendar.ts'
+import { syncGoogleCalendar } from '../_shared/syncGoogleCalendar.ts'
 
 type Estado =
   | '1_RASCUNHO'

@@ -17,7 +17,7 @@
     "get-relatorio-tempo-autorizacao": 10,
     "check-disponibilidade-agendamento": 6,
     "create-pedido-cirurgia": 15,
-    "update-pedido-cirurgia": 22,
+    "update-pedido-cirurgia": 23,
     "create_test_surgeons": 3,
     "generate-google-docs": 8,
     "authorize-google-oauth": 3,
