@@ -341,121 +341,127 @@ export function PedidoOpmeSection({ pedidoId }: { pedidoId: string }) {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {items.map((item) => {
+            {items.flatMap((item) => {
               const itemConsumptions = consumptions.filter(
                 (c) => c.opme_items?.catalog_id === item.catalog_id,
               )
               const totalAllocated = itemConsumptions.reduce((acc, c) => acc + (c.quantity || 0), 0)
               const isFullyAllocated = totalAllocated >= item.quantity
 
-              return (
-                <React.Fragment key={item.id}>
-                  <TableRow>
-                    <TableCell className="font-mono text-muted-foreground text-sm">
-                      {item.opme_catalog?.item_type}
-                    </TableCell>
-                    <TableCell className="font-medium">{item.opme_catalog?.name}</TableCell>
-                    <TableCell>{item.quantity}</TableCell>
-                    <TableCell>
-                      {isFullyAllocated ? (
-                        <Badge className="bg-green-600 hover:bg-green-700">✅ Alocado</Badge>
-                      ) : (
-                        <Badge
-                          variant="outline"
-                          className="bg-yellow-100 text-yellow-800 border-yellow-200"
-                        >
-                          ⚠️ Pendente ({totalAllocated}/{item.quantity})
-                        </Badge>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      {item.authorization_code ? (
-                        <Badge variant="outline" className="bg-muted">
-                          {item.authorization_code}
-                        </Badge>
-                      ) : (
-                        <span className="text-muted-foreground text-sm">—</span>
-                      )}
-                    </TableCell>
-                    <TableCell className="text-sm text-muted-foreground">
-                      {item.profiles?.name || 'Sistema'}
-                    </TableCell>
-                    {(canEdit || canAllocate) && (
-                      <TableCell className="text-right space-x-2">
-                        {canAllocate && !isFullyAllocated && (
-                          <Button
-                            variant="secondary"
-                            size="sm"
-                            onClick={() => openAllocateModal(item)}
-                            className="h-8"
-                          >
-                            Alocar Pinça
-                          </Button>
-                        )}
-                        {canEdit && (
-                          <>
-                            <Button variant="ghost" size="icon" onClick={() => openEdit(item)}>
-                              <Edit2 className="w-4 h-4 text-muted-foreground" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                              onClick={() => setDeleteId(item)}
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </Button>
-                          </>
-                        )}
-                      </TableCell>
+              const rows = [
+                <TableRow key={item.id}>
+                  <TableCell className="font-mono text-muted-foreground text-sm">
+                    {item.opme_catalog?.item_type}
+                  </TableCell>
+                  <TableCell className="font-medium">{item.opme_catalog?.name}</TableCell>
+                  <TableCell>{item.quantity}</TableCell>
+                  <TableCell>
+                    {isFullyAllocated ? (
+                      <Badge className="bg-green-600 hover:bg-green-700">✅ Alocado</Badge>
+                    ) : (
+                      <Badge
+                        variant="outline"
+                        className="bg-yellow-100 text-yellow-800 border-yellow-200"
+                      >
+                        ⚠️ Pendente ({totalAllocated}/{item.quantity})
+                      </Badge>
                     )}
-                  </TableRow>
-                  {itemConsumptions.length > 0 && (
-                    <TableRow className="bg-muted/10 hover:bg-muted/10">
-                      <TableCell colSpan={canEdit || canAllocate ? 7 : 6} className="p-0 border-b">
-                        <div className="px-6 py-3 space-y-2 border-l-2 border-primary/50 ml-2">
-                          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                            Itens Físicos Alocados:
-                          </p>
-                          <div className="space-y-1.5">
-                            {itemConsumptions.map((c) => (
-                              <div
-                                key={c.id}
-                                className="flex items-center justify-between text-sm bg-background border px-3 py-2 rounded-md shadow-sm"
-                              >
-                                <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-4">
-                                  <span className="font-medium">{c.opme_items?.name}</span>
-                                  <div className="flex gap-3 text-muted-foreground">
-                                    {c.opme_items?.lot_number && (
-                                      <span>Lote: {c.opme_items.lot_number}</span>
-                                    )}
-                                    {c.opme_items?.current_lives !== null && (
-                                      <span>Vidas: {c.opme_items.current_lives}</span>
-                                    )}
-                                    <span className="font-semibold text-foreground">
-                                      Qtd: {c.quantity}
-                                    </span>
-                                  </div>
-                                </div>
-                                {canAllocate && (
-                                  <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    className="h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-50"
-                                    onClick={() => handleRemoveAllocation(c.id)}
-                                  >
-                                    <Trash2 className="w-4 h-4" />
-                                  </Button>
-                                )}
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      </TableCell>
-                    </TableRow>
+                  </TableCell>
+                  <TableCell>
+                    {item.authorization_code ? (
+                      <Badge variant="outline" className="bg-muted">
+                        {item.authorization_code}
+                      </Badge>
+                    ) : (
+                      <span className="text-muted-foreground text-sm">—</span>
+                    )}
+                  </TableCell>
+                  <TableCell className="text-sm text-muted-foreground">
+                    {item.profiles?.name || 'Sistema'}
+                  </TableCell>
+                  {(canEdit || canAllocate) && (
+                    <TableCell className="text-right space-x-2">
+                      {canAllocate && !isFullyAllocated && (
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          onClick={() => openAllocateModal(item)}
+                          className="h-8"
+                        >
+                          Alocar Pinça
+                        </Button>
+                      )}
+                      {canEdit && (
+                        <span className="inline-flex items-center gap-1">
+                          <Button variant="ghost" size="icon" onClick={() => openEdit(item)}>
+                            <Edit2 className="w-4 h-4 text-muted-foreground" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                            onClick={() => setDeleteId(item)}
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </span>
+                      )}
+                    </TableCell>
                   )}
-                </React.Fragment>
-              )
+                </TableRow>,
+              ]
+
+              if (itemConsumptions.length > 0) {
+                rows.push(
+                  <TableRow
+                    key={`${item.id}-consumptions`}
+                    className="bg-muted/10 hover:bg-muted/10"
+                  >
+                    <TableCell colSpan={canEdit || canAllocate ? 7 : 6} className="p-0 border-b">
+                      <div className="px-6 py-3 space-y-2 border-l-2 border-primary/50 ml-2">
+                        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                          Itens Físicos Alocados:
+                        </p>
+                        <div className="space-y-1.5">
+                          {itemConsumptions.map((c) => (
+                            <div
+                              key={c.id}
+                              className="flex items-center justify-between text-sm bg-background border px-3 py-2 rounded-md shadow-sm"
+                            >
+                              <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-4">
+                                <span className="font-medium">{c.opme_items?.name}</span>
+                                <div className="flex gap-3 text-muted-foreground">
+                                  {c.opme_items?.lot_number && (
+                                    <span>Lote: {c.opme_items.lot_number}</span>
+                                  )}
+                                  {c.opme_items?.current_lives !== null && (
+                                    <span>Vidas: {c.opme_items.current_lives}</span>
+                                  )}
+                                  <span className="font-semibold text-foreground">
+                                    Qtd: {c.quantity}
+                                  </span>
+                                </div>
+                              </div>
+                              {canAllocate && (
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-50"
+                                  onClick={() => handleRemoveAllocation(c.id)}
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </Button>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </TableCell>
+                  </TableRow>,
+                )
+              }
+
+              return rows
             })}
             {items.length === 0 && (
               <TableRow>
