@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { api } from '@/services/api'
+import { supabase } from '@/lib/supabase/client'
 import { useAuth } from '@/hooks/use-auth'
 import { Button } from '@/components/ui/button'
 import {
@@ -45,7 +46,7 @@ export function PedidoOpmeSection({ pedidoId }: { pedidoId: string }) {
   const [loading, setLoading] = useState(false)
 
   const [addForm, setAddForm] = useState({
-    opme_item_id: '',
+    catalog_id: '',
     quantity: 1,
     authorization_code: '',
     authorized_at: '',
@@ -61,13 +62,29 @@ export function PedidoOpmeSection({ pedidoId }: { pedidoId: string }) {
   })
 
   const loadData = async () => {
-    const { data } = await api.pedidoOpme.list(pedidoId)
+    const { data } = await supabase
+      .from('pedido_opme_items')
+      .select(`
+        *,
+        opme_catalog (
+          id,
+          name,
+          item_type,
+          description
+        ),
+        profiles ( name )
+      `)
+      .eq('pedido_id', pedidoId)
     if (data) setItems(data)
   }
 
   const loadCatalog = async () => {
     if (!canEdit) return
-    const { data } = await api.opmeCatalog.listActive()
+    const { data } = await supabase
+      .from('opme_catalog')
+      .select('*')
+      .eq('is_active', true)
+      .order('name')
     if (data) setCatalog(data)
   }
 
@@ -82,7 +99,7 @@ export function PedidoOpmeSection({ pedidoId }: { pedidoId: string }) {
 
     const payload = {
       pedido_id: pedidoId,
-      opme_item_id: addForm.opme_item_id,
+      catalog_id: addForm.catalog_id,
       quantity: addForm.quantity,
       authorization_code: addForm.authorization_code || null,
       authorized_at:
@@ -91,16 +108,16 @@ export function PedidoOpmeSection({ pedidoId }: { pedidoId: string }) {
       added_by: user?.id,
     }
 
-    const { error } = await api.pedidoOpme.add(payload)
+    const { error } = await supabase.from('pedido_opme_items').insert(payload)
     setLoading(false)
 
     if (error) {
       if (error.code === '23505') toast.error('Este material já está vinculado ao pedido')
-      else toast.error('Erro ao adicionar material')
+      else toast.error('Erro ao adicionar material: ' + error.message)
     } else {
       toast.success('Material adicionado com sucesso')
       setAddForm({
-        opme_item_id: '',
+        catalog_id: '',
         quantity: 1,
         authorization_code: '',
         authorized_at: '',
@@ -111,7 +128,7 @@ export function PedidoOpmeSection({ pedidoId }: { pedidoId: string }) {
   }
 
   const openEdit = (item: any) => {
-    setEditItemDisplay(`[${item.opme_items?.code}] — ${item.opme_items?.description}`)
+    setEditItemDisplay(`[${item.opme_catalog?.item_type}] — ${item.opme_catalog?.name}`)
     setEditForm({
       id: item.id,
       quantity: item.quantity,
@@ -134,7 +151,7 @@ export function PedidoOpmeSection({ pedidoId }: { pedidoId: string }) {
       notes: editForm.notes || null,
     }
 
-    const { error } = await api.pedidoOpme.update(editForm.id, payload)
+    const { error } = await supabase.from('pedido_opme_items').update(payload).eq('id', editForm.id)
     setLoading(false)
 
     if (error) {
@@ -149,7 +166,7 @@ export function PedidoOpmeSection({ pedidoId }: { pedidoId: string }) {
   const handleDelete = async () => {
     if (!deleteId) return
     setLoading(true)
-    const { error } = await api.pedidoOpme.remove(deleteId.id)
+    const { error } = await supabase.from('pedido_opme_items').delete().eq('id', deleteId.id)
     setLoading(false)
     if (error) {
       toast.error('Erro ao remover material')
@@ -164,20 +181,20 @@ export function PedidoOpmeSection({ pedidoId }: { pedidoId: string }) {
     <div className="mt-8 space-y-6">
       <div className="flex items-center justify-between">
         <h2 className="text-xl font-bold tracking-tight flex items-center gap-2">
-          <Package className="w-5 h-5 text-muted-foreground" /> Materiais OPME
+          <Package className="w-5 h-5 text-muted-foreground" /> Catálogo OPME Solicitado
         </h2>
       </div>
 
       {canEdit && (
         <div className="bg-muted/30 border rounded-lg p-5">
-          <h3 className="text-sm font-semibold mb-4">Adicionar Novo Material</h3>
+          <h3 className="text-sm font-semibold mb-4">Solicitar Material do Catálogo</h3>
           <form onSubmit={handleAdd} className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
               <div className="md:col-span-6 space-y-2">
                 <Label>Material *</Label>
                 <Select
-                  value={addForm.opme_item_id}
-                  onValueChange={(v) => setAddForm({ ...addForm, opme_item_id: v })}
+                  value={addForm.catalog_id}
+                  onValueChange={(v) => setAddForm({ ...addForm, catalog_id: v })}
                   required
                 >
                   <SelectTrigger>
@@ -186,7 +203,7 @@ export function PedidoOpmeSection({ pedidoId }: { pedidoId: string }) {
                   <SelectContent>
                     {catalog.map((c) => (
                       <SelectItem key={c.id} value={c.id}>
-                        [{c.code}] — {c.description}
+                        [{c.item_type}] — {c.name}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -241,7 +258,7 @@ export function PedidoOpmeSection({ pedidoId }: { pedidoId: string }) {
               </div>
             </div>
             <div className="flex justify-end">
-              <Button type="submit" disabled={!addForm.opme_item_id || loading}>
+              <Button type="submit" disabled={!addForm.catalog_id || loading}>
                 <Plus className="w-4 h-4 mr-2" /> Adicionar Material
               </Button>
             </div>
@@ -253,25 +270,25 @@ export function PedidoOpmeSection({ pedidoId }: { pedidoId: string }) {
         <Table>
           <TableHeader>
             <TableRow className="bg-muted/50">
-              <TableHead>Código</TableHead>
+              <TableHead>Tipo</TableHead>
+              <TableHead>Nome do Item</TableHead>
               <TableHead>Descrição</TableHead>
-              <TableHead>Fabricante</TableHead>
               <TableHead>Qtd</TableHead>
               <TableHead>Autorização</TableHead>
               <TableHead>Autorizado em</TableHead>
-              <TableHead>Adicionado por</TableHead>
+              <TableHead>Solicitado por</TableHead>
               {canEdit && <TableHead className="text-right">Ações</TableHead>}
             </TableRow>
           </TableHeader>
           <TableBody>
             {items.map((item) => (
               <TableRow key={item.id}>
-                <TableCell className="font-mono text-muted-foreground">
-                  {item.opme_items?.code}
+                <TableCell className="font-mono text-muted-foreground text-sm">
+                  {item.opme_catalog?.item_type}
                 </TableCell>
-                <TableCell className="font-medium">{item.opme_items?.description}</TableCell>
-                <TableCell className="text-muted-foreground">
-                  {item.opme_items?.manufacturer}
+                <TableCell className="font-medium">{item.opme_catalog?.name}</TableCell>
+                <TableCell className="text-muted-foreground text-sm">
+                  {item.opme_catalog?.description || '—'}
                 </TableCell>
                 <TableCell>{item.quantity}</TableCell>
                 <TableCell>
@@ -319,7 +336,7 @@ export function PedidoOpmeSection({ pedidoId }: { pedidoId: string }) {
                   colSpan={canEdit ? 8 : 7}
                   className="text-center py-6 text-muted-foreground"
                 >
-                  Nenhum material OPME vinculado a este pedido.
+                  Nenhum material OPME solicitado para este pedido.
                 </TableCell>
               </TableRow>
             )}
@@ -398,7 +415,7 @@ export function PedidoOpmeSection({ pedidoId }: { pedidoId: string }) {
           <DialogHeader>
             <DialogTitle>Remover Material</DialogTitle>
             <DialogDescription>
-              Remover <strong>{deleteId?.opme_items?.description}</strong> deste pedido?
+              Remover <strong>{deleteId?.opme_catalog?.name}</strong> deste pedido?
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
