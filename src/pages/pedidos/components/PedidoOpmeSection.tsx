@@ -34,7 +34,13 @@ import { Plus, Edit2, Trash2, Package } from 'lucide-react'
 
 export function PedidoOpmeSection({ pedidoId }: { pedidoId: string }) {
   const { hasRole, user } = useAuth()
-  const canEdit = hasRole('opme') || hasRole('admin')
+  const [pedidoStatus, setPedidoStatus] = useState<string>('')
+
+  const canEdit =
+    hasRole('opme') ||
+    hasRole('admin') ||
+    ((hasRole('surgeon') || hasRole('secretary')) && pedidoStatus === '1_RASCUNHO')
+
   const canAllocate = hasRole('opme') || hasRole('nursing') || hasRole('admin')
 
   const [items, setItems] = useState<any[]>([])
@@ -73,7 +79,9 @@ export function PedidoOpmeSection({ pedidoId }: { pedidoId: string }) {
   })
 
   const loadData = async () => {
-    const [reqRes, consRes] = await Promise.all([
+    if (!pedidoId) return
+
+    const [reqRes, consRes, pedidoRes] = await Promise.all([
       supabase
         .from('pedido_opme_items')
         .select(`
@@ -100,14 +108,15 @@ export function PedidoOpmeSection({ pedidoId }: { pedidoId: string }) {
           )
         `)
         .eq('pedido_id', pedidoId),
+      supabase.from('pedidos_cirurgia').select('status').eq('id', pedidoId).single(),
     ])
 
     if (reqRes.data) setItems(reqRes.data)
     if (consRes.data) setConsumptions(consRes.data)
+    if (pedidoRes.data) setPedidoStatus(pedidoRes.data.status)
   }
 
   const loadCatalog = async () => {
-    if (!canEdit) return
     const { data } = await supabase
       .from('opme_catalog')
       .select('*')
