@@ -407,8 +407,9 @@ export function TransicaoPedidoCircurgico({ pedidoId }: { pedidoId: string }) {
     }
 
     const payload = {
-      id: pedidoId,
-      status: novoEstado,
+      pedido_id: pedidoId,
+      new_status: novoEstado,
+      notes: null,
       ...camposDinamicos,
     }
 
@@ -417,65 +418,50 @@ export function TransicaoPedidoCircurgico({ pedidoId }: { pedidoId: string }) {
         body: payload,
       })
 
-      let errObj = error
-      if (error && error.context && typeof error.context.json === 'function') {
-        try {
-          errObj = await error.context.json()
-        } catch (e) {
-          /* ignore */
-        }
+      if (error) {
+        toast.error(`Erro ao atualizar status: ${error.message}`)
+        return
       }
 
-      const responseError = errObj || data?.error
-
-      if (responseError) {
-        if (responseError.camposPermitidos) {
-          const invalidFields = Object.keys(camposDinamicos).filter(
-            (k) => !responseError.camposPermitidos.includes(k),
-          )
-          toast.error(
-            `Campo não permitido: ${invalidFields.join(', ') || 'desconhecido'}. Permitidos: ${responseError.camposPermitidos.join(', ')}`,
-          )
-        } else if (responseError.transicoesPermitidas) {
-          toast.error(
-            `Transição não permitida. Estados permitidos: ${responseError.transicoesPermitidas.join(', ')}`,
-          )
-        } else {
-          toast.error(`Erro ao atualizar pedido: ${responseError.message || responseError}`)
-        }
-      } else {
-        // Feedback Visual - Telegram
-        if (data?.notificationSent === true && data?.notifiedGroups?.length > 0) {
-          toast.success(`Notificação Telegram enviada (${data.notifiedGroups.join(', ')})`)
-        } else if (data?.notificationSent === false) {
-          toast.warning(`Falha na notificação Telegram: ${data?.notificationWarning || ''}`)
-        }
-
-        // Feedback Visual - Google Calendar
-        if (data?.calendarSynced || data?.calendarUpdated || data?.calendarDeleted) {
-          const actionStr = data.calendarDeleted
-            ? 'removido do'
-            : data.calendarUpdated
-              ? 'atualizado no'
-              : 'criado no'
-          toast.success(`Evento ${actionStr} Google Calendar`)
-        }
-
-        if (data?.calendarWarning) {
-          toast.warning('Aviso de Sincronização de Agenda', {
-            description: data.calendarWarning,
-            action: data.calendarWarning.includes('expirou')
-              ? {
-                  label: 'Reautenticar',
-                  onClick: handleReauthGoogle,
-                }
-              : undefined,
-          })
-        }
-
-        toast.success(`Pedido transicionado para ${STATUS_LABELS[novoEstado] || novoEstado}`)
-        setNovoEstado('')
+      if (data && !data.success) {
+        toast.error(`Validação falhou: ${data.message || 'Erro desconhecido'}`)
+        return
       }
+
+      // Feedback Visual - Telegram
+      if (data?.notificationSent === true && data?.notifiedGroups?.length > 0) {
+        toast.success(`Notificação Telegram enviada (${data.notifiedGroups.join(', ')})`)
+      } else if (data?.notificationSent === false) {
+        toast.warning(`Falha na notificação Telegram: ${data?.notificationWarning || ''}`)
+      }
+
+      // Feedback Visual - Google Calendar
+      if (data?.calendarSynced || data?.calendarUpdated || data?.calendarDeleted) {
+        const actionStr = data.calendarDeleted
+          ? 'removido do'
+          : data.calendarUpdated
+            ? 'atualizado no'
+            : 'criado no'
+        toast.success(`Evento ${actionStr} Google Calendar`)
+      }
+
+      if (data?.calendarWarning) {
+        toast.warning('Aviso de Sincronização de Agenda', {
+          description: data.calendarWarning,
+          action: data.calendarWarning.includes('expirou')
+            ? {
+                label: 'Reautenticar',
+                onClick: handleReauthGoogle,
+              }
+            : undefined,
+        })
+      }
+
+      toast.success(
+        data?.message || `Pedido transicionado para ${STATUS_LABELS[novoEstado] || novoEstado}`,
+      )
+      setNovoEstado('')
+      carregarPedido()
     } catch (err: any) {
       toast.error(`Erro inesperado: ${err.message}`)
     } finally {

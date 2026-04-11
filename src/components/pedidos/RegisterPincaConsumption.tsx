@@ -1,18 +1,29 @@
 import React, { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase/client'
+import { toast } from 'sonner'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { toast } from 'sonner'
-import { Loader2, ActivitySquare } from 'lucide-react'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import { Loader2, Plus } from 'lucide-react'
 
 export function RegisterPincaConsumption({ pedidoId }: { pedidoId: string }) {
   const [items, setItems] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
-  const [submittingId, setSubmittingId] = useState<string | null>(null)
+  const [submitting, setSubmitting] = useState(false)
 
-  const fetchItems = async () => {
+  const [selectedItemId, setSelectedItemId] = useState('')
+  const [livesConsumed, setLivesConsumed] = useState<number>(1)
+  const [lotUsed, setLotUsed] = useState('')
+
+  const carregarItens = async () => {
     setLoading(true)
     const { data, error } = await supabase
       .from('pedido_opme_items')
@@ -20,7 +31,6 @@ export function RegisterPincaConsumption({ pedidoId }: { pedidoId: string }) {
         id,
         quantity,
         lives_consumed,
-        lot_used,
         opme_items (
           id,
           name,
@@ -30,153 +40,168 @@ export function RegisterPincaConsumption({ pedidoId }: { pedidoId: string }) {
       `)
       .eq('pedido_id', pedidoId)
 
-    if (!error && data) {
-      setItems(data.filter((i) => i.opme_items?.item_type === 'pinça_clicada'))
+    if (error) {
+      toast.error('Erro ao carregar itens OPME: ' + error.message)
+    } else {
+      setItems(data || [])
     }
     setLoading(false)
   }
 
   useEffect(() => {
-    fetchItems()
+    carregarItens()
   }, [pedidoId])
 
-  const handleRegister = async (itemId: string, livesConsumed: number, lotUsed: string) => {
-    if (livesConsumed < 0) {
-      toast.error('O número de vidas consumidas não pode ser negativo.')
+  const handleRegister = async () => {
+    if (!selectedItemId) {
+      toast.error('Selecione uma pinça')
       return
     }
 
-    setSubmittingId(itemId)
+    const item = items.find((i) => i.id === selectedItemId)
+    if (!item) return
+
+    if (livesConsumed <= 0) {
+      toast.error('A quantidade de vidas consumidas deve ser maior que zero')
+      return
+    }
+
+    if (item.quantity < (item.lives_consumed || 0) + livesConsumed) {
+      toast.error('A quantidade consumida excederá a quantidade solicitada para esta cirurgia')
+      return
+    }
+
+    setSubmitting(true)
     try {
       const { data, error } = await supabase.rpc('register_pinça_consumption', {
-        p_pedido_opme_item_id: itemId,
-        p_lives_consumed: livesConsumed,
+        p_pedido_opme_item_id: selectedItemId,
+        p_lives_consumed: (item.lives_consumed || 0) + livesConsumed,
         p_lot_used: lotUsed || null,
       })
 
       if (error) throw error
 
-      if (data && data.length > 0) {
-        if (data[0].success) {
-          toast.success(data[0].message)
-          await fetchItems()
-        } else {
-          toast.error(data[0].message)
-        }
+      if (data && data.length > 0 && !data[0].success) {
+        toast.error(data[0].message)
+      } else {
+        toast.success(data[0]?.message || 'Consumo registrado com sucesso!')
+        setSelectedItemId('')
+        setLivesConsumed(1)
+        setLotUsed('')
+        await carregarItens()
       }
-    } catch (e: any) {
-      toast.error('Erro ao registrar consumo: ' + e.message)
+    } catch (err: any) {
+      toast.error('Erro ao registrar consumo: ' + err.message)
     } finally {
-      setSubmittingId(null)
+      setSubmitting(false)
     }
   }
 
   if (loading) {
     return (
-      <Card className="border-dashed animate-fade-in mt-6">
-        <CardContent className="p-6 flex items-center justify-center text-muted-foreground">
-          <Loader2 className="h-5 w-5 animate-spin mr-2" /> Carregando pinças para registro...
+      <Card className="animate-fade-in">
+        <CardContent className="p-6 flex items-center justify-center">
+          <Loader2 className="w-6 h-6 animate-spin text-primary" />
         </CardContent>
       </Card>
     )
   }
 
-  if (items.length === 0) return null
+  const pincas = items.filter((i) => i.opme_items?.item_type === 'pinça_clicada')
+
+  if (pincas.length === 0) {
+    return (
+      <Card className="border-dashed bg-muted/30 mt-6">
+        <CardContent className="p-4 text-center text-sm text-muted-foreground">
+          Nenhuma pinça robótica (com vidas) foi solicitada para este pedido.
+        </CardContent>
+      </Card>
+    )
+  }
 
   return (
-    <Card className="border-primary/20 shadow-sm mt-6 animate-fade-in">
-      <CardHeader className="bg-primary/5 border-b pb-3 pt-4">
-        <CardTitle className="text-base flex items-center gap-2 text-primary">
-          <ActivitySquare className="h-5 w-5" />
-          Registro de Consumo (Pinças Robóticas)
-        </CardTitle>
+    <Card className="border-primary/20 shadow-sm mt-6">
+      <CardHeader className="bg-muted/30 border-b pb-4">
+        <CardTitle className="text-lg">Registro de Consumo de Pinças</CardTitle>
         <CardDescription>
-          Registre o consumo de vidas das pinças utilizadas durante a cirurgia.
+          Registre as vidas consumidas de cada pinça durante a execução da cirurgia.
         </CardDescription>
       </CardHeader>
-      <CardContent className="p-0">
-        <div className="divide-y divide-border/50">
-          {items.map((item) => (
-            <ConsumptionForm
-              key={item.id}
-              item={item}
-              onRegister={handleRegister}
-              isSubmitting={submittingId === item.id}
+      <CardContent className="space-y-6 pt-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="space-y-2">
+            <Label>Pinça Utilizada</Label>
+            <Select value={selectedItemId} onValueChange={setSelectedItemId}>
+              <SelectTrigger>
+                <SelectValue placeholder="Selecione..." />
+              </SelectTrigger>
+              <SelectContent>
+                {pincas.map((item) => (
+                  <SelectItem key={item.id} value={item.id}>
+                    {item.opme_items.name} (Sol: {item.quantity} | Usadas:{' '}
+                    {item.lives_consumed || 0})
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-2">
+            <Label>Vidas Consumidas Agora</Label>
+            <Input
+              type="number"
+              min={1}
+              value={livesConsumed}
+              onChange={(e) => setLivesConsumed(parseInt(e.target.value) || 1)}
             />
+          </div>
+
+          <div className="space-y-2">
+            <Label>Lote Utilizado (Opcional)</Label>
+            <Input
+              placeholder="Ex: LOTE-123"
+              value={lotUsed}
+              onChange={(e) => setLotUsed(e.target.value)}
+            />
+          </div>
+        </div>
+
+        <Button
+          onClick={handleRegister}
+          disabled={submitting || !selectedItemId}
+          className="w-full sm:w-auto"
+        >
+          {submitting ? (
+            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+          ) : (
+            <Plus className="w-4 h-4 mr-2" />
+          )}
+          Registrar Consumo
+        </Button>
+
+        <div className="mt-6 border rounded-md divide-y">
+          <div className="bg-muted/50 p-3 text-sm font-medium grid grid-cols-12 gap-2">
+            <div className="col-span-6">Pinça</div>
+            <div className="col-span-2 text-center">Solicitado</div>
+            <div className="col-span-2 text-center">Consumido</div>
+            <div className="col-span-2 text-center">Lote</div>
+          </div>
+          {pincas.map((item) => (
+            <div key={item.id} className="p-3 text-sm grid grid-cols-12 gap-2 items-center">
+              <div className="col-span-6 truncate" title={item.opme_items.name}>
+                {item.opme_items.name}
+              </div>
+              <div className="col-span-2 text-center font-medium">{item.quantity}</div>
+              <div className="col-span-2 text-center font-medium text-primary">
+                {item.lives_consumed || 0}
+              </div>
+              <div className="col-span-2 text-center text-muted-foreground truncate">
+                {item.lot_used || '-'}
+              </div>
+            </div>
           ))}
         </div>
       </CardContent>
     </Card>
-  )
-}
-
-function ConsumptionForm({
-  item,
-  onRegister,
-  isSubmitting,
-}: {
-  item: any
-  onRegister: any
-  isSubmitting: boolean
-}) {
-  const isAlreadyRegistered = item.lives_consumed !== null && item.lives_consumed > 0
-
-  const [lives, setLives] = useState<number>(item.lives_consumed || item.quantity || 1)
-  const [lot, setLot] = useState<string>(item.lot_used || '')
-
-  return (
-    <div className="p-4 space-y-4 bg-card">
-      <div>
-        <p className="font-medium text-sm text-foreground">{item.opme_items.name}</p>
-        <div className="text-xs text-muted-foreground flex gap-3 mt-1">
-          <span>Solicitado: {item.quantity}</span>
-          <span>•</span>
-          <span>Vidas em estoque: {item.opme_items.current_lives ?? 'N/A'}</span>
-        </div>
-      </div>
-      <div className="grid grid-cols-1 sm:grid-cols-12 gap-4 items-end">
-        <div className="space-y-2 sm:col-span-4">
-          <Label className="text-xs">Vidas Consumidas</Label>
-          <Input
-            type="number"
-            min="0"
-            max={item.quantity * 10}
-            value={lives}
-            onChange={(e) => setLives(parseInt(e.target.value) || 0)}
-            disabled={isAlreadyRegistered || isSubmitting}
-            className="h-9"
-          />
-        </div>
-        <div className="space-y-2 sm:col-span-4">
-          <Label className="text-xs">Lote Utilizado (Opcional)</Label>
-          <Input
-            type="text"
-            placeholder="Nº do lote"
-            value={lot}
-            onChange={(e) => setLot(e.target.value)}
-            disabled={isAlreadyRegistered || isSubmitting}
-            className="h-9"
-          />
-        </div>
-        <div className="sm:col-span-4">
-          <Button
-            className="w-full h-9"
-            disabled={isAlreadyRegistered || isSubmitting || lives <= 0}
-            onClick={() => onRegister(item.id, lives, lot)}
-            variant={isAlreadyRegistered ? 'outline' : 'default'}
-          >
-            {isSubmitting ? (
-              <>
-                <Loader2 className="h-4 w-4 animate-spin mr-2" /> Registrando...
-              </>
-            ) : isAlreadyRegistered ? (
-              'Registrado'
-            ) : (
-              'Registrar Consumo'
-            )}
-          </Button>
-        </div>
-      </div>
-    </div>
   )
 }
