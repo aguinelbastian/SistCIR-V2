@@ -58,17 +58,23 @@ export const api = {
       statusFrom: string,
       statusTo: Database['public']['Enums']['surgery_status'],
       actionLabel: string,
+      additionalData?: any,
     ) => {
       const {
         data: { user },
       } = await supabase.auth.getUser()
       if (!user) return { error: new Error('Não autenticado') }
 
-      const updateRes = await supabase
-        .from('pedidos_cirurgia')
-        .update({ status: statusTo })
-        .eq('id', id)
-      if (updateRes.error) return updateRes
+      const { data, error } = await supabase.functions.invoke('update-pedido-cirurgia', {
+        body: {
+          pedido_id: id,
+          new_status: statusTo,
+          ...additionalData,
+        },
+      })
+
+      if (error) return { error }
+      if (!data?.success) return { error: new Error(data?.message || 'Erro ao atualizar status') }
 
       await supabase.from('audit_log' as any).insert({
         pedido_id: id,
@@ -76,9 +82,10 @@ export const api = {
         status_from: statusFrom,
         status_to: statusTo,
         action: actionLabel,
+        notes: additionalData?.notes,
       })
 
-      return updateRes
+      return { data }
     },
     cancel: async (id: string, statusFrom: string, reason: string) => {
       const {
@@ -86,15 +93,16 @@ export const api = {
       } = await supabase.auth.getUser()
       if (!user) return { error: new Error('Não autenticado') }
 
-      const updateRes = await supabase
-        .from('pedidos_cirurgia')
-        .update({
-          status: '10_CANCELADO',
+      const { data, error } = await supabase.functions.invoke('update-pedido-cirurgia', {
+        body: {
+          pedido_id: id,
+          new_status: '10_CANCELADO',
           cancellation_reason: reason,
-          cancellation_actor_id: user.id,
-        })
-        .eq('id', id)
-      if (updateRes.error) return updateRes
+        },
+      })
+
+      if (error) return { error }
+      if (!data?.success) return { error: new Error(data?.message || 'Erro ao cancelar') }
 
       await supabase.from('audit_log' as any).insert({
         pedido_id: id,
@@ -105,7 +113,7 @@ export const api = {
         notes: reason,
       })
 
-      return updateRes
+      return { data }
     },
     getTimeline: async (id: string) => {
       return await supabase

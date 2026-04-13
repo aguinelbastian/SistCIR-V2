@@ -26,6 +26,7 @@ import {
 } from '@/components/ui/dialog'
 import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
+import { Input } from '@/components/ui/input'
 import { useReportData } from '@/hooks/use-report-data'
 
 export default function Dashboard() {
@@ -61,19 +62,42 @@ export default function Dashboard() {
     }
   }, [user, authLoading, roles])
 
+  const handleActionResponse = (data: any) => {
+    if (data?.notificationSent === false) {
+      toast.warning(`⚠️ Falha ao notificar grupos. Detalhes: ${data.notificationWarning}`)
+    }
+    if (data?.calendarWarning) {
+      toast.warning(`⚠️ Falha ao sincronizar Google Calendar. Detalhes: ${data.calendarWarning}`)
+    }
+    if (data?.success && data?.notifiedGroups && data.notifiedGroups.length > 0) {
+      toast.success(
+        `✅ Transição realizada. Notificações enviadas para: ${data.notifiedGroups.join(', ')}`,
+      )
+    } else if (data?.success) {
+      toast.success(`✅ Transição realizada com sucesso.`)
+    }
+  }
+
   const handleUpdateStatus = async (
     e: React.MouseEvent,
     id: string,
     statusFrom: string,
     newStatus: SurgeryStatus,
     actionLabel: string,
+    additionalData?: any,
   ) => {
-    e.stopPropagation()
-    const { error } = await api.pedidos.updateStatus(id, statusFrom, newStatus, actionLabel)
+    e?.stopPropagation()
+    const { data, error } = await api.pedidos.updateStatus(
+      id,
+      statusFrom,
+      newStatus,
+      actionLabel,
+      additionalData,
+    )
     if (error) {
-      toast.error('Erro ao atualizar status')
+      toast.error(error.message || 'Erro ao atualizar status')
     } else {
-      toast.success('Status atualizado com sucesso')
+      handleActionResponse(data)
       loadData()
     }
   }
@@ -81,18 +105,68 @@ export default function Dashboard() {
   const handleCancelConfirm = async () => {
     if (!pedidoToCancel || !pedidoToCancelStatus || !cancelReason.trim()) return
     setIsSubmitting(true)
-    const { error } = await api.pedidos.cancel(pedidoToCancel, pedidoToCancelStatus, cancelReason)
+    const { data, error } = await api.pedidos.cancel(
+      pedidoToCancel,
+      pedidoToCancelStatus,
+      cancelReason,
+    )
     setIsSubmitting(false)
     if (error) {
-      toast.error('Erro ao cancelar solicitação')
+      toast.error(error.message || 'Erro ao cancelar solicitação')
     } else {
-      toast.success('Solicitação cancelada com sucesso')
+      handleActionResponse(data)
       setCancelModalOpen(false)
       setPedidoToCancel(null)
       setPedidoToCancelStatus(null)
       setCancelReason('')
       loadData()
     }
+  }
+
+  const [agendarModalOpen, setAgendarModalOpen] = useState(false)
+  const [pedidoToSchedule, setPedidoToSchedule] = useState<{
+    id: string
+    statusFrom: string
+  } | null>(null)
+  const [scheduleData, setScheduleData] = useState({
+    date: '',
+    time: '',
+    room: '',
+    anesthesiologist: '',
+  })
+
+  const handleAgendarConfirm = async () => {
+    if (
+      !pedidoToSchedule ||
+      !scheduleData.date ||
+      !scheduleData.time ||
+      !scheduleData.room ||
+      !scheduleData.anesthesiologist
+    ) {
+      toast.error('Preencha todos os campos obrigatórios')
+      return
+    }
+    setIsSubmitting(true)
+
+    const scheduledDate = new Date(`${scheduleData.date}T${scheduleData.time}`).toISOString()
+
+    await handleUpdateStatus(
+      null as any,
+      pedidoToSchedule.id,
+      pedidoToSchedule.statusFrom,
+      '7_AGENDADO_CC',
+      'Alocar Sala/Robô',
+      {
+        scheduled_date: scheduledDate,
+        operating_room: scheduleData.room,
+        anesthesiologist_name: scheduleData.anesthesiologist,
+      },
+    )
+
+    setIsSubmitting(false)
+    setAgendarModalOpen(false)
+    setPedidoToSchedule(null)
+    setScheduleData({ date: '', time: '', room: '', anesthesiologist: '' })
   }
 
   const stats = {
@@ -172,13 +246,28 @@ export default function Dashboard() {
           </Button>
         )}
 
-        {s === '6_AGUARDANDO_MAPA' && hasRole('coordinator') && (
+        {s === '5_AUTORIZADO' && hasRole('coordinator') && (
           <Button
             variant="default"
             size="sm"
             onClick={(e) =>
-              handleUpdateStatus(e, pedido.id!, s, '7_AGENDADO_CC', 'Alocar Sala/Robô')
+              handleUpdateStatus(e, pedido.id!, s, '6_AGUARDANDO_MAPA', 'Aguardando Mapa')
             }
+            className="bg-blue-600 hover:bg-blue-700"
+          >
+            Aguardando Mapa
+          </Button>
+        )}
+
+        {s === '6_AGUARDANDO_MAPA' && hasRole('coordinator') && (
+          <Button
+            variant="default"
+            size="sm"
+            onClick={(e) => {
+              e.stopPropagation()
+              setPedidoToSchedule({ id: pedido.id!, statusFrom: s })
+              setAgendarModalOpen(true)
+            }}
             className="bg-blue-600 hover:bg-blue-700"
           >
             Alocar Sala/Robô
@@ -385,6 +474,80 @@ export default function Dashboard() {
           </Table>
         </CardContent>
       </Card>
+
+      <Dialog open={agendarModalOpen} onOpenChange={setAgendarModalOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Agendar Cirurgia no CC</DialogTitle>
+            <DialogDescription>
+              Informe a data, horário, sala e anestesista para confirmar o agendamento.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="schedule-date">Data (Obrigatório)</Label>
+                <Input
+                  id="schedule-date"
+                  type="date"
+                  value={scheduleData.date}
+                  onChange={(e) => setScheduleData((prev) => ({ ...prev, date: e.target.value }))}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="schedule-time">Horário (Obrigatório)</Label>
+                <Input
+                  id="schedule-time"
+                  type="time"
+                  value={scheduleData.time}
+                  onChange={(e) => setScheduleData((prev) => ({ ...prev, time: e.target.value }))}
+                />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="schedule-room">Sala Cirúrgica (Obrigatório)</Label>
+              <Input
+                id="schedule-room"
+                placeholder="Ex: Sala 01"
+                value={scheduleData.room}
+                onChange={(e) => setScheduleData((prev) => ({ ...prev, room: e.target.value }))}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="schedule-anesthesiologist">Anestesista (Obrigatório)</Label>
+              <Input
+                id="schedule-anesthesiologist"
+                placeholder="Nome do Anestesista"
+                value={scheduleData.anesthesiologist}
+                onChange={(e) =>
+                  setScheduleData((prev) => ({ ...prev, anesthesiologist: e.target.value }))
+                }
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setAgendarModalOpen(false)}
+              disabled={isSubmitting}
+            >
+              Cancelar
+            </Button>
+            <Button
+              onClick={handleAgendarConfirm}
+              disabled={
+                !scheduleData.date ||
+                !scheduleData.time ||
+                !scheduleData.room ||
+                !scheduleData.anesthesiologist ||
+                isSubmitting
+              }
+            >
+              {isSubmitting ? 'Agendando...' : 'Confirmar Agendamento'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={cancelModalOpen} onOpenChange={setCancelModalOpen}>
         <DialogContent>
