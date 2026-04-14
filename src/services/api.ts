@@ -74,6 +74,9 @@ export const api = {
       })
 
       if (error) return { error }
+
+      console.log('RESPONSE_DATA_FROM_EDGE_FUNCTION:', JSON.stringify(data))
+
       if (!data?.success) return { error: new Error(data?.message || 'Erro ao atualizar status') }
 
       await supabase.from('audit_log' as any).insert({
