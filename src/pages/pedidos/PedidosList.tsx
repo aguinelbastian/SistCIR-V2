@@ -13,23 +13,55 @@ import {
 } from '@/components/ui/table'
 import { Button } from '@/components/ui/button'
 import { StatusBadge } from '@/components/StatusBadge'
-import { Plus, Eye } from 'lucide-react'
+import { Plus, Eye, CheckCircle } from 'lucide-react'
+import { toast } from 'sonner'
 
 export default function PedidosList() {
   const [pedidos, setPedidos] = useState<any[]>([])
-  const { hasRole } = useAuth()
+  const { hasRole, session } = useAuth()
 
-  useEffect(() => {
+  const loadPedidos = () => {
     api.pedidos.list().then(({ data }) => {
       if (data) setPedidos(data)
     })
+  }
+
+  useEffect(() => {
+    loadPedidos()
   }, [])
+
+  const handleStatusChange = async (pedidoId: string, newStatus: string) => {
+    try {
+      const res = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/update-pedido-cirurgia`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${session?.access_token}`,
+          },
+          body: JSON.stringify({ pedido_id: pedidoId, new_status: newStatus }),
+        },
+      )
+
+      const result = await res.json()
+
+      if (!res.ok || !result.success) {
+        throw new Error(result.message || 'Erro ao atualizar status')
+      }
+
+      toast.success('Status atualizado com sucesso!')
+      loadPedidos()
+    } catch (error: any) {
+      toast.error(error.message || 'Erro ao atualizar status')
+    }
+  }
 
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-bold tracking-tight">Pedidos de Cirurgia</h1>
-        {(hasRole('surgeon') || hasRole('secretary')) && (
+        {(hasRole('surgeon') || hasRole('secretary') || hasRole('admin')) && (
           <Button asChild>
             <Link to="/pedidos/novo">
               <Plus className="w-4 h-4 mr-2" /> Novo Pedido
@@ -65,11 +97,24 @@ export default function PedidosList() {
                     <StatusBadge status={p.status} />
                   </TableCell>
                   <TableCell className="text-right">
-                    <Button variant="ghost" size="sm" asChild>
-                      <Link to={`/pedidos/${p.id}`}>
-                        <Eye className="w-4 h-4 mr-2" /> Ver
-                      </Link>
-                    </Button>
+                    <div className="flex items-center justify-end gap-2">
+                      {p.status === '5_AUTORIZADO' &&
+                        (hasRole('coordinator') || hasRole('admin')) && (
+                          <Button
+                            variant="secondary"
+                            size="sm"
+                            onClick={() => handleStatusChange(p.id, '6_AGUARDANDO_ALOCACAO')}
+                          >
+                            <CheckCircle className="w-4 h-4 mr-2" />
+                            Aguardando Alocação
+                          </Button>
+                        )}
+                      <Button variant="ghost" size="sm" asChild>
+                        <Link to={`/pedidos/${p.id}`}>
+                          <Eye className="w-4 h-4 mr-2" /> Ver
+                        </Link>
+                      </Button>
+                    </div>
                   </TableCell>
                 </TableRow>
               ))}
