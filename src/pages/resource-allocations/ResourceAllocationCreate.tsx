@@ -47,7 +47,7 @@ export default function ResourceAllocationCreate() {
           .select(
             'id, surgeon_id, profiles!pedidos_cirurgia_surgeon_id_fkey(name), patients(full_name, medical_record), procedures(name)',
           )
-          .eq('status', '6_AGUARDANDO_MAPA'), // ✅ CORRIGIDO: Apenas status 6
+          .eq('status', '6_AGUARDANDO_ALOCACAO'), // ✅ CORRIGIDO: Apenas status 6
         supabase
           .from('v_blocos_disponiveis')
           .select(
@@ -177,7 +177,7 @@ export default function ResourceAllocationCreate() {
         <CardContent>
           <form onSubmit={onSubmit} className="space-y-6">
             <div className="space-y-2">
-              <Label>Pedido Cirúrgico (Autorizado / Aguardando Mapa)</Label>
+              <Label>Pedido Cirúrgico (Aguardando Alocação)</Label>
               <Select value={formData.pedido_id} onValueChange={handlePedidoChange}>
                 <SelectTrigger>
                   <SelectValue placeholder="Selecione a cirurgia..." />
