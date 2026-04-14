@@ -73,12 +73,32 @@ export const api = {
         },
       })
 
-      if (error) return { error }
+      if (error) {
+        console.error('❌ Erro na invocação:', error)
+        return { error }
+      }
 
-      console.log('RESPONSE_DATA_FROM_EDGE_FUNCTION:', JSON.stringify(data))
+      // Parsear resposta se for string
+      let parsedData = data
+      if (typeof data === 'string') {
+        try {
+          parsedData = JSON.parse(data)
+          console.log('✅ Resposta parseada:', parsedData)
+        } catch (parseError) {
+          console.error('❌ Erro ao parsear:', parseError)
+          return { error: new Error('Erro ao parsear resposta da função') }
+        }
+      }
 
-      if (!data?.success) return { error: new Error(data?.message || 'Erro ao atualizar status') }
+      // Validar sucesso
+      if (!parsedData?.success) {
+        console.error('❌ Resposta com success=false:', parsedData)
+        return { error: new Error(parsedData?.message || 'Erro ao atualizar status') }
+      }
 
+      console.log('✅ Transição bem-sucedida:', parsedData)
+
+      // Registrar auditoria
       await supabase.from('audit_log' as any).insert({
         pedido_id: id,
         changed_by: user.id,
@@ -88,7 +108,14 @@ export const api = {
         notes: additionalData?.notes,
       })
 
-      return { data }
+      // Retornar com warnings (se houver)
+      return {
+        data: parsedData,
+        warnings: {
+          notification: parsedData?.notificationWarning || null,
+          calendar: parsedData?.calendarWarning || null,
+        },
+      }
     },
     cancel: async (id: string, statusFrom: string, reason: string) => {
       const {
@@ -104,9 +131,32 @@ export const api = {
         },
       })
 
-      if (error) return { error }
-      if (!data?.success) return { error: new Error(data?.message || 'Erro ao cancelar') }
+      if (error) {
+        console.error('❌ Erro na invocação:', error)
+        return { error }
+      }
 
+      // Parsear resposta se for string
+      let parsedData = data
+      if (typeof data === 'string') {
+        try {
+          parsedData = JSON.parse(data)
+          console.log('✅ Resposta parseada:', parsedData)
+        } catch (parseError) {
+          console.error('❌ Erro ao parsear:', parseError)
+          return { error: new Error('Erro ao parsear resposta da função') }
+        }
+      }
+
+      // Validar sucesso
+      if (!parsedData?.success) {
+        console.error('❌ Resposta com success=false:', parsedData)
+        return { error: new Error(parsedData?.message || 'Erro ao cancelar') }
+      }
+
+      console.log('✅ Transição bem-sucedida:', parsedData)
+
+      // Registrar auditoria
       await supabase.from('audit_log' as any).insert({
         pedido_id: id,
         changed_by: user.id,
@@ -116,7 +166,14 @@ export const api = {
         notes: reason,
       })
 
-      return { data }
+      // Retornar com warnings (se houver)
+      return {
+        data: parsedData,
+        warnings: {
+          notification: parsedData?.notificationWarning || null,
+          calendar: parsedData?.calendarWarning || null,
+        },
+      }
     },
     getTimeline: async (id: string) => {
       return await supabase
