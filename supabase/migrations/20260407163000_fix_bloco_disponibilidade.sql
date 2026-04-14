@@ -22,7 +22,7 @@ BEGIN
   IF NEW.allocation_status IN ('ALOCADO', 'CONFIRMADO') THEN
     UPDATE public.surgical_blocks SET is_available = false WHERE id = NEW.surgical_block_id;
 
-    IF v_current_status IN ('6_AGUARDANDO_MAPA', '5_AUTORIZADO') THEN
+    IF v_current_status IN ('6_AGUARDANDO_ALOCACAO', '5_AUTORIZADO') THEN
       UPDATE public.pedidos_cirurgia
       SET status = '7_AGENDADO_CC',
           updated_at = NOW()
@@ -48,14 +48,14 @@ BEGIN
 
     IF v_current_status = '7_AGENDADO_CC' THEN
       UPDATE public.pedidos_cirurgia
-      SET status = '6_AGUARDANDO_MAPA',
+      SET status = '6_AGUARDANDO_ALOCACAO',
           updated_at = NOW()
       WHERE id = NEW.pedido_id;
       
       INSERT INTO public.audit_log (
         pedido_id, action, changed_by, status_from, status_to, changed_at, notes
       ) VALUES (
-        NEW.pedido_id, 'Cancelar Alocação', NEW.allocated_by, '7_AGENDADO_CC', '6_AGUARDANDO_MAPA', NOW(), 'Alocação cancelada.'
+        NEW.pedido_id, 'Cancelar Alocação', NEW.allocated_by, '7_AGENDADO_CC', '6_AGUARDANDO_ALOCACAO', NOW(), 'Alocação cancelada.'
       );
     END IF;
   END IF;

@@ -26,7 +26,7 @@ BEGIN
   END IF;
 
   IF NEW.allocation_status = 'ALOCADO' THEN
-    IF v_current_status IN ('6_AGUARDANDO_MAPA', '5_AUTORIZADO') THEN
+    IF v_current_status IN ('6_AGUARDANDO_ALOCACAO', '5_AUTORIZADO') THEN
       UPDATE pedidos_cirurgia
       SET status = '7_AGENDADO_CC',
           updated_at = NOW()
@@ -43,14 +43,14 @@ BEGIN
   IF NEW.allocation_status = 'CANCELADO' THEN
     IF v_current_status = '7_AGENDADO_CC' THEN
       UPDATE pedidos_cirurgia
-      SET status = '6_AGUARDANDO_MAPA',
+      SET status = '6_AGUARDANDO_ALOCACAO',
           updated_at = NOW()
       WHERE id = NEW.pedido_id;
       
       INSERT INTO audit_log (
         pedido_id, action, changed_by, status_from, status_to, changed_at, notes
       ) VALUES (
-        NEW.pedido_id, 'Cancelar Alocação', NEW.allocated_by, '7_AGENDADO_CC', '6_AGUARDANDO_MAPA', NOW(), 'Alocação cancelada.'
+        NEW.pedido_id, 'Cancelar Alocação', NEW.allocated_by, '7_AGENDADO_CC', '6_AGUARDANDO_ALOCACAO', NOW(), 'Alocação cancelada.'
       );
     END IF;
   END IF;
