@@ -588,4 +588,7 @@ export default function Dashboard() {
             </Button>
           </DialogFooter>
         </DialogContent>
-      </D
+      </Dialog>
+    </div>
+  )
+}
