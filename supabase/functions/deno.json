@@ -3,7 +3,7 @@
     "notify-sector": 20,
     "create-users": 12,
     "admin-manage-users": 15,
-    "notify-telegram": 10,
+    "notify-telegram": 11,
     "functions": 10,
     "admin-reset-password": 9,
     "send-email-welcome": 8,

@@ -18,8 +18,8 @@ export const STATUS_MAP: Record<SurgeryStatus, { label: string; color: string }>
     label: 'Autorizado',
     color: 'bg-lime-100 text-lime-800 border-lime-200',
   },
-  '6_AGUARDANDO_MAPA': {
-    label: 'Aguardando Mapa',
+  '6_AGUARDANDO_ALOCACAO': {
+    label: 'Aguardando Alocação',
     color: 'bg-blue-100 text-blue-800 border-blue-200',
   },
   '7_AGENDADO_CC': {

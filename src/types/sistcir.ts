@@ -4,7 +4,7 @@ export type SurgeryStatus =
   | '3_EM_AUDITORIA'
   | '4_PENDENCIA_TECNICA'
   | '5_AUTORIZADO'
-  | '6_AGUARDANDO_MAPA'
+  | '6_AGUARDANDO_ALOCACAO'
   | '7_AGENDADO_CC'
   | '8_EM_EXECUCAO'
   | '9_REALIZADO'

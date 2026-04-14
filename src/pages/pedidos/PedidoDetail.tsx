@@ -196,13 +196,13 @@ export default function PedidoDetail() {
           <Button
             size="sm"
             className="bg-blue-600 hover:bg-blue-700 text-white"
-            onClick={() => handleStatusChange('6_AGUARDANDO_MAPA', 'Aguardando Mapa')}
+            onClick={() => handleStatusChange('6_AGUARDANDO_ALOCACAO', 'Aguardando Alocação')}
           >
-            Aguardando Mapa
+            Aguardando Alocação
           </Button>
         )}
 
-        {s === '6_AGUARDANDO_MAPA' && hasRole('coordinator') && (
+        {s === '6_AGUARDANDO_ALOCACAO' && hasRole('coordinator') && (
           <Button
             size="sm"
             className="bg-blue-600 hover:bg-blue-700 text-white"
