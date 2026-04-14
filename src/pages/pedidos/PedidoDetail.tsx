@@ -18,7 +18,6 @@ import {
 } from '@/components/ui/dialog'
 import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
-import { Input } from '@/components/ui/input'
 import { cn } from '@/lib/utils'
 import { PedidoOpmeSection } from './components/PedidoOpmeSection'
 import { DocumentUploadWidget } from '@/components/DocumentUploadWidget'
@@ -35,14 +34,6 @@ export default function PedidoDetail() {
   const [cancelReason, setCancelReason] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [refreshDocs, setRefreshDocs] = useState(0)
-
-  const [agendarModalOpen, setAgendarModalOpen] = useState(false)
-  const [scheduleData, setScheduleData] = useState({
-    date: '',
-    time: '',
-    room: '',
-    anesthesiologist: '',
-  })
 
   const loadData = async () => {
     if (!id) return
@@ -99,31 +90,6 @@ export default function PedidoDetail() {
       setCancelReason('')
       loadData()
     }
-  }
-
-  const handleAgendarConfirm = async () => {
-    if (
-      !scheduleData.date ||
-      !scheduleData.time ||
-      !scheduleData.room ||
-      !scheduleData.anesthesiologist
-    ) {
-      toast.error('Preencha todos os campos obrigatórios')
-      return
-    }
-    setIsSubmitting(true)
-
-    const scheduledDate = new Date(`${scheduleData.date}T${scheduleData.time}`).toISOString()
-
-    await handleStatusChange('7_AGENDADO_CC', 'Alocar Sala/Robô', {
-      scheduled_date: scheduledDate,
-      operating_room: scheduleData.room,
-      anesthesiologist_name: scheduleData.anesthesiologist,
-    })
-
-    setIsSubmitting(false)
-    setAgendarModalOpen(false)
-    setScheduleData({ date: '', time: '', room: '', anesthesiologist: '' })
   }
 
   if (!pedido)
@@ -206,7 +172,7 @@ export default function PedidoDetail() {
           <Button
             size="sm"
             className="bg-blue-600 hover:bg-blue-700 text-white"
-            onClick={() => setAgendarModalOpen(true)}
+            onClick={() => navigate('/alocacao-recursos')}
           >
             Alocar Sala/Robô
           </Button>
@@ -422,80 +388,6 @@ export default function PedidoDetail() {
       )}
 
       {id && <PedidoOpmeSection pedidoId={id} />}
-
-      <Dialog open={agendarModalOpen} onOpenChange={setAgendarModalOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Agendar Cirurgia no CC</DialogTitle>
-            <DialogDescription>
-              Informe a data, horário, sala e anestesista para confirmar o agendamento.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="schedule-date">Data (Obrigatório)</Label>
-                <Input
-                  id="schedule-date"
-                  type="date"
-                  value={scheduleData.date}
-                  onChange={(e) => setScheduleData((prev) => ({ ...prev, date: e.target.value }))}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="schedule-time">Horário (Obrigatório)</Label>
-                <Input
-                  id="schedule-time"
-                  type="time"
-                  value={scheduleData.time}
-                  onChange={(e) => setScheduleData((prev) => ({ ...prev, time: e.target.value }))}
-                />
-              </div>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="schedule-room">Sala Cirúrgica (Obrigatório)</Label>
-              <Input
-                id="schedule-room"
-                placeholder="Ex: Sala 01"
-                value={scheduleData.room}
-                onChange={(e) => setScheduleData((prev) => ({ ...prev, room: e.target.value }))}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="schedule-anesthesiologist">Anestesista (Obrigatório)</Label>
-              <Input
-                id="schedule-anesthesiologist"
-                placeholder="Nome do Anestesista"
-                value={scheduleData.anesthesiologist}
-                onChange={(e) =>
-                  setScheduleData((prev) => ({ ...prev, anesthesiologist: e.target.value }))
-                }
-              />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setAgendarModalOpen(false)}
-              disabled={isSubmitting}
-            >
-              Cancelar
-            </Button>
-            <Button
-              onClick={handleAgendarConfirm}
-              disabled={
-                !scheduleData.date ||
-                !scheduleData.time ||
-                !scheduleData.room ||
-                !scheduleData.anesthesiologist ||
-                isSubmitting
-              }
-            >
-              {isSubmitting ? 'Agendando...' : 'Confirmar Agendamento'}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
 
       <Dialog open={cancelModalOpen} onOpenChange={setCancelModalOpen}>
         <DialogContent>
