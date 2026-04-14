@@ -25,7 +25,7 @@ const STATUS_LABELS: Record<string, string> = {
   '3_EM_AUDITORIA': 'Em Auditoria',
   '4_PENDENCIA_TECNICA': 'Pendência Técnica',
   '5_AUTORIZADO': 'Autorizado',
-  '6_AGUARDANDO_MAPA': 'Aguardando Mapa',
+  '6_AGUARDANDO_ALOCACAO': 'Aguardando Alocação',
   '7_AGENDADO_CC': 'Agendado Centro Cirúrgico',
   '8_EM_EXECUCAO': 'Em Execução',
   '9_REALIZADO': 'Realizado',
@@ -36,9 +36,9 @@ const TRANSICOES_PERMITIDAS: Record<string, string[]> = {
   '1_RASCUNHO': ['2_AGUARDANDO_OPME', '10_CANCELADO'],
   '2_AGUARDANDO_OPME': ['3_EM_AUDITORIA', '1_RASCUNHO', '10_CANCELADO'],
   '3_EM_AUDITORIA': ['4_PENDENCIA_TECNICA', '5_AUTORIZADO', '2_AGUARDANDO_OPME', '10_CANCELADO'],
-  '4_PENDENCIA_TECNICA': ['3_EM_AUDITORIA', '10_CANCELADO'],
-  '5_AUTORIZADO': ['6_AGUARDANDO_MAPA', '10_CANCELADO'],
-  '6_AGUARDANDO_MAPA': ['7_AGENDADO_CC', '10_CANCELADO'],
+  '4_PENDENCIA_TECNICA': ['3_EM_AUDITORIA', '5_AUTORIZADO', '10_CANCELADO'],
+  '5_AUTORIZADO': ['6_AGUARDANDO_ALOCACAO', '10_CANCELADO'],
+  '6_AGUARDANDO_ALOCACAO': ['7_AGENDADO_CC', '10_CANCELADO'],
   '7_AGENDADO_CC': ['8_EM_EXECUCAO', '10_CANCELADO'],
   '8_EM_EXECUCAO': ['9_REALIZADO', '10_CANCELADO'],
   '9_REALIZADO': ['10_CANCELADO'],
@@ -67,9 +67,9 @@ const CAMPOS_POR_ESTADO: Record<string, string[]> = {
   ],
   '2_AGUARDANDO_OPME': ['pacote_opme_id', 'anexo_guia_url', 'anexo_guia_tipo'],
   '3_EM_AUDITORIA': [],
-  '4_PENDENCIA_TECNICA': ['clinical_indication'],
+  '4_PENDENCIA_TECNICA': ['tipo_pendencia', 'descricao_pendencia'],
   '5_AUTORIZADO': ['authorization_number', 'authorization_date'],
-  '6_AGUARDANDO_MAPA': ['scheduled_date', 'operating_room'],
+  '6_AGUARDANDO_ALOCACAO': [],
   '7_AGENDADO_CC': ['scheduled_date', 'operating_room', 'anesthesiologist_name'],
   '8_EM_EXECUCAO': [],
   '9_REALIZADO': [],
@@ -99,6 +99,8 @@ const FIELD_LABELS: Record<string, string> = {
   scheduled_date: 'Data Agendada',
   anesthesiologist_name: 'Nome do Anestesista',
   cancellation_reason: 'Motivo do Cancelamento',
+  tipo_pendencia: 'Tipo de Pendência',
+  descricao_pendencia: 'Descrição da Pendência',
 }
 
 export function TransicaoPedidoCircurgico({ pedidoId }: { pedidoId: string }) {
@@ -231,18 +233,42 @@ export function TransicaoPedidoCircurgico({ pedidoId }: { pedidoId: string }) {
     const label = FIELD_LABELS[field] || field
 
     switch (field) {
-      case 'clinical_indication':
-      case 'cancellation_reason':
-      case 'alergias_descricao':
+      case 'tipo_pendencia':
         return (
           <div key={field} className="space-y-2">
             <Label>
-              {label} {field === 'cancellation_reason' && <span className="text-red-500">*</span>}
+              {label} <span className="text-red-500">*</span>
+            </Label>
+            <Select value={value || ''} onValueChange={(v) => handleFieldChange(field, v)}>
+              <SelectTrigger>
+                <SelectValue placeholder="Selecione um tipo..." />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="ORCAMENTO_PACIENTE">Orçamento do Paciente</SelectItem>
+                <SelectItem value="AUTORIZACAO_CONVENIO">Autorização do Convênio</SelectItem>
+                <SelectItem value="INSUMOS_OPME">Insumos/OPME</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        )
+
+      case 'clinical_indication':
+      case 'cancellation_reason':
+      case 'alergias_descricao':
+      case 'descricao_pendencia':
+        return (
+          <div key={field} className="space-y-2">
+            <Label>
+              {label}{' '}
+              {(field === 'cancellation_reason' || field === 'descricao_pendencia') && (
+                <span className="text-red-500">*</span>
+              )}
             </Label>
             <Textarea
               value={value || ''}
               onChange={(e) => handleFieldChange(field, e.target.value)}
               placeholder={`Digite ${label.toLowerCase()}...`}
+              rows={field === 'descricao_pendencia' ? 4 : undefined}
             />
           </div>
         )
@@ -386,6 +412,13 @@ export function TransicaoPedidoCircurgico({ pedidoId }: { pedidoId: string }) {
       return
     }
 
+    if (novoEstado === '4_PENDENCIA_TECNICA') {
+      if (!camposDinamicos.tipo_pendencia || !camposDinamicos.descricao_pendencia) {
+        toast.error('Tipo de Pendência e Descrição são obrigatórios')
+        return
+      }
+    }
+
     setSubmitting(true)
 
     if (novoEstado === '7_AGENDADO_CC') {
@@ -423,32 +456,30 @@ export function TransicaoPedidoCircurgico({ pedidoId }: { pedidoId: string }) {
         return
       }
 
-      if (data && !data.success) {
-        toast.error(`Validação falhou: ${data.message || 'Erro desconhecido'}`)
+      let parsedData = data
+      if (typeof data === 'string') {
+        try {
+          parsedData = JSON.parse(data)
+        } catch (e) {
+          console.error('Erro ao parsear resposta:', e)
+        }
+      }
+
+      if (!parsedData?.success) {
+        const errorMsg = parsedData?.message || 'Erro ao realizar transição'
+        console.error('❌ Erro na transição:', errorMsg)
+        toast.error(`Erro: ${errorMsg}`)
         return
       }
 
-      // Feedback Visual - Telegram
-      if (data?.notificationSent === true && data?.notifiedGroups?.length > 0) {
-        toast.success(`Notificação Telegram enviada (${data.notifiedGroups.join(', ')})`)
-      } else if (data?.notificationSent === false) {
-        toast.warning(`Falha na notificação Telegram: ${data?.notificationWarning || ''}`)
+      if (parsedData?.notificationWarning) {
+        toast.warning(`⚠️ Notificação: ${parsedData.notificationWarning}`)
       }
 
-      // Feedback Visual - Google Calendar
-      if (data?.calendarSynced || data?.calendarUpdated || data?.calendarDeleted) {
-        const actionStr = data.calendarDeleted
-          ? 'removido do'
-          : data.calendarUpdated
-            ? 'atualizado no'
-            : 'criado no'
-        toast.success(`Evento ${actionStr} Google Calendar`)
-      }
-
-      if (data?.calendarWarning) {
-        toast.warning('Aviso de Sincronização de Agenda', {
-          description: data.calendarWarning,
-          action: data.calendarWarning.includes('expirou')
+      if (parsedData?.calendarWarning) {
+        toast.warning('⚠️ Aviso de Sincronização de Agenda', {
+          description: parsedData.calendarWarning,
+          action: parsedData.calendarWarning.includes('expirou')
             ? {
                 label: 'Reautenticar',
                 onClick: handleReauthGoogle,
@@ -457,9 +488,16 @@ export function TransicaoPedidoCircurgico({ pedidoId }: { pedidoId: string }) {
         })
       }
 
-      toast.success(
-        data?.message || `Pedido transicionado para ${STATUS_LABELS[novoEstado] || novoEstado}`,
-      )
+      if (novoEstado === '4_PENDENCIA_TECNICA') {
+        toast.success(`✅ Pendência registrada: ${camposDinamicos.tipo_pendencia}`)
+      } else {
+        const groups =
+          parsedData?.notifiedGroups?.length > 0
+            ? ` Notificações enviadas para: ${parsedData.notifiedGroups.join(', ')}`
+            : ''
+        toast.success(parsedData?.message || `Transição realizada.${groups}`)
+      }
+
       setNovoEstado('')
       carregarPedido()
     } catch (err: any) {
