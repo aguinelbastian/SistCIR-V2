@@ -155,7 +155,7 @@ export default function PedidoDetail() {
           <Button
             size="sm"
             variant="secondary"
-            onClick={() => handleStatusChange('6_AGUARDANDO_MAPA', 'OPME Finalizada')}
+            onClick={() => handleStatusChange('3_EM_AUDITORIA', 'OPME Finalizada')}
           >
             OPME Finalizada
           </Button>
