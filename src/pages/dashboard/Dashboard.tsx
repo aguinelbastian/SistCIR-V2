@@ -201,7 +201,7 @@ export default function Dashboard() {
             variant="secondary"
             size="sm"
             onClick={(e) =>
-              handleUpdateStatus(e, pedido.id!, s, '6_AGUARDANDO_MAPA', 'OPME Finalizada')
+              handleUpdateStatus(e, pedido.id!, s, '6_AGUARDANDO_ALOCACAO', 'OPME Finalizada')
             }
           >
             OPME Finalizada
@@ -251,15 +251,15 @@ export default function Dashboard() {
             variant="default"
             size="sm"
             onClick={(e) =>
-              handleUpdateStatus(e, pedido.id!, s, '6_AGUARDANDO_MAPA', 'Aguardando Mapa')
+              handleUpdateStatus(e, pedido.id!, s, '6_AGUARDANDO_ALOCACAO', 'Aguardando Alocação')
             }
             className="bg-blue-600 hover:bg-blue-700"
           >
-            Aguardando Mapa
+            Aguardando Alocação
           </Button>
         )}
 
-        {s === '6_AGUARDANDO_MAPA' && hasRole('coordinator') && (
+        {s === '6_AGUARDANDO_ALOCACAO' && hasRole('coordinator') && (
           <Button
             variant="default"
             size="sm"
